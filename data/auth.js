@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = passwordInput.value;
 
             try {
-                const response = await fetch('./db.json');
+                const response = await fetch('./data/db.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
