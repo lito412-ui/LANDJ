@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = passwordInput.value;
 
             try {
-                const response = await fetch('./data/db.json');
+                const response = await fetch('./db.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -22,8 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const user = users.find(u => u.username === username && u.password === password);
 
                 if (user) {
+                    // Guardar el nombre de usuario en localStorage
+                    localStorage.setItem('pcwp_username', username);
+                    
                     alert('Inicio de sesión exitoso!');
-                    window.location.href = 'index.html'; // Redirigir a index.html
+                    window.location.href = 'cpanel.html'; // Redirigir al cPanel
                 } else {
                     alert('Nombre de usuario o contraseña incorrectos.');
                 }
