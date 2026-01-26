@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +10,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <title>L&J - Panel de Control</title>
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-container">
             <div class="header-left">
                 <h1 class="logo">L&J</h1>
-                <span class="welcome-text">Bienvenido, <span id="username-display">Usuario</span></span>
+                <span class="welcome-text">Bienvenido, <span id="user-name">Usuario</span></span>
             </div>
             <div class="header-right">
                 <div class="user-menu">
@@ -34,7 +36,7 @@
                             Configuración
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="index.html" class="dropdown-item logout">
+                        <a href="logout.php" class="dropdown-item logout">
                             <i class="fas fa-sign-out-alt"></i>
                             Cerrar Sesión
                         </a>
@@ -360,15 +362,18 @@
                     <form class="form-grid" id="ftp-form">
                         <div class="form-group">
                             <label for="ftp-username" class="form-label">Nombre de Usuario</label>
-                            <input type="text" id="ftp-username" class="form-input" placeholder="Ingresa el nombre de usuario FTP" required>
+                            <input type="text" id="ftp-username" class="form-input"
+                                placeholder="Ingresa el nombre de usuario FTP" required>
                         </div>
                         <div class="form-group">
                             <label for="ftp-password" class="form-label">Contraseña</label>
-                            <input type="password" id="ftp-password" class="form-input" placeholder="Contraseña segura" required>
+                            <input type="password" id="ftp-password" class="form-input" placeholder="Contraseña segura"
+                                required>
                         </div>
                         <div class="form-group">
                             <label for="ftp-directory" class="form-label">Directorio</label>
-                            <input type="text" id="ftp-directory" class="form-input" placeholder="/public_html/" required>
+                            <input type="text" id="ftp-directory" class="form-input" placeholder="/public_html/"
+                                required>
                         </div>
                         <div class="form-group">
                             <label for="ftp-quota" class="form-label">Cuota (MB)</label>
@@ -478,11 +483,13 @@
                         </div>
                         <div class="form-group full-width" id="custom-ssl-fields" style="display: none;">
                             <label for="ssl-certificate" class="form-label">Certificado (CRT)</label>
-                            <textarea id="ssl-certificate" class="form-textarea" placeholder="-----BEGIN CERTIFICATE-----" rows="6"></textarea>
+                            <textarea id="ssl-certificate" class="form-textarea"
+                                placeholder="-----BEGIN CERTIFICATE-----" rows="6"></textarea>
                         </div>
                         <div class="form-group full-width" id="custom-ssl-key" style="display: none;">
                             <label for="ssl-private-key" class="form-label">Clave Privada</label>
-                            <textarea id="ssl-private-key" class="form-textarea" placeholder="-----BEGIN PRIVATE KEY-----" rows="6"></textarea>
+                            <textarea id="ssl-private-key" class="form-textarea"
+                                placeholder="-----BEGIN PRIVATE KEY-----" rows="6"></textarea>
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn-primary">
@@ -499,7 +506,7 @@
 
             <!-- Other sections would go here (databases, email, etc.) -->
             <!-- For brevity, I'll include placeholders for the other sections -->
-            
+
             <section id="statistics" class="content-section">
                 <div class="section-header">
                     <h2 class="section-title">Estadísticas</h2>
@@ -601,8 +608,30 @@
             </section>
         </main>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('get_user.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.logged) {
+                    //Actualiza el nombre en el texto de bienvenida
+                    const welcomeName = document.getElementById('user-name');
+                    if(welcomeName) welcomeName.textContent = data.nombre;
 
+                    //Actualiza el nombre en el botón de la derecha (menú)
+                    const headerName = document.getElementById('header-username');
+                    if(headerName) headerName.textContent = data.nombre;
+
+                    console.log("Sesión activa para: " + data.nombre);
+                } else {
+                    //Si intentan entrar sin loguearse, fuera
+                    window.location.href = 'login.html';
+                }
+            })
+            .catch(error => console.error('Error al obtener usuario:', error));
+    });
+</script>
     <script src="./backend/cpanel-script.js"></script>
 </body>
-</html>
 
+</html>

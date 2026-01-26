@@ -1,14 +1,25 @@
 services:
-  # Servidor Web
+  # Servidor Web Nginx
   web:
     image: nginx:alpine
     container_name: mi_servidor_web
     ports:
       - "80:80"
     volumes:
+      # Montamos el código fuente y un archivo de configuración de Nginx personalizado
       - .:/usr/share/nginx/html
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - db
+      - php
+
+  # Servicio de PHP-FPM (Ahora construido localmente para incluir pdo_mysql)
+  php:
+    build: . # Usa el Dockerfile que creaste en la raíz del proyecto
+    container_name: mi_php_fpm
+    volumes:
+      # El código debe estar accesible tanto para Nginx como para PHP
+      - .:/usr/share/nginx/html
 
   # Base de Datos MySQL
   db:
@@ -19,7 +30,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "lolito412/"
       MYSQL_DATABASE: mi_proyecto_db
-      MYSQL_USER: user_web
+      MYSQL_USER: root
       MYSQL_PASSWORD: "lolito412/"
     ports:
       - "3306:3306"
@@ -41,3 +52,4 @@ services:
 
 volumes:
   db_data:
+

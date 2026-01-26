@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Verificar autenticación con el servidor antes de mostrar nada
+    // 1. Verificar si el usuario está logueado en el servidor
     checkAuth();
     
     // Inicializar navegación del sidebar
@@ -18,39 +18,40 @@ document.addEventListener('DOMContentLoaded', () => {
     initRealTimeUpdates();
 });
 
+// Función para verificar la autenticación real (PHP)
 function checkAuth() {
-    // Llamamos al archivo PHP que nos dice si hay una sesión activa
     fetch('get_user.php')
         .then(response => response.json())
         .then(data => {
             if (data.logged) {
-                // Si el servidor confirma la sesión, cargamos el nombre en el HTML
+                // Si está logueado, cargamos su nombre en el HTML
                 loadUserData(data.nombre);
             } else {
-                // Si no hay sesión real en el servidor, redirigimos al login
+                // Si no hay sesión activa, lo echamos al login
                 window.location.href = 'index.html';
             }
         })
         .catch(error => {
-            console.error('Error verificando sesión:', error);
+            console.error('Error de autenticación:', error);
             window.location.href = 'index.html';
         });
 }
 
-function loadUserData(nombreReal) {
-    // Actualizar elementos que muestran el nombre de usuario con el dato de la DB
+// Función para cargar el nombre del usuario en los elementos correspondientes
+function loadUserData(nombre) {
+    // Actualizar elementos que muestran el nombre de usuario
     const usernameDisplays = document.querySelectorAll('#username-display, #header-username');
     usernameDisplays.forEach(element => {
-        element.textContent = nombreReal;
+        element.textContent = nombre;
     });
 }
 
+// Función para cerrar sesión
 function logout() {
-    // Redirigir al script de PHP que destruye la sesión
     window.location.href = 'logout.php';
 }
 
-// Escuchar clicks en cualquier elemento que tenga la clase "logout"
+// Agregar event listener para el enlace de cerrar sesión
 document.addEventListener('click', (e) => {
     if (e.target.closest('.logout')) {
         e.preventDefault();
@@ -71,9 +72,7 @@ function initSidebarNavigation() {
             contentSections.forEach(s => s.classList.remove('active'));
             link.parentElement.classList.add('active');
             const targetElement = document.getElementById(targetSection);
-            if (targetElement) {
-                targetElement.classList.add('active');
-            }
+            if (targetElement) targetElement.classList.add('active');
         });
     });
 }
@@ -88,12 +87,10 @@ function initUserMenu() {
             userDropdown.classList.toggle('show');
             userMenuBtn.classList.toggle('active');
         });
-        
         document.addEventListener('click', () => {
             userDropdown.classList.remove('show');
             userMenuBtn.classList.remove('active');
         });
-
         userDropdown.addEventListener('click', (e) => e.stopPropagation());
     }
 }
@@ -109,20 +106,18 @@ function initFTPForm() {
     const cancelFTPBtn = document.getElementById('cancel-ftp-btn');
     const ftpForm = document.getElementById('ftp-form');
     
-    if (createFTPBtn) {
+    if (createFTPBtn && ftpFormCard) {
         createFTPBtn.addEventListener('click', () => {
             ftpFormCard.style.display = 'block';
             ftpFormCard.scrollIntoView({ behavior: 'smooth' });
         });
-        
         cancelFTPBtn.addEventListener('click', () => {
             ftpFormCard.style.display = 'none';
             ftpForm.reset();
         });
-        
         ftpForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            showNotification('Cuenta FTP creada exitosamente', 'success');
+            showNotification('Cuenta FTP creada exitosamente (Simulación)', 'success');
             ftpFormCard.style.display = 'none';
             ftpForm.reset();
         });
@@ -135,12 +130,11 @@ function initSSLForm() {
     const cancelSSLBtn = document.getElementById('cancel-ssl-btn');
     const sslForm = document.getElementById('ssl-form');
     
-    if (installSSLBtn) {
+    if (installSSLBtn && sslFormCard) {
         installSSLBtn.addEventListener('click', () => {
             sslFormCard.style.display = 'block';
             sslFormCard.scrollIntoView({ behavior: 'smooth' });
         });
-        
         cancelSSLBtn.addEventListener('click', () => {
             sslFormCard.style.display = 'none';
             sslForm.reset();
@@ -153,17 +147,17 @@ function initQuickActions() {
     quickActionBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const action = btn.getAttribute('data-action');
-            showNotification('Acción iniciada: ' + action, 'info');
+            showNotification(`Acción ejecutada: ${action}`, 'info');
         });
     });
 }
 
 function showNotification(message, type = 'info') {
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    alert(message); // Temporal para verificar que funciona
+    console.log(`[Notificación ${type}]: ${message}`);
 }
 
 function initRealTimeUpdates() {
     setInterval(() => {
+        console.log('Actualizando datos en segundo plano...');
     }, 30000);
 }
