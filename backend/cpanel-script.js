@@ -1,163 +1,109 @@
+let ultimaLectura = null;
+let ultimoTiempo = null;
+
+//Cofig de calibración
+const FACTOR_AJUSTE = 64; 
+const LIMITE_RAM_MB = 2048;
+
+console.log("🚀 Monitor Pro: Sistema de telemetría iniciado...");
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Verificar si el usuario está logueado en el servidor
-    checkAuth();
-    
-    // Inicializar navegación del sidebar
+    actualizarMetricas(); 
+    setInterval(actualizarMetricas, 3000);
     initSidebarNavigation();
-    
-    // Inicializar menú de usuario
     initUserMenu();
-    
-    // Inicializar formularios
-    initForms();
-    
-    // Inicializar acciones rápidas
-    initQuickActions();
-    
-    // Simular datos en tiempo real
-    initRealTimeUpdates();
 });
 
-// Función para verificar la autenticación real (PHP)
-function checkAuth() {
-    fetch('get_user.php')
-        .then(response => response.json())
-        .then(data => {
-            if (data.logged) {
-                // Si está logueado, cargamos su nombre en el HTML
-                loadUserData(data.nombre);
+async function actualizarMetricas() {
+    try {
+        const respuesta = await fetch('monitorizacion.php?t=' + Date.now());
+        if (!respuesta.ok) throw new Error('Error de conexión con el servidor');
+        
+        const datos = await respuesta.json();
+
+        //Procesamiento de BBDD
+        let ramTotalMB = 0;
+        let cpuTotalAcumulada = 0;
+
+        if (datos.contenedores && Array.isArray(datos.contenedores)) {
+            datos.contenedores.forEach(c => {
+                ramTotalMB += parseFloat(c.memoria_mb) || 0;
+                cpuTotalAcumulada += parseFloat(c.cpu_raw) || 0;
+            });
+        }
+
+        //Actualizar Disco
+        const discoTxt = document.getElementById('disco-texto');
+        const discoBar = document.getElementById('disco-barra');
+        if (discoTxt && discoBar) {
+            discoTxt.innerText = datos.disco + "%";
+            discoBar.style.width = datos.disco + "%";
+        }
+
+        //Actualizar RAM
+        const porcentajeRAM = Math.min((ramTotalMB / LIMITE_RAM_MB) * 100, 100).toFixed(1);
+        const ramTxt = document.getElementById('ram-texto');
+        const ramBar = document.getElementById('ram-barra');
+        
+        if (ramTxt && ramBar) {
+            ramTxt.innerText = porcentajeRAM + "%";
+            ramBar.style.width = porcentajeRAM + "%";
+        }
+
+        //Lógica CPU
+        const ahora = Date.now();
+
+        if (ultimaLectura !== null && ultimoTiempo !== null) {
+            const difCPU = cpuTotalAcumulada - ultimaLectura;
+            const difTiempoNS = (ahora - ultimoTiempo) * 1000000;
+
+            if (difCPU === 0) {
+                console.warn(" Datos estáticos: El servidor envió el mismo cpu_raw.");
             } else {
-                // Si no hay sesión activa, lo echamos al login
-                window.location.href = 'index.html';
+                let calculoBase = (difCPU / difTiempoNS) * 100;
+                let porcentajeReal = calculoBase / FACTOR_AJUSTE;
+
+                const cpuFinal = Math.max(0.1, Math.min(porcentajeReal, 100)).toFixed(1);
+                
+                const cpuTxt = document.getElementById('cpu-texto');
+                const cpuBar = document.getElementById('cpu-barra');
+                
+                if (cpuTxt && cpuBar) {
+                    cpuTxt.innerText = cpuFinal + "%";
+                    cpuBar.style.width = cpuFinal + "%";
+                    console.log(`[OK] CPU: ${cpuFinal}% | RAM: ${porcentajeRAM}%`);
+                }
             }
-        })
-        .catch(error => {
-            console.error('Error de autenticación:', error);
-            window.location.href = 'index.html';
-        });
-}
+        }
 
-// Función para cargar el nombre del usuario en los elementos correspondientes
-function loadUserData(nombre) {
-    // Actualizar elementos que muestran el nombre de usuario
-    const usernameDisplays = document.querySelectorAll('#username-display, #header-username');
-    usernameDisplays.forEach(element => {
-        element.textContent = nombre;
-    });
-}
+        ultimaLectura = cpuTotalAcumulada;
+        ultimoTiempo = ahora;
 
-// Función para cerrar sesión
-function logout() {
-    window.location.href = 'logout.php';
-}
-
-// Agregar event listener para el enlace de cerrar sesión
-document.addEventListener('click', (e) => {
-    if (e.target.closest('.logout')) {
-        e.preventDefault();
-        logout();
+    } catch (e) {
+        console.error(" Error en actualización:", e.message);
     }
-});
-
+}
 
 function initSidebarNavigation() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    const contentSections = document.querySelectorAll('.content-section');
-    
-    navLinks.forEach(link => {
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
         link.addEventListener('click', (e) => {
+            const sectionId = link.getAttribute('data-section');
+            if (!sectionId) return;
             e.preventDefault();
-            const targetSection = link.getAttribute('data-section');
-            navLinks.forEach(l => l.parentElement.classList.remove('active'));
-            contentSections.forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             link.parentElement.classList.add('active');
-            const targetElement = document.getElementById(targetSection);
-            if (targetElement) targetElement.classList.add('active');
+            document.getElementById(sectionId)?.classList.add('active');
         });
     });
 }
 
 function initUserMenu() {
-    const userMenuBtn = document.getElementById('user-menu-btn');
-    const userDropdown = document.getElementById('user-dropdown');
-    
-    if (userMenuBtn && userDropdown) {
-        userMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userDropdown.classList.toggle('show');
-            userMenuBtn.classList.toggle('active');
-        });
-        document.addEventListener('click', () => {
-            userDropdown.classList.remove('show');
-            userMenuBtn.classList.remove('active');
-        });
-        userDropdown.addEventListener('click', (e) => e.stopPropagation());
+    const btn = document.getElementById('user-menu-btn');
+    const menu = document.getElementById('user-dropdown');
+    if (btn && menu) {
+        btn.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('show'); };
+        window.onclick = () => menu.classList.remove('show');
     }
-}
-
-function initForms() {
-    initFTPForm();
-    initSSLForm();
-}
-
-function initFTPForm() {
-    const createFTPBtn = document.getElementById('create-ftp-btn');
-    const ftpFormCard = document.getElementById('ftp-form-card');
-    const cancelFTPBtn = document.getElementById('cancel-ftp-btn');
-    const ftpForm = document.getElementById('ftp-form');
-    
-    if (createFTPBtn && ftpFormCard) {
-        createFTPBtn.addEventListener('click', () => {
-            ftpFormCard.style.display = 'block';
-            ftpFormCard.scrollIntoView({ behavior: 'smooth' });
-        });
-        cancelFTPBtn.addEventListener('click', () => {
-            ftpFormCard.style.display = 'none';
-            ftpForm.reset();
-        });
-        ftpForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            showNotification('Cuenta FTP creada exitosamente (Simulación)', 'success');
-            ftpFormCard.style.display = 'none';
-            ftpForm.reset();
-        });
-    }
-}
-
-function initSSLForm() {
-    const installSSLBtn = document.getElementById('install-ssl-btn');
-    const sslFormCard = document.getElementById('ssl-form-card');
-    const cancelSSLBtn = document.getElementById('cancel-ssl-btn');
-    const sslForm = document.getElementById('ssl-form');
-    
-    if (installSSLBtn && sslFormCard) {
-        installSSLBtn.addEventListener('click', () => {
-            sslFormCard.style.display = 'block';
-            sslFormCard.scrollIntoView({ behavior: 'smooth' });
-        });
-        cancelSSLBtn.addEventListener('click', () => {
-            sslFormCard.style.display = 'none';
-            sslForm.reset();
-        });
-    }
-}
-
-function initQuickActions() {
-    const quickActionBtns = document.querySelectorAll('.quick-action-btn');
-    quickActionBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const action = btn.getAttribute('data-action');
-            showNotification(`Acción ejecutada: ${action}`, 'info');
-        });
-    });
-}
-
-function showNotification(message, type = 'info') {
-    console.log(`[Notificación ${type}]: ${message}`);
-}
-
-function initRealTimeUpdates() {
-    setInterval(() => {
-        console.log('Actualizando datos en segundo plano...');
-    }, 30000);
 }

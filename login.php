@@ -1,6 +1,6 @@
 <?php
 session_start();
-// Conexión a Docker (Asegúrate de que conexion.php usa root y lolito412/)
+//Conexión a Docker (Asegúrate de que conexion.php usa root y lolito412/)
 require 'conexion.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -8,13 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass_form = $_POST['password'] ?? '';
 
     try {
-        // Buscamos en la base de datos MySQL
+        //Buscamos en la base de datos MySQL
         $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE nombre = ? LIMIT 1");
         $stmt->execute([$user_form]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($pass_form, $user['contraseña_hash'])) {
-            // ÉXITO
+            //EXITO
             $_SESSION['user_id'] = $user['id_usuario'];
             $_SESSION['nombre'] = $user['nombre'];
             $_SESSION['rol'] = $user['rol'];
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: cpanel.html");
             exit;
         } else {
-            // ERROR
+            //ERROR
             echo "<script>alert('Usuario o contraseña incorrectos'); window.location.href='login.html';</script>";
         }
     } catch (PDOException $e) {
