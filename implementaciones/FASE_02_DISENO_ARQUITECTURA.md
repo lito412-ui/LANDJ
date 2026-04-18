@@ -26,6 +26,7 @@ Objetivo: transformar el análisis en una propuesta concreta de datos, pantallas
 
 | Tabla | Descripción | FK principales |
 |-------|-------------|----------------|
+| `auditoria` | Log de cambios: tabla, registro, acción, usuario, JSON antes/después | → `usuarios` (ON DELETE SET NULL) |
 | `usuarios` | Cuentas del sistema con rol y hash Argon2id | — |
 | `contactos` | Clientes/contactos del CRM | → `usuarios` (creado_por) |
 | `leads` | Prospectos con estado y origen | → `usuarios`, → `contactos` (si convertido) |

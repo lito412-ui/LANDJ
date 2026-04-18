@@ -23,17 +23,21 @@ function registrarAuditoria(
                ?? $_SERVER['REMOTE_ADDR']
                ?? null;
 
-    $s = $pdo->prepare(
-        "INSERT INTO auditoria (tabla, registro_id, accion, usuario_id, datos_antes, datos_despues, ip)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
-    );
-    $s->execute([
-        $tabla,
-        $registroId,
-        $accion,
-        $usuarioId,
-        $antes   !== null ? json_encode($antes,   JSON_UNESCAPED_UNICODE) : null,
-        $despues !== null ? json_encode($despues,  JSON_UNESCAPED_UNICODE) : null,
-        $ip,
-    ]);
+    try {
+        $s = $pdo->prepare(
+            "INSERT INTO auditoria (tabla, registro_id, accion, usuario_id, datos_antes, datos_despues, ip)
+             VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        $s->execute([
+            $tabla,
+            $registroId,
+            $accion,
+            $usuarioId,
+            $antes   !== null ? json_encode($antes,   JSON_UNESCAPED_UNICODE) : null,
+            $despues !== null ? json_encode($despues,  JSON_UNESCAPED_UNICODE) : null,
+            $ip,
+        ]);
+    } catch (PDOException $e) {
+        error_log('[auditoria] ' . $e->getMessage());
+    }
 }

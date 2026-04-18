@@ -1082,6 +1082,37 @@ html, body {
     margin-top: 2px;
 }
 
+/* ─── Leads: badges de estado y avatar ──────────────────────────────────── */
+.lead-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.badge-nuevo       { background: #e0e7ff; color: #3730a3; }
+.badge-contactado  { background: #dbeafe; color: #1d4ed8; }
+.badge-calificado  { background: #fef9c3; color: #92400e; }
+.badge-convertido  { background: #dcfce7; color: #15803d; }
+.badge-descartado  { background: #fee2e2; color: #b91c1c; }
+
+.lead-av { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+.lead-avatar { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+
+.crm-filtros { display: flex; gap: 8px; align-items: center; }
+.crm-select {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+}
+.crm-select:focus { outline: none; border-color: #667eea; }
+
 /* ─── Panel detalle de contacto ─────────────────────────────────────────── */
 .detalle-overlay {
     display: none;
@@ -1385,5 +1416,40 @@ body.detalle-open { overflow: hidden; }
     color: #1e293b;
     font-size: 0.9rem;
     font-weight: 500;
+}
+
+/* ─── Badges de rol de usuario ─────────────────────────────────────────────── */
+
+.user-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.badge-administrador {
+    background: linear-gradient(135deg, #667eea22, #764ba222);
+    color: #7c3aed;
+    border: 1px solid #7c3aed33;
+}
+
+.badge-usuario {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.user-yo-tag {
+    font-size: 0.7rem;
+    background: #dbeafe;
+    color: #2563eb;
+    border: 1px solid #93c5fd;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-weight: 600;
+    margin-left: 4px;
 }
 

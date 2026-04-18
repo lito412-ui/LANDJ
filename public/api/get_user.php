@@ -16,6 +16,7 @@ $row = $stmt->fetch();
 
 echo json_encode([
     'logged'     => true,
+    'id_usuario' => (int) $_SESSION['user_id'],
     'nombre'     => $_SESSION['nombre'],
     'rol'        => $_SESSION['rol'],
     'email'      => $row['email'] ?? '',

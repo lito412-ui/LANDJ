@@ -3,76 +3,93 @@
 Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-end.
 
 ## Estado actual
-- Avance estimado: `50%`
-- Completado: infraestructura Docker, auth, esquema BD completo (5 tablas con FKs), seed con datos de prueba, monitorización real del sistema, vista de perfil, panel modularizado por partials PHP y assets organizados por dominio, CRUD completo de contactos con validaciones cliente y servidor.
-- Pendiente principal: módulos core CRM (leads, oportunidades, actividades, detalle de contacto).
+- Avance estimado: `62%`
+- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos (validaciones JS+PHP, detalle lateral, toast/confirm), CRUD completo de leads (badges de estado, búsqueda + filtro, detalle lateral), CRUD completo de gestión de usuarios (admin-only, roles, autoprotección).
+- Pendiente principal: oportunidades (pipeline), actividades/notas, búsqueda/filtros avanzados, paginación.
 
 ## Checklist de tareas (MVP primero)
 
 ### Infraestructura y base
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
-- [x] Configurar entorno Docker (Nginx + PHP-FPM + MySQL + seed + phpMyAdmin + cAdvisor)
-- [x] Corregir healthcheck MySQL (`--password=` en lugar de `-p`) y añadir `MYSQL_ALLOW_EMPTY_PASSWORD`
-- [x] Corregir bug de contraseña vacía en `public/config/conexion.php` (usar `!== false` en vez de `?:`)
-- [x] Crear esquema SQL completo del MVP con 5 tablas y FKs (`database/init.sql`)
-- [x] Implementar seed con datos de prueba para todas las tablas (`database/seed.php`)
+- [x] Configurar entorno Docker (Nginx + PHP-FPM + MySQL + migrate + phpMyAdmin + cAdvisor)
+- [x] Corregir healthcheck MySQL y variable `MYSQL_ALLOW_EMPTY_PASSWORD`
+- [x] Corregir bug de contraseña vacía en `public/config/conexion.php`
+- [x] Crear esquema SQL completo del MVP con 6 tablas y FKs (`database/init.sql`)
+- [x] Implementar sistema de migraciones (`database/migrate.php` + `database/migrations/`)
+- [x] Seed con datos de prueba vía migraciones (`002_seed_usuarios.php`, `003_seed_crm.sql`)
+- [x] Añadir `try_files $uri =404` al bloque PHP de Nginx (seguridad + comportamiento correcto)
+
+### Seguridad
+- [x] Implementar `public/config/seguridad.php`: cabeceras HTTP (CSP, X-Frame-Options, Referrer-Policy), funciones CSRF (`csrfGenerar`, `csrfMeta`, `csrfValidar`)
+- [x] `fetchSeguro()` en cliente: añade `X-CSRF-Token` automáticamente a POST/PUT/DELETE/PATCH
+- [x] `registrarAuditoria()` tolerante a fallos: captura `PDOException` internamente para no bloquear operaciones si la tabla no existe
 
 ### Autenticación y sesión
 - [x] Implementar autenticación (hash Argon2id, login, logout, sesión PHP)
 - [x] Implementar control de acceso (RBAC) en rutas y endpoints protegidos
-- [x] `api/get_user.php` devuelve `nombre`, `rol`, `email` y `created_at` desde BD
+- [x] `api/get_user.php` devuelve `id_usuario`, `nombre`, `rol`, `email`, `created_at`
 
 ### Panel de control y estructura
-- [x] Modularizar panel: `cpanel.html` → `cpanel.php` con includes PHP por sección
-- [x] Crear partials independientes: `head.php`, `header.php`, `sidebar.php`
-- [x] Crear 14 secciones bajo `modules/dashboard/partials/sections/`
-- [x] Reorganizar assets por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
-- [x] Eliminar archivos obsoletos (`auth.js`, `script.js`, `cpanel.html` monolítico)
+- [x] Modularizar panel: `cpanel.php` con includes PHP por sección
+- [x] Partials independientes: `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
+- [x] Secciones PHP bajo `modules/dashboard/partials/sections/`
+- [x] Assets organizados por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
 
 ### Monitorización del sistema
-- [x] Reescribir `api/monitorizacion.php` con métricas reales por plataforma
-  - CPU: `wmic cpu get loadpercentage` en Windows; delta de `/proc/stat` (200 ms) en Linux
-  - RAM: `wmic OS get FreePhysicalMemory,TotalVisibleMemorySize` en Windows; `/proc/meminfo` en Linux
-  - Disco: `disk_total_space` / `disk_free_space` adaptado por SO
-- [x] Simplificar `cpanel-script.js`: eliminar `FACTOR_AJUSTE`, `LIMITE_RAM_MB` y lógica de delta en cliente
-- [x] Extraer helper `setMetrica()` para eliminar código duplicado
+- [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco) multiplataforma
+- [x] `setMetrica()` helper en cliente para eliminar duplicación
 
 ### Perfil de usuario
-- [x] Vista `#perfil` en panel con avatar de iniciales, nombre, email, rol y fecha de registro
-- [x] Accesible desde dropdown "Mi Perfil" en la cabecera
-- [x] Estilos de perfil añadidos a `assets/css/dashboard/cpanel-style.css`
+- [x] Vista `#perfil` con avatar de iniciales, nombre, email, rol y fecha de registro
+- [x] Accesible desde dropdown "Mi Perfil" en cabecera
 
-### CRM — Contactos (implementado)
-- [x] Implementar CRUD base para contactos/clientes
-- [x] Pantalla/listado de contactos con búsqueda debounced (400ms) server-side LIKE
-- [x] Formulario crear/editar con panel animado (max-height 0→700px)
+### CRM — Contactos
+- [x] CRUD base (API REST + módulo JS `Contactos`)
+- [x] Listado con búsqueda debounced (400ms) server-side LIKE
+- [x] Formulario crear/editar con panel animado
 - [x] Eliminación con confirmación modal e integridad referencial
-- [x] Validación JS en tiempo real (input + blur): nombre/apellidos solo letras/espacios/guiones/apóstrofes, auto-capitalización, email formato, teléfono español (9 dígitos iniciando 6-9), maxlength por campo, counter de notas
-- [x] Validación PHP (servidor): mismas reglas — regex `/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s'\-]+$/u`, `filter_var FILTER_VALIDATE_EMAIL`, regex teléfono `/^[6-9]\d{8}$/`, maxlength enforced
-- [x] Estados visuales CSS: `.form-input--error` (rojo), `.form-input--ok` (verde), `.form-error` (mensaje inline), `.form-counter` (contador notas)
-- [x] Toast notifications (success/error/info) + confirm modal reutilizables
+- [x] Validación JS en tiempo real + PHP servidor: nombre, apellidos, email, teléfono español, maxlength, counter notas
+- [x] Vista de detalle (panel lateral fijo `position:fixed, top:64px`, z-index 1100, movido a `<body>` por JS)
+- [x] Toast notifications (success/error/info) y confirm modal reutilizables
+- [x] Auditoría en crear/editar/eliminar
+
+### CRM — Leads
+- [x] CRUD base (API REST + módulo JS `Leads` + sección HTML)
+- [x] Listado con búsqueda debounced y filtro por estado (combinados con `URLSearchParams`)
+- [x] Formulario crear/editar con validaciones JS + PHP
+- [x] Badges de estado con color semántico (nuevo/contactado/calificado/convertido/descartado)
+- [x] Panel de detalle lateral (mismo patrón que contactos)
+- [x] Auditoría en crear/editar/eliminar
+- [x] Estado vacío `crm-empty` en tbody cuando no hay resultados
+
+### CRM — Gestión de Usuarios (admin-only)
+- [x] API REST `usuarios.php` con CRUD completo (GET lista/detalle, POST, PUT, DELETE)
+- [x] Validación PHP: nombre alfanumérico único, email único, contraseña mín 8 car. letras+números
+- [x] Protecciones: no auto-eliminación, no eliminar último admin, no cambiar propio rol
+- [x] Módulo JS `Usuarios`: listado, badges de rol (administrador/usuario), etiqueta "Tú" en fila propia
+- [x] Filtro por rol client-side
+- [x] Botón eliminar deshabilitado para cuenta propia
+- [x] Formulario con contraseña obligatoria en creación, opcional en edición
+- [x] Estilos globales reutilizados: `crm-toolbar`, `crm-search`, `data-table`, `btn-icon`, `crm-avatar`
+- [x] Auditoría en crear/editar/eliminar
 
 ### CRM core (pendiente)
-- [x] Vista de detalle de contacto (panel lateral deslizante con datos, notas y actividades recientes)
-- [ ] Implementar CRUD base para leads
-- [ ] Pantalla/listado de leads (filtros básicos)
-- [ ] Formulario de lead (crear/editar)
 - [ ] Conversión de lead a contacto y/o oportunidad
 - [ ] Pipeline de oportunidades — listado agrupado por etapa
 - [ ] Movimiento de oportunidades entre etapas
 - [ ] CRUD de actividades/notas ligadas a entidades
 - [ ] Listado de actividades por entidad y por usuario
-- [ ] Búsqueda y filtros en listados (campos acordados en Fase 02)
+- [ ] Búsqueda y filtros avanzados en listados (campos acordados en Fase 02)
 - [ ] Paginación básica en listados
-- [ ] Manejo de errores unificado
-- [ ] Auditoría de cambios (al menos cambios de estado e ediciones importantes)
+- [ ] Manejo de errores unificado y consistente
 
 ## Checklist de UX (mínimo viable)
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
 - [x] Feedback visual en métricas del dashboard (barras en tiempo real)
 - [x] Vista de perfil con datos reales del usuario autenticado
-- [ ] Estados vacíos (sin datos) y mensajes de carga en listados CRM
-- [ ] Permisos reflejados en la UI (botones/acciones según rol)
+- [x] Estados vacíos (`crm-empty`) y mensajes de carga (`crm-loading`) en todos los listados
+- [x] Toast notifications y confirm modal reutilizables en todas las secciones CRM
+- [ ] Permisos reflejados en la UI (botones/acciones según rol en contactos y leads)
 
 ## Criterio de "Hecho"
-- El usuario puede: entrar, gestionar contactos, gestionar leads, mover oportunidades en el pipeline y crear actividades, con permisos correctos y feedback claro.
+- El usuario puede: entrar, gestionar contactos, leads y usuarios, mover oportunidades en el pipeline y crear actividades, con permisos correctos y feedback claro.

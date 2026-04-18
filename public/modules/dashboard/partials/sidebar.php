@@ -2,6 +2,24 @@
     <nav class="sidebar-nav">
 
         <div class="nav-section">
+            <h3 class="nav-section-title">CRM</h3>
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="#contactos" class="nav-link" data-section="contactos">
+                        <i class="fas fa-address-book"></i>
+                        <span>Contactos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#leads" class="nav-link" data-section="leads">
+                        <i class="fas fa-funnel-dollar"></i>
+                        <span>Leads</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="nav-section">
             <h3 class="nav-section-title">Panel Principal</h3>
             <ul class="nav-list">
                 <li class="nav-item active">
@@ -14,18 +32,6 @@
                     <a href="#statistics" class="nav-link" data-section="statistics">
                         <i class="fas fa-chart-bar"></i>
                         <span>Estadísticas</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="nav-section">
-            <h3 class="nav-section-title">CRM</h3>
-            <ul class="nav-list">
-                <li class="nav-item">
-                    <a href="#contactos" class="nav-link" data-section="contactos">
-                        <i class="fas fa-address-book"></i>
-                        <span>Contactos</span>
                     </a>
                 </li>
             </ul>

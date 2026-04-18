@@ -18,6 +18,7 @@ csrfGenerar();
     <main class="main-content">
         <?php include __DIR__ . '/partials/sections/dashboard.php'; ?>
         <?php include __DIR__ . '/partials/sections/contactos.php'; ?>
+        <?php include __DIR__ . '/partials/sections/leads.php'; ?>
         <?php include __DIR__ . '/partials/sections/statistics.php'; ?>
         <?php include __DIR__ . '/partials/sections/file-manager.php'; ?>
         <?php include __DIR__ . '/partials/sections/ftp.php'; ?>
