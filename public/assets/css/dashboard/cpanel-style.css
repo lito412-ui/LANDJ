@@ -942,3 +942,89 @@ html, body {
     background: #94a3b8;
 }
 
+/* ─── Perfil ──────────────────────────────────────────────────────────────── */
+.perfil-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.perfil-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+}
+
+.perfil-nombre {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.perfil-rol-badge {
+    background: linear-gradient(135deg, #667eea22, #764ba222);
+    color: #667eea;
+    border: 1px solid #667eea44;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.perfil-detalles {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.perfil-campo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.perfil-campo:last-child {
+    border-bottom: none;
+}
+
+.perfil-campo-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.perfil-campo-label i {
+    width: 16px;
+    color: #94a3b8;
+}
+
+.perfil-campo-valor {
+    color: #1e293b;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+

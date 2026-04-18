@@ -5,5 +5,4 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-readfile(__DIR__ . '/../modules/dashboard/cpanel.html');
-?>
+include __DIR__ . '/../modules/dashboard/cpanel.php';

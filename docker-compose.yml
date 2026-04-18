@@ -25,9 +25,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "3306"
-      DB_NAME: mi_proyecto_db
+      DB_NAME: landj_db
       DB_USER: root
-      DB_PASSWORD: "lolito412/"
+      DB_PASSWORD: ""
     depends_on:
       db:
         condition: service_healthy
@@ -41,9 +41,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "3306"
-      DB_NAME: mi_proyecto_db
+      DB_NAME: landj_db
       DB_USER: root
-      DB_PASSWORD: "lolito412/"
+      DB_PASSWORD: ""
     volumes:
       - .:/usr/share/nginx/html
     depends_on:
@@ -60,15 +60,16 @@ services:
     restart: always
     command: --mysql-native-password=ON
     environment:
-      MYSQL_ROOT_PASSWORD: "lolito412/"
-      MYSQL_DATABASE: mi_proyecto_db
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: landj_db
     ports:
       - "3307:3306"
     volumes:
       - db_data_2:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-plolito412/"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password="]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -87,8 +88,8 @@ services:
       - PMA_HOST=db
       - PMA_PORT=3306
       - PMA_USER=root
-      - PMA_PASSWORD=lolito412/
-      - MYSQL_ROOT_PASSWORD=lolito412/
+      - PMA_PASSWORD=
+      - MYSQL_ROOT_PASSWORD=
     depends_on:
       db:
         condition: service_healthy

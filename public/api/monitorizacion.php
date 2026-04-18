@@ -10,66 +10,85 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$disco_ruta = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? "C:" : "/";
-$disco_total = disk_total_space($disco_ruta);
-$disco_libre = disk_free_space($disco_ruta);
-$porcentaje_disco = round((($disco_total - $disco_libre) / $disco_total) * 100, 1);
+$isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
 
-// Esto lee el tiempo total de CPU que el sistema ha procesado
-function get_server_cpu_usage() {
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') return 0;
-    
-    $stats = file_get_contents("/proc/stat");
-    if ($stats === false) return 0;
-    
-    $lines = explode("\n", $stats);
-    $cpuStats = explode(" ", preg_replace("/ +/", " ", $lines[0]));
-    
-    // Esto nos da un valor "raw" acumulado real, similar al que entrega Docker
-    return $cpuStats[2] + $cpuStats[3] + $cpuStats[4] + $cpuStats[5] + $cpuStats[6] + $cpuStats[7] + $cpuStats[8] + $cpuStats[9];
-}
+// ─── Disco ────────────────────────────────────────────────────────────────
+$disco_ruta   = $isWindows ? 'C:' : '/';
+$disco_total  = disk_total_space($disco_ruta);
+$disco_libre  = disk_free_space($disco_ruta);
+$disco_pct    = $disco_total > 0
+    ? round(($disco_total - $disco_libre) / $disco_total * 100, 1)
+    : 0;
 
-$cpu_total_real = get_server_cpu_usage();
-
-function get_server_ram_usage() {
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') return 300;
-    $memInfo = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    if ($memInfo === false) {
-        return 0;
-    }
-
-    $totalKb = 0;
-    $availableKb = 0;
-    foreach ($memInfo as $line) {
-        if (strpos($line, 'MemTotal:') === 0) {
-            $totalKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
-        } elseif (strpos($line, 'MemAvailable:') === 0) {
-            $availableKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
+// ─── CPU ──────────────────────────────────────────────────────────────────
+function get_cpu_pct() {
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        $out = @shell_exec('wmic cpu get loadpercentage /value 2>nul');
+        if ($out && preg_match('/LoadPercentage=(\d+)/i', $out, $m)) {
+            return (float) $m[1];
         }
+        return 0.0;
     }
 
-    if ($totalKb <= 0) {
-        return 0;
-    }
+    // Linux: dos lecturas separadas 200 ms para calcular delta real
+    $leer = function () {
+        $fh   = @fopen('/proc/stat', 'r');
+        if (!$fh) return null;
+        $line = fgets($fh);
+        fclose($fh);
+        $cols = preg_split('/\s+/', trim($line));
+        array_shift($cols); // quita "cpu"
+        $idle  = (float)($cols[3] ?? 0) + (float)($cols[4] ?? 0); // idle + iowait
+        $total = array_sum(array_map('floatval', $cols));
+        return ['idle' => $idle, 'total' => $total];
+    };
 
-    $usedKb = max(0, $totalKb - $availableKb);
-    return round($usedKb / 1024, 2); // Retorna memoria usada en MB
+    $a = $leer();
+    usleep(200000);
+    $b = $leer();
+
+    if (!$a || !$b) return 0.0;
+    $dTotal = $b['total'] - $a['total'];
+    $dIdle  = $b['idle']  - $a['idle'];
+
+    return $dTotal > 0 ? round((1 - $dIdle / $dTotal) * 100, 1) : 0.0;
 }
 
-$ram_usada = get_server_ram_usage();
+// ─── RAM ──────────────────────────────────────────────────────────────────
+function get_ram_info() {
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        $out = @shell_exec('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /value 2>nul');
+        if ($out) {
+            preg_match('/FreePhysicalMemory=(\d+)/i',      $out, $free);
+            preg_match('/TotalVisibleMemorySize=(\d+)/i',  $out, $total);
+            $totalMb = isset($total[1]) ? round($total[1] / 1024, 1) : 0;
+            $freeMb  = isset($free[1])  ? round($free[1]  / 1024, 1) : 0;
+            return ['usada' => round($totalMb - $freeMb, 1), 'total' => $totalMb];
+        }
+        return ['usada' => 0, 'total' => 0];
+    }
 
+    $lines   = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    $totalKb = 0;
+    $availKb = 0;
+    foreach ($lines as $line) {
+        if (str_starts_with($line, 'MemTotal:'))     $totalKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
+        if (str_starts_with($line, 'MemAvailable:')) $availKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
+    }
+    return [
+        'usada' => round(max(0, $totalKb - $availKb) / 1024, 1),
+        'total' => round($totalKb / 1024, 1),
+    ];
+}
 
-$contenedores = [
-    [
-        "nombre" => "Sistema_Global",
-        "memoria_mb" => $ram_usada,
-        "cpu_raw" => $cpu_total_real * 10000000 // Escalado para que el JS lo procese
-    ]
-];
+$cpu = get_cpu_pct();
+$ram = get_ram_info();
 
 echo json_encode([
-    "status" => "success",
-    "disco" => $porcentaje_disco,
-    "contenedores" => $contenedores,
-    "timestamp" => time()
+    'status'    => 'success',
+    'disco'     => $disco_pct,
+    'cpu'       => $cpu,
+    'ram_usada' => $ram['usada'],
+    'ram_total' => $ram['total'],
+    'timestamp' => time(),
 ]);

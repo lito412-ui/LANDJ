@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/c/Users/Jaime/Desktop/TRABAJOS DAW/_Proyecto/**)"
+      "Read(//c/c/Users/Jaime/Desktop/TRABAJOS DAW/_Proyecto/**)",
+      "Bash(docker compose *)",
+      "Bash(mkdir -p assets/css/site assets/css/dashboard assets/js/site assets/js/dashboard)",
+      "Bash(mv assets/css/index-style.css assets/css/site/index-style.css)",
+      "Bash(mv assets/css/style.css assets/css/site/style.css)",
+      "Bash(mv assets/css/cpanel-style.css assets/css/dashboard/cpanel-style.css)",
+      "Bash(mv assets/js/index-script.js assets/js/site/index-script.js)"
     ]
   }
 }
