@@ -274,6 +274,11 @@ const Contactos = (() => {
     let buscarTimer = null;
 
     function init() {
+        // Mover el panel de detalle a <body> para evitar que quede atrapado
+        // por el contexto de apilamiento del section padre
+        const overlay = document.getElementById('contacto-detalle-overlay');
+        if (overlay) document.body.appendChild(overlay);
+
         document.getElementById('contactos-nuevo-btn')
             ?.addEventListener('click', () => abrirForm());
         document.getElementById('contactos-cancelar-btn')
@@ -332,6 +337,9 @@ const Contactos = (() => {
                 <td>${formatFecha(c.created_at)}</td>
                 <td>
                     <div class="action-buttons">
+                        <button class="btn-icon" data-ver="${c.id_contacto}" title="Ver detalle">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <button class="btn-icon" data-edit="${c.id_contacto}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -342,6 +350,8 @@ const Contactos = (() => {
                 </td>
             </tr>`).join('');
 
+        tbody.querySelectorAll('[data-ver]').forEach(btn =>
+            btn.addEventListener('click', () => abrirDetalle(parseInt(btn.dataset.ver))));
         tbody.querySelectorAll('[data-edit]').forEach(btn =>
             btn.addEventListener('click', () => abrirForm(parseInt(btn.dataset.edit))));
         tbody.querySelectorAll('[data-del]').forEach(btn =>
@@ -452,6 +462,91 @@ const Contactos = (() => {
     function formatFecha(ts) {
         if (!ts) return '—';
         return new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // ── Detalle ───────────────────────────────────────────────────────────────
+
+    let detalleId = null;
+
+    async function abrirDetalle(id) {
+        detalleId = id;
+        const overlay = document.getElementById('contacto-detalle-overlay');
+        overlay?.classList.add('active');
+        document.body.classList.add('detalle-open');
+
+        document.getElementById('det-cerrar-btn')
+            ?.addEventListener('click', cerrarDetalle, { once: true });
+        overlay?.addEventListener('click', (e) => {
+            if (e.target === overlay) cerrarDetalle();
+        }, { once: true });
+        document.getElementById('det-editar-btn')
+            ?.addEventListener('click', () => { cerrarDetalle(); abrirForm(detalleId); }, { once: true });
+        document.getElementById('det-eliminar-btn')
+            ?.addEventListener('click', () => { cerrarDetalle(); eliminar(detalleId); }, { once: true });
+
+        try {
+            const r = await fetchSeguro(`/api/contactos.php?id=${id}`);
+            const d = await r.json();
+            if (d.ok) renderDetalle(d.data);
+            else mostrarToast(d.error, 'error');
+        } catch {
+            mostrarToast('Error al cargar el contacto', 'error');
+        }
+
+        cargarActividadesDetalle(id);
+    }
+
+    function cerrarDetalle() {
+        document.getElementById('contacto-detalle-overlay')?.classList.remove('active');
+        document.body.classList.remove('detalle-open');
+        detalleId = null;
+    }
+
+    function renderDetalle(c) {
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val || '—';
+        };
+        const iniciales = (c.nombre || '?').slice(0, 2).toUpperCase();
+        set('det-avatar',        iniciales);
+        set('det-nombre',        [c.nombre, c.apellidos].filter(Boolean).join(' '));
+        set('det-empresa',       c.empresa || '');
+        set('det-email',         c.email);
+        set('det-telefono',      c.telefono);
+        set('det-empresa-campo', c.empresa);
+        set('det-fecha',         formatFecha(c.created_at));
+
+        const notasBloque = document.getElementById('det-notas-bloque');
+        const notasEl     = document.getElementById('det-notas');
+        if (notasEl) notasEl.textContent = c.notas || '';
+        if (notasBloque) notasBloque.style.display = c.notas ? '' : 'none';
+    }
+
+    async function cargarActividadesDetalle(contactoId) {
+        const lista = document.getElementById('det-actividades-lista');
+        if (!lista) return;
+        try {
+            const r = await fetchSeguro(`/api/actividades.php?contacto_id=${contactoId}&limite=5`);
+            if (!r.ok) throw new Error();
+            const d = await r.json();
+            if (!d.ok || !d.data?.length) {
+                lista.innerHTML = '<li class="det-act-vacio">Sin actividades registradas</li>';
+                return;
+            }
+            const iconos = { nota: 'fa-sticky-note', llamada: 'fa-phone', reunion: 'fa-users', tarea: 'fa-tasks', email: 'fa-envelope' };
+            lista.innerHTML = d.data.map(a => `
+                <li class="det-act-item">
+                    <span class="det-act-icono det-act-${esc(a.tipo)}">
+                        <i class="fas ${iconos[a.tipo] || 'fa-circle'}"></i>
+                    </span>
+                    <div class="det-act-info">
+                        <span class="det-act-desc">${esc(a.descripcion)}</span>
+                        <span class="det-act-fecha">${formatFecha(a.fecha || a.created_at)}</span>
+                    </div>
+                </li>`).join('');
+        } catch {
+            lista.innerHTML = '<li class="det-act-vacio">No disponible</li>';
+        }
     }
 
     return { init };

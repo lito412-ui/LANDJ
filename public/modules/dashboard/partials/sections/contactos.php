@@ -59,6 +59,65 @@
         </div>
     </div>
 
+    <!-- Panel detalle -->
+    <div class="detalle-overlay" id="contacto-detalle-overlay" style="display:none">
+        <div class="detalle-panel" id="contacto-detalle-panel">
+            <div class="detalle-header">
+                <div class="detalle-avatar" id="det-avatar"></div>
+                <div class="detalle-header-info">
+                    <h3 id="det-nombre"></h3>
+                    <span id="det-empresa" class="detalle-empresa"></span>
+                </div>
+                <div class="detalle-header-actions">
+                    <button class="btn-icon" id="det-editar-btn" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon danger" id="det-eliminar-btn" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn-icon" id="det-cerrar-btn" title="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="detalle-body">
+                <div class="detalle-campos">
+                    <div class="detalle-campo">
+                        <span class="detalle-label"><i class="fas fa-envelope"></i> Email</span>
+                        <span class="detalle-valor" id="det-email"></span>
+                    </div>
+                    <div class="detalle-campo">
+                        <span class="detalle-label"><i class="fas fa-phone"></i> Teléfono</span>
+                        <span class="detalle-valor" id="det-telefono"></span>
+                    </div>
+                    <div class="detalle-campo">
+                        <span class="detalle-label"><i class="fas fa-building"></i> Empresa</span>
+                        <span class="detalle-valor" id="det-empresa-campo"></span>
+                    </div>
+                    <div class="detalle-campo">
+                        <span class="detalle-label"><i class="fas fa-calendar-alt"></i> Registrado</span>
+                        <span class="detalle-valor" id="det-fecha"></span>
+                    </div>
+                </div>
+
+                <div class="detalle-notas" id="det-notas-bloque">
+                    <span class="detalle-label"><i class="fas fa-sticky-note"></i> Notas</span>
+                    <p id="det-notas"></p>
+                </div>
+
+                <div class="detalle-actividades">
+                    <div class="detalle-seccion-titulo">
+                        <i class="fas fa-history"></i> Actividades recientes
+                    </div>
+                    <ul class="det-actividades-lista" id="det-actividades-lista">
+                        <li class="det-act-vacio">Cargando...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Buscador -->
     <div class="crm-toolbar">
         <div class="crm-search">

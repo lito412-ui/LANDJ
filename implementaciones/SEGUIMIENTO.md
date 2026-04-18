@@ -5,7 +5,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `65%`**
+- **Avance estimado actual: `67%`**
 
 ## Pesos por fase
 - Fase 01 - Análisis y Planificación: `15%`
@@ -54,7 +54,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Implementar formulario crear/editar con panel animado
 - [x] Implementar eliminación con confirmación modal e integridad referencial
 - [x] Implementar validaciones JS (tiempo real) + PHP (servidor): nombre/apellidos, email, teléfono español, maxlength por campo, counter de notas
-- [ ] Implementar vista de detalle de contacto
+- [x] Implementar vista de detalle de contacto (panel lateral con datos, notas, actividades recientes y acciones rápidas)
 - [ ] Implementar CRUD base para leads
 - [ ] Implementar pantalla/listado de leads (filtros básicos)
 - [ ] Implementar pantalla/formulario de lead (crear/editar)

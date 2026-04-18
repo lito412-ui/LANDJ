@@ -53,7 +53,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Toast notifications (success/error/info) + confirm modal reutilizables
 
 ### CRM core (pendiente)
-- [ ] Vista de detalle de contacto
+- [x] Vista de detalle de contacto (panel lateral deslizante con datos, notas y actividades recientes)
 - [ ] Implementar CRUD base para leads
 - [ ] Pantalla/listado de leads (filtros básicos)
 - [ ] Formulario de lead (crear/editar)
