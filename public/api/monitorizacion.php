@@ -33,11 +33,27 @@ $cpu_total_real = get_server_cpu_usage();
 
 function get_server_ram_usage() {
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') return 300;
-    $free = shell_exec('free -m');
-    $free = (string)trim($free);
-    $free_arr = explode("\n", $free);
-    $mem = explode(" ", preg_replace("/\s+/", " ", $free_arr[1]));
-    return $mem[2]; // Retorna memoria usada en MB
+    $memInfo = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($memInfo === false) {
+        return 0;
+    }
+
+    $totalKb = 0;
+    $availableKb = 0;
+    foreach ($memInfo as $line) {
+        if (strpos($line, 'MemTotal:') === 0) {
+            $totalKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
+        } elseif (strpos($line, 'MemAvailable:') === 0) {
+            $availableKb = (int) filter_var($line, FILTER_SANITIZE_NUMBER_INT);
+        }
+    }
+
+    if ($totalKb <= 0) {
+        return 0;
+    }
+
+    $usedKb = max(0, $totalKb - $availableKb);
+    return round($usedKb / 1024, 2); // Retorna memoria usada en MB
 }
 
 $ram_usada = get_server_ram_usage();

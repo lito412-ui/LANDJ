@@ -4,11 +4,19 @@ Vista general del repositorio: aplicación web tipo panel de control (landing, l
 
 ## Qué incluye este proyecto
 
-- **Landing** (`index.html`): presentación del proyecto.
-- **Autenticación** (`login.html` → `login.php`): sesión PHP y tabla `usuarios` en MySQL.
-- **Panel** (`cpanel.html`, scripts en `backend/`): interfaz del panel; parte de las secciones son maquetación o simulación en cliente.
-- **Utilidades PHP**: `get_user.php`, `logout.php`, `monitorizacion.php`, `registro.php`, scripts de administración de usuario según necesidad.
-- **Infraestructura**: `docker-compose.yml`, `Dockerfile`, configuración Nginx en `nginx/conf.d/`.
+- **Landing** (`public/index.html`): presentación del proyecto en la raíz del sitio (`/`).
+- **Autenticación** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP y tabla `usuarios` en MySQL.
+- **Panel** (`public/admin/cpanel.php` + vista `public/modules/dashboard/cpanel.html`): el PHP comprueba sesión y sirve el HTML; los estilos y scripts están en `public/assets/`.
+- **Utilidades PHP**: `public/api/get_user.php`, `public/auth/logout.php`, `public/api/monitorizacion.php`, `public/auth/registro.php`, scripts en `public/admin/` según necesidad.
+- **Datos**: esquema en `database/init.sql`, semilla desde `database/db.json` mediante `database/seed.php` (ver más abajo).
+- **Infraestructura**: `docker-compose.yml`, `Dockerfile`, configuración Nginx en `docker/nginx/conf.d/`.
+
+### Rutas de compatibilidad
+
+En la raíz de `public/` existen redirecciones ligeras para enlaces antiguos:
+
+- `public/login.html` → redirige a `/modules/site/login.html`
+- `public/cpanel.html` → redirige a `/admin/cpanel.php`
 
 ## Stack
 
@@ -20,17 +28,61 @@ Vista general del repositorio: aplicación web tipo panel de control (landing, l
 | Datos      | MySQL 8.4                            |
 | Entorno    | Docker Compose                       |
 
-## Usuarios en `data/db.json`
+## Estructura principal del código (activa)
 
-El archivo [`data/db.json`](data/db.json) contiene un listado de ejemplo con identificador, nombre de usuario y contraseña en texto plano (solo adecuado para entornos locales o de prueba).
+El documento raíz servido por Nginx es `public/` (mapeado como `/usr/share/nginx/html/public` en el contenedor).
 
-| ID | Usuario  | Contraseña   |
-|----|----------|--------------|
-| 1  | Samuel   | tuchulito96  |
-| 2  | lito412  | admin412     | ############# Este es el administrador.
-| 3  | Cuervo   | soyunchulo   |
+```text
+LANDJ/
+├── database/
+│   ├── init.sql          # creación tabla usuarios (entre otros)
+│   ├── db.json           # usuarios de ejemplo para el seed
+│   └── seed.php          # inserta/actualiza usuarios en MySQL desde db.json
+├── docker/
+│   └── nginx/conf.d/default.conf
+├── public/
+│   ├── index.html
+│   ├── login.html        # redirección al login modular
+│   ├── cpanel.html       # redirección al panel protegido
+│   ├── assets/
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── img/
+│   ├── modules/
+│   │   ├── site/         # vistas públicas (login)
+│   │   └── dashboard/    # vista HTML del panel (servida por admin/cpanel.php)
+│   ├── auth/             # login, logout, registro
+│   ├── admin/            # cpanel.php, crearusuario, reset_admin
+│   ├── api/              # get_user, monitorizacion
+│   └── config/           # conexion.php (bloqueado por Nginx a acceso directo)
+├── docker-compose.yml
+├── Dockerfile
+└── README.md
+```
 
-El login principal del proyecto, cuando usas PHP y MySQL en Docker, valida contra la tabla **`usuarios`** de la base de datos, no contra este JSON. Revisa si tu flujo concreto lee `db.json` o la base de datos antes de probar credenciales.
+Existe además una carpeta **`LANDJ/`** en el repositorio con una copia histórica de parte del frontend; el desarrollo activo y Docker usan la **raíz del repo** (este `README.md` y `docker-compose.yml`).
+
+## Usuarios en `database/db.json`
+
+El archivo [`database/db.json`](database/db.json) define usuarios de ejemplo (nombre de usuario y contraseña en texto plano) **solo para entornos locales**. El script [`database/seed.php`](database/seed.php) lee este JSON y escribe en la tabla **`usuarios`** de MySQL (hash con Argon2id). El login de la aplicación **siempre valida contra MySQL**, no contra el JSON en tiempo real.
+
+| ID | Usuario  | Contraseña (ejemplo en JSON) |
+|----|----------|------------------------------|
+| 1  | Samuel   | tuchulito96                  |
+| 2  | lito412  | lolito412/                   |
+| 3  | Cuervo   | soyunchulo                   |
+
+Tras el seed también puede existir un usuario **`admin`** (contraseña definida en `seed.php`, p. ej. `lolito412/`). Ajusta credenciales antes de cualquier despliegue real.
+
+### Poblar o actualizar usuarios en la base de datos
+
+Con los contenedores en marcha y MySQL saludable:
+
+```bash
+docker compose run --rm seed
+```
+
+O, si usas el servicio `seed` definido en `docker-compose.yml`, se puede ejecutar en el primer arranque según tu configuración. Si cambias `db.json`, vuelve a ejecutar el comando anterior para aplicar contraseñas actualizadas a filas ya existentes.
 
 ## Requisitos previos
 
@@ -56,6 +108,8 @@ docker compose ps
 | Servicio    | URL por defecto              |
 |------------|------------------------------|
 | Aplicación | http://localhost:91          |
+| Login      | http://localhost:91/modules/site/login.html |
+| Panel      | http://localhost:91/admin/cpanel.php (requiere sesión) |
 | phpMyAdmin | http://localhost:8082        |
 | cAdvisor   | http://localhost:8080        |
 
@@ -147,19 +201,13 @@ docker system prune -f
 
 ### Desde PHP (dentro de la red Docker)
 
-Los scripts PHP se ejecutan en el servicio PHP-FPM. El **host** de MySQL debe ser el **nombre del servicio** de la base en `docker-compose.yml` (habitualmente `db`), no `localhost`, para que la resolución DNS de Docker funcione.
+Los scripts PHP se ejecutan en el servicio PHP-FPM. El **host** de MySQL debe ser el **nombre del servicio** de la base en `docker-compose.yml` (habitualmente `db`), no `127.0.0.1`.
 
-En `conexion.php` suele usarse PDO con opciones como:
-
-- `PDO::ATTR_ERRMODE` = excepciones
-- `PDO::ATTR_DEFAULT_FETCH_MODE` = array asociativo
-- `PDO::ATTR_EMULATE_PREPARES` = desactivado (consultas preparadas reales)
-
-La cadena DSN típica: `mysql:host=<servicio_db>;dbname=<nombre_bd>;charset=utf8mb4`.
+En `public/config/conexion.php` se leen variables de entorno `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (con valores por defecto alineados con `docker-compose.yml` en el servicio `php`). La cadena DSN usa PDO con `utf8mb4`.
 
 ### Desde tu máquina (fuera de Docker)
 
-Si el puerto de MySQL está publicado en el host (p. ej. `3307:3306`), puedes conectar con un cliente gráfico (DBeaver, TablePlus, MySQL Workbench) o por línea de comandos:
+Si el puerto de MySQL está publicado en el host (p. ej. `3307:3306`), puedes conectar con un cliente gráfico o:
 
 ```bash
 mysql -h 127.0.0.1 -P 3307 -uroot -p
@@ -169,24 +217,21 @@ Usa el mismo usuario/contraseña que en Compose. Comprueba el puerto exacto en `
 
 ### phpMyAdmin
 
-Si el servicio está activo, la interfaz web suele estar en `http://localhost:8082` (o el puerto que indique tu `docker-compose.yml`). El host que debe usar phpMyAdmin para llegar a MySQL es el nombre del servicio de base de datos (p. ej. `PMA_HOST=db`).
+Si el servicio está activo, la interfaz web suele estar en `http://localhost:8082`. Debe apuntar al host MySQL interno (`PMA_HOST=db` en Compose). Las credenciales de acceso deben coincidir con las de MySQL (`PMA_USER` / `PMA_PASSWORD` o usuario que configures).
 
 ### Tablas y usuarios de aplicación
 
-- El login (`login.php`) consulta la tabla **`usuarios`** (campos como identificador, nombre, hash de contraseña, rol).
-- Scripts auxiliares como `crearusuario.php` o `reset_admin.php` (si existen en tu copia del repo) sirven para poblar o recuperar un administrador: **solo en entorno local/controlado** y rotando credenciales antes de cualquier despliegue real.
+- El login (`public/auth/login.php`) consulta la tabla **`usuarios`**. La columna del hash de contraseña se documenta como **`contraseña_hash`** (debe coincidir con el esquema real de tu base de datos).
+- Scripts auxiliares en `public/admin/` sirven para poblar o recuperar un administrador: **solo en entorno local/controlado** y rotando credenciales antes de cualquier despliegue real.
 
 ### Buenas prácticas
 
 - No subas a repositorios públicos contraseñas reales: usa variables de entorno o un `.env` ignorado por Git.
-- En producción, crea un usuario MySQL dedicado con permisos mínimos, no uses `root` desde la aplicación.
+- En producción, crea un usuario MySQL dedicado con permisos mínimos; no uses `root` desde la aplicación.
 - Cambia `MYSQL_ROOT_PASSWORD` y las credenciales de la app respecto a los valores de ejemplo del desarrollo.
 
 ## Documentación ampliada
 
 - **Arquitectura, estructura de carpetas, despliegue y comandos útiles**: [`implementaciones/README.md`](implementaciones/README.md)
+- **MVP, historias de usuario y criterios de aceptación (Fase 01)**: [`implementaciones/MVP_HISTORIAS_Y_CRITERIOS.md`](implementaciones/MVP_HISTORIAS_Y_CRITERIOS.md)
 - **Seguimiento y fases del CRM**: [`implementaciones/SEGUIMIENTO.md`](implementaciones/SEGUIMIENTO.md)
-
-## Nota sobre la carpeta `LANDJ/`
-
-Dentro del repositorio puede existir una subcarpeta `LANDJ/` con copia de parte del frontend. El desarrollo activo y el arranque con Docker se asumen desde la **raíz del repositorio** (donde está este `README.md` y `docker-compose.yml`).

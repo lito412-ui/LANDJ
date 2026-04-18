@@ -28,12 +28,12 @@ function checkAuth() {
                 loadUserData(data.nombre);
             } else {
                 // Si no hay sesión real en el servidor, redirigimos al login
-                window.location.href = '/index.html';
+                window.location.href = '/modules/site/login.html';
             }
         })
         .catch(error => {
             console.error('Error verificando sesión:', error);
-            window.location.href = '/index.html';
+            window.location.href = '/modules/site/login.html';
         });
 }
 

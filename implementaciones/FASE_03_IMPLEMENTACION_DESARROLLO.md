@@ -4,8 +4,11 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 
 ## Estado actual
 - Avance estimado: `25%`
-- Ya implementado: login/logout con sesion, estructura base Docker/PHP/MySQL y panel inicial.
-- Pendiente principal: modulos core CRM (contactos, leads, oportunidades, actividades) con persistencia real.
+- Ya implementado: login/logout con sesión, estructura modular bajo `public/` (`modules/site`, `modules/dashboard`, `assets/`), Docker/PHP/MySQL, seed desde `database/db.json` y panel servido vía `public/admin/cpanel.php`.
+- Pendiente principal: módulos core CRM (contactos, leads, oportunidades, actividades) con persistencia real.
+
+## Documentación alineada con el código
+- Estructura de carpetas y URLs actualizadas: [`README.md`](../README.md) e [`implementaciones/README.md`](README.md).
 
 ## Checklist de tareas (MVP primero)
 - [x] Preparar estructura de proyecto (carpetas, convenciones, nombrado, rutas)

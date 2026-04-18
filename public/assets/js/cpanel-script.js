@@ -8,11 +8,34 @@ const LIMITE_RAM_MB = 2048;
 console.log("🚀 Monitor Pro: Sistema de telemetría iniciado...");
 
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
     actualizarMetricas(); 
     setInterval(actualizarMetricas, 3000);
     initSidebarNavigation();
     initUserMenu();
 });
+
+async function checkAuth() {
+    try {
+        const response = await fetch('/api/get_user.php?t=' + Date.now());
+        if (!response.ok) {
+            throw new Error('No se pudo validar la sesion');
+        }
+        const data = await response.json();
+        if (!data.logged) {
+            window.location.href = '/modules/site/login.html';
+            return;
+        }
+
+        const headerUsername = document.getElementById('header-username');
+        const userName = document.getElementById('user-name');
+        if (headerUsername) headerUsername.textContent = data.nombre;
+        if (userName) userName.textContent = data.nombre;
+    } catch (error) {
+        console.error('Error validando sesion:', error.message);
+        window.location.href = '/modules/site/login.html';
+    }
+}
 
 async function actualizarMetricas() {
     try {

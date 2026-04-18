@@ -22,9 +22,34 @@ services:
     container_name: mi_php_fpm_2
     volumes:
       - .:/usr/share/nginx/html
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: mi_proyecto_db
+      DB_USER: root
+      DB_PASSWORD: "lolito412/"
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - red_proyecto_2
+
+  seed:
+    build: .
+    container_name: mi_seed_usuarios_2
+    command: ["php", "/usr/share/nginx/html/database/seed.php"]
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: mi_proyecto_db
+      DB_USER: root
+      DB_PASSWORD: "lolito412/"
+    volumes:
+      - .:/usr/share/nginx/html
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
     networks:
       - red_proyecto_2
 
@@ -60,6 +85,9 @@ services:
       - "8082:80"
     environment:
       - PMA_HOST=db
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=lolito412/
       - MYSQL_ROOT_PASSWORD=lolito412/
     depends_on:
       db:

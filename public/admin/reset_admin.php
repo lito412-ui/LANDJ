@@ -15,7 +15,7 @@ try {
     $hash = password_hash($pass_plana, PASSWORD_ARGON2ID);
 
     //Insertamos
-    $sql = "INSERT INTO usuarios (nombre, email, contrasena_hash, rol) VALUES (?, ?, ?, ?)";
+    $sql = "INSERT INTO usuarios (nombre, email, contraseña_hash, rol) VALUES (?, ?, ?, ?)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$nombre, $email, $hash, $rol]);
 

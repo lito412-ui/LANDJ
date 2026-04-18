@@ -29,3 +29,6 @@ Objetivo: transformar el analisis en una propuesta concreta de datos, pantallas 
 ## Criterio de "Hecho"
 - Existe una especificacion suficiente para implementar sin adivinar (datos + permisos + contratos + UI basica).
 
+## Implementación vigente (referencia)
+- Descripción de capas y rutas actuales del código: [`README.md`](../README.md) (sección estructura y autenticación).
+

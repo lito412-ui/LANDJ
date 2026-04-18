@@ -11,7 +11,7 @@ echo "Iniciando proceso de creación de usuario...\n";
 $contrasena_plana = "lolito412/";
 $contrasena_hasheada = password_hash($contrasena_plana, PASSWORD_ARGON2ID);
 
-$sql = "INSERT INTO usuarios (nombre, email, contrasena_hash, rol) VALUES (?, ?, ?, ?)";
+$sql = "INSERT INTO usuarios (nombre, email, contraseña_hash, rol) VALUES (?, ?, ?, ?)";
 $stmt = $pdo->prepare($sql);
 
 try {

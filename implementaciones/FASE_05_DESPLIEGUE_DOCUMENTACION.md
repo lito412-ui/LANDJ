@@ -21,3 +21,7 @@ Objetivo: dejar el CRM instalable, ejecutable y documentado para entrega.
 ## Criterio de "Hecho"
 - Cualquier persona puede instalar y usar el CRM siguiendo la documentacion, y el caso de uso principal funciona.
 
+## Documentación del repositorio (actualizada con la estructura modular)
+- Instalación, URLs y árbol de carpetas: [`README.md`](../README.md).
+- Detalle de flujos y servicios Docker: [`implementaciones/README.md`](README.md).
+

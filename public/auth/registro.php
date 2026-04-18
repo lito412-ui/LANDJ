@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     $rol = 'usuario';
     try {
-        $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, contrasena_hash, rol) VALUES (?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, contraseña_hash, rol) VALUES (?, ?, ?, ?)");
         $stmt->execute([$nombre, $email, $password_hasheada, $rol]);
         echo "Usuario registrado con éxito. <a href='/index.html'>Volver al inicio</a>";
     } catch (PDOException $e) {

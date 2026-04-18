@@ -35,3 +35,8 @@ Objetivo: asegurar que el CRM funciona, que las reglas de seguridad se respetan 
 ## Criterio de "Hecho"
 - Los flujos criticos pasan sin fallos y los problemas de seguridad de severidad alta quedan resueltos o documentados con mitigacion.
 
+## Referencia de rutas (humo manual actual)
+- Login: `/modules/site/login.html` → POST a `/auth/login.php`.
+- Panel con sesión: `/admin/cpanel.php` (no confundir con la redirección `/cpanel.html`).
+- Sesión en cliente: respuesta JSON de `/api/get_user.php`.
+

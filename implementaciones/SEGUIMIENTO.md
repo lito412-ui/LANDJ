@@ -5,7 +5,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando este completad
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Formula recomendada: `avance_global = suma(avance_fase * peso_fase)`
-- Avance estimado actual del proyecto: `32%` (basado en funcionalidad existente)
+- Avance estimado actual del proyecto: `38%` (Fase 01 cerrada al 100%; resto de fases según backlog)
 
 ## Pesos por fase
 - Fase 01 - Analisis y Planificacion: `15%`
@@ -14,10 +14,10 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando este completad
 - Fase 04 - Pruebas y Validacion: `15%`
 - Fase 05 - Despliegue y Documentacion: `10%`
 
-## Fase 01 - Analisis y Planificacion (Peso: 15% | Avance: 67%)
+## Fase 01 - Analisis y Planificacion (Peso: 15% | Avance: 100%)
 - [x] Definir alcance del MVP (que entra / que no entra)
 - [x] Definir actores y roles (admin, agente, vendedor, etc.)
-- [ ] Escribir historias de usuario (epics) con criterios de aceptacion
+- [x] Escribir historias de usuario (epics) con criterios de aceptacion → [`MVP_HISTORIAS_Y_CRITERIOS.md`](MVP_HISTORIAS_Y_CRITERIOS.md)
 - [x] Definir requisitos no funcionales (seguridad, rendimiento, auditoria)
 - [x] Definir entidades principales del CRM (alto nivel)
 - [x] Plan de entregables (documentos, prototipos y versiones)
@@ -67,7 +67,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando este completad
 - [ ] Tests automatizados minimos (smoke + integracion) (estado: pendiente | impacto: alto | esfuerzo: medio)
 - [ ] Hardening de seguridad adicional (rate limit, bloqueo por intentos, CSP) (estado: pendiente | impacto: alto | esfuerzo: medio)
 - [ ] Logging estructurado para incidencias y soporte (estado: pendiente | impacto: medio | esfuerzo: medio)
-- [ ] Refactor de JS duplicado entre raiz y `backend/` (estado: pendiente | impacto: medio | esfuerzo: bajo)
+- [ ] Unificar o eliminar JS duplicado entre `public/assets/js/` y la carpeta historica `LANDJ/` (estado: pendiente | impacto: medio | esfuerzo: bajo)
 
 ### Mejoras de producto (prioridad media-baja)
 - [ ] Modulo de etiquetas y segmentacion de contactos (estado: pendiente | impacto: medio | esfuerzo: medio)

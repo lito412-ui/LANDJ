@@ -18,6 +18,6 @@ if (ini_get("session.use_cookies")) {
 }
 
 //Redirigimos al usuario al login (index.html)
-header("Location: /index.html");
+header("Location: /modules/site/login.html");
 exit;
 ?>

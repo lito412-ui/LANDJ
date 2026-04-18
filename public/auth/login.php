@@ -13,22 +13,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$user_form]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($pass_form, $user['contrasena_hash'])) {
+        if ($user && password_verify($pass_form, $user['contraseña_hash'])) {
             //EXITO
             $_SESSION['user_id'] = $user['id_usuario'];
             $_SESSION['nombre'] = $user['nombre'];
             $_SESSION['rol'] = $user['rol'];
 
-            header("Location: /cpanel.html");
+            header("Location: /admin/cpanel.php");
             exit;
         } else {
             //ERROR
-            echo "<script>alert('Usuario o contraseña incorrectos'); window.location.href='/login.html';</script>";
+            echo "<script>alert('Usuario o contraseña incorrectos'); window.location.href='/modules/site/login.html';</script>";
         }
     } catch (PDOException $e) {
         die("Error de base de datos: " . $e->getMessage());
     }
 } else {
-    header("Location: /login.html");
+    header("Location: /modules/site/login.html");
 }
 ?>
