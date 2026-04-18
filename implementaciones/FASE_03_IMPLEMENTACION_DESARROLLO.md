@@ -3,9 +3,9 @@
 Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-end.
 
 ## Estado actual
-- Avance estimado: `38%`
-- Completado: infraestructura Docker, auth, esquema BD completo (5 tablas con FKs), seed con datos de prueba, monitorización real del sistema, vista de perfil, panel modularizado por partials PHP y assets organizados por dominio.
-- Pendiente principal: módulos core CRM (CRUD de contactos, leads, oportunidades, actividades).
+- Avance estimado: `50%`
+- Completado: infraestructura Docker, auth, esquema BD completo (5 tablas con FKs), seed con datos de prueba, monitorización real del sistema, vista de perfil, panel modularizado por partials PHP y assets organizados por dominio, CRUD completo de contactos con validaciones cliente y servidor.
+- Pendiente principal: módulos core CRM (leads, oportunidades, actividades, detalle de contacto).
 
 ## Checklist de tareas (MVP primero)
 
@@ -42,12 +42,18 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Accesible desde dropdown "Mi Perfil" en la cabecera
 - [x] Estilos de perfil añadidos a `assets/css/dashboard/cpanel-style.css`
 
+### CRM — Contactos (implementado)
+- [x] Implementar CRUD base para contactos/clientes
+- [x] Pantalla/listado de contactos con búsqueda debounced (400ms) server-side LIKE
+- [x] Formulario crear/editar con panel animado (max-height 0→700px)
+- [x] Eliminación con confirmación modal e integridad referencial
+- [x] Validación JS en tiempo real (input + blur): nombre/apellidos solo letras/espacios/guiones/apóstrofes, auto-capitalización, email formato, teléfono español (9 dígitos iniciando 6-9), maxlength por campo, counter de notas
+- [x] Validación PHP (servidor): mismas reglas — regex `/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s'\-]+$/u`, `filter_var FILTER_VALIDATE_EMAIL`, regex teléfono `/^[6-9]\d{8}$/`, maxlength enforced
+- [x] Estados visuales CSS: `.form-input--error` (rojo), `.form-input--ok` (verde), `.form-error` (mensaje inline), `.form-counter` (contador notas)
+- [x] Toast notifications (success/error/info) + confirm modal reutilizables
+
 ### CRM core (pendiente)
-- [ ] Implementar CRUD base para contactos/clientes
-- [ ] Pantalla/listado de contactos (filtros básicos)
-- [ ] Formulario de contacto (crear/editar) con validación de servidor
 - [ ] Vista de detalle de contacto
-- [ ] Eliminación de contacto con confirmación e integridad referencial
 - [ ] Implementar CRUD base para leads
 - [ ] Pantalla/listado de leads (filtros básicos)
 - [ ] Formulario de lead (crear/editar)
@@ -58,7 +64,6 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [ ] Listado de actividades por entidad y por usuario
 - [ ] Búsqueda y filtros en listados (campos acordados en Fase 02)
 - [ ] Paginación básica en listados
-- [ ] Validaciones de servidor consistentes (mensajes claros en UI)
 - [ ] Manejo de errores unificado
 - [ ] Auditoría de cambios (al menos cambios de estado e ediciones importantes)
 

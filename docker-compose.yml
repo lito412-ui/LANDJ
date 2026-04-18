@@ -34,10 +34,10 @@ services:
     networks:
       - red_proyecto_2
 
-  seed:
+  migrate:
     build: .
-    container_name: mi_seed_usuarios_2
-    command: ["php", "/usr/share/nginx/html/database/seed.php"]
+    container_name: mi_migrate_2
+    command: ["php", "/usr/share/nginx/html/database/migrate.php"]
     environment:
       DB_HOST: db
       DB_PORT: "3306"

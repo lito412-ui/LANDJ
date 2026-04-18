@@ -5,7 +5,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `48%`**
+- **Avance estimado actual: `65%`**
 
 ## Pesos por fase
 - Fase 01 - Análisis y Planificación: `15%`
@@ -25,16 +25,16 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Fase 02 - Diseño y Arquitectura (Peso: 20% | Avance: 60%)
 - [x] Modelar datos del MVP (tablas: `usuarios`, `contactos`, `leads`, `oportunidades`, `actividades`)
 - [x] Definir relaciones y reglas de integridad (FKs, ON DELETE, unicidad)
-- [ ] Definir esquema para auditoría (quien/qué/cuando; cambios relevantes)
+- [x] Definir esquema para auditoría (tabla `auditoria`, helper PHP, endpoint GET admin-only)
 - [x] Diseñar flujo de autenticación (sesión PHP) y cierre de sesión
 - [x] Diseñar RBAC (permisos por rol `usuario` / `administrador`)
-- [ ] Diseñar validaciones de entrada (tipo, formato, longitudes) y manejo de errores
-- [ ] Definir seguridad anti-CSRF/anti-XSS (encoding, tokens, cabeceras)
+- [x] Diseñar validaciones de entrada (tipo, formato, longitudes) y manejo de errores → `implementaciones/VALIDACIONES.md`
+- [x] Definir seguridad anti-CSRF/anti-XSS (encoding, tokens, cabeceras) → `implementaciones/SEGURIDAD_CSRF_XSS.md`
 - [x] Prototipar pantallas principales (login, dashboard, listados, formularios, pipeline)
 - [x] Definir mapa de navegación (de la vista principal a cada módulo)
-- [ ] Definir contratos de endpoints/acciones (rutas, payloads, respuestas y códigos de error)
-- [ ] Definir búsqueda/filtros (campos y paginación)
-- [ ] Preparar estrategia de archivos/adjuntos o excluirlo del alcance
+- [x] Definir contratos de endpoints/acciones (rutas, payloads, respuestas y códigos de error) → `implementaciones/CONTRATOS_API.md`
+- [x] Definir búsqueda/filtros (campos y paginación) → `implementaciones/BUSQUEDA_FILTROS.md`
+- [x] Preparar estrategia de archivos/adjuntos → excluido del MVP; diseño de tabla `adjuntos` + reglas documentadas en FASE_02 para fase posterior
 
 ## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 38%)
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
@@ -49,11 +49,12 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Implementar vista de perfil del usuario autenticado
 - [x] Modularizar panel: `cpanel.php` + partials PHP por sección (14 secciones)
 - [x] Reorganizar assets por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
-- [ ] Implementar CRUD base para contactos/clientes
-- [ ] Implementar pantalla/listado de contactos (filtros básicos)
-- [ ] Implementar pantalla/formulario de contacto (crear/editar)
+- [x] Implementar CRUD base para contactos/clientes (REST API + módulo JS)
+- [x] Implementar pantalla/listado de contactos con búsqueda debounced
+- [x] Implementar formulario crear/editar con panel animado
+- [x] Implementar eliminación con confirmación modal e integridad referencial
+- [x] Implementar validaciones JS (tiempo real) + PHP (servidor): nombre/apellidos, email, teléfono español, maxlength por campo, counter de notas
 - [ ] Implementar vista de detalle de contacto
-- [ ] Implementar eliminación con confirmación e integridad referencial
 - [ ] Implementar CRUD base para leads
 - [ ] Implementar pantalla/listado de leads (filtros básicos)
 - [ ] Implementar pantalla/formulario de lead (crear/editar)
@@ -68,7 +69,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
 - [x] Feedback visual en métricas del dashboard (tiempo real)
 - [x] Vista de perfil con datos reales del usuario autenticado
-- [ ] Estados vacíos (sin datos) y mensajes de carga en listados CRM
+- [x] Estados vacíos (sin datos) y mensajes de carga en listados CRM (contactos)
 - [ ] Permisos reflejados en la UI (botones/acciones según rol)
 
 ## Fase 04 - Pruebas y Validación (Peso: 15% | Avance: 0%)
@@ -98,7 +99,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ### Mejoras técnicas (prioridad media)
 - [ ] API REST versionada para integraciones futuras (impacto: medio-alto | esfuerzo: medio-alto)
 - [ ] Tests automatizados mínimos (smoke + integración) (impacto: alto | esfuerzo: medio)
-- [ ] Hardening de seguridad (rate limit, bloqueo por intentos, CSRF tokens, CSP) (impacto: alto | esfuerzo: medio)
+- [~] Hardening de seguridad (rate limit, bloqueo por intentos, CSRF tokens ✓, CSP ✓) (impacto: alto | esfuerzo: medio)
 - [ ] Logging estructurado para incidencias y soporte (impacto: medio | esfuerzo: medio)
 
 ### Mejoras de producto (prioridad media-baja)

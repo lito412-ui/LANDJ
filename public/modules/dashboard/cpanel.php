@@ -1,3 +1,9 @@
+<?php
+ob_start();
+if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../../config/seguridad.php';
+csrfGenerar();
+?>
 <!DOCTYPE html>
 <html lang="es">
 <?php include __DIR__ . '/partials/head.php'; ?>
@@ -11,6 +17,7 @@
 
     <main class="main-content">
         <?php include __DIR__ . '/partials/sections/dashboard.php'; ?>
+        <?php include __DIR__ . '/partials/sections/contactos.php'; ?>
         <?php include __DIR__ . '/partials/sections/statistics.php'; ?>
         <?php include __DIR__ . '/partials/sections/file-manager.php'; ?>
         <?php include __DIR__ . '/partials/sections/ftp.php'; ?>
