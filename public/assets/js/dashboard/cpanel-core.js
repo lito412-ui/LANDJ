@@ -107,11 +107,12 @@ function initSidebarNavigation() {
             document.getElementById(sectionId)?.classList.add('active');
             document.getElementById('user-dropdown')?.classList.remove('show');
 
-            if (sectionId === 'perfil'        && perfilData) mostrarPerfil(perfilData);
-            if (sectionId === 'contactos')    Contactos.init();
-            if (sectionId === 'leads')        Leads.init();
-            if (sectionId === 'users')        Usuarios.init();
+            if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
+            if (sectionId === 'contactos')     Contactos.init();
+            if (sectionId === 'leads')         Leads.init();
+            if (sectionId === 'users')         Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
+            if (sectionId === 'logs')          Auditoria.init();
         });
     });
 }

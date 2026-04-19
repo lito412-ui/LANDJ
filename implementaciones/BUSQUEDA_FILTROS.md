@@ -277,4 +277,4 @@ La paginación se renderiza como una barra debajo de la tabla:
 | Leads | ✅ implementado | ✅ estado, origen, desde, hasta | ✅ nombre/estado/created_at + dir | ✅ implementado |
 | Oportunidades | ✅ implementado (+ descripción) | ✅ etapa, valor_min/max, cierre_desde/hasta | ✅ titulo/valor/etapa/fecha_cierre/created_at + dir | ❌ pendiente |
 | Actividades | ✅ por entidad_id | ❌ pendiente | ❌ pendiente | ❌ pendiente |
-| Auditoría | ✅ implementado | ✅ implementado | — | ✅ (offset manual) |
+| Auditoría | ✅ por tabla/accion/registro_id | ✅ tabla (whitelist), accion (whitelist) | — | ✅ offset/limite + total |

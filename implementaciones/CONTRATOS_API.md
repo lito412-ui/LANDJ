@@ -604,18 +604,19 @@ Devuelve el log de auditoría paginado.
 
 **Query params**
 
-| Param | Tipo | Descripción |
-|-------|------|-------------|
-| `tabla` | string | Filtra por entidad: `contactos`, `leads`, `usuarios`, etc. |
-| `registro_id` | int | Filtra por PK del registro concreto |
-| `limite` | int | Resultados por página (máx 200, defecto 50) |
-| `offset` | int | Desplazamiento para paginación |
+| Param | Tipo | Valores | Descripción |
+|-------|------|---------|-------------|
+| `tabla` | string | `contactos`, `leads`, `oportunidades`, `actividades`, `usuarios` | Filtra por entidad (whitelist) |
+| `accion` | string | `crear`, `editar`, `eliminar` | Filtra por tipo de acción |
+| `registro_id` | int | — | Filtra por PK del registro concreto |
+| `limite` | int | máx 200, defecto 50 | Resultados por página |
+| `offset` | int | defecto 0 | Desplazamiento para paginación |
 
 **Respuesta `200`**
 ```json
 {
   "ok": true,
-  "count": 2,
+  "total": 87,
   "data": [
     {
       "id_auditoria": 12,
@@ -626,12 +627,13 @@ Devuelve el log de auditoría paginado.
       "usuario_nombre": "admin",
       "datos_antes":   { "nombre": "Samuel", "rol": "usuario" },
       "datos_despues": null,
-      "ip": "172.18.0.1",
       "created_at": "2026-04-18 14:32:00"
     }
   ]
 }
 ```
+
+> `total` es el total de registros que cumplen los filtros (independiente del `limite`/`offset`), útil para calcular la paginación en el cliente.
 
 > Si la tabla `auditoria` no existe (volumen antiguo), `registrarAuditoria()` falla silenciosamente y solo escribe en `error_log`. Ejecutar `docker compose run --rm migrate` para crearla.
 

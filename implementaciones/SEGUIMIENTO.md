@@ -75,10 +75,11 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] CRUD de actividades/notas ligadas a contactos, leads y oportunidades (`ActividadesWidget` compartido)
 - [x] Búsqueda y filtros avanzados: panel colapsable con estado por módulo, badge de filtros activos, ordenación asc/desc y limpiar
 
-### CRM (pendiente)
+### CRM (completado)
 - [x] Paginación básica en listados (contactos y leads: server-side LIMIT/OFFSET, renderPaginacion compartido en core.js)
-- [ ] Permisos reflejados en la UI (mostrar/ocultar acciones según rol)
+- [x] Permisos reflejados en la UI (secciones admin-only ocultas, badge de rol, guard en navegación JS)
 - [x] Manejo de errores unificado (manejarApiError en core, monitorizacion.php formato estándar, get_user.php 401)
+- [x] Sección Auditoría (UI completa: tabla con diff expandible, filtros por entidad y acción, paginación offset, módulo `cpanel-auditoria.js`)
 
 ## Fase 03 - UX mínima viable
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
@@ -99,7 +100,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Preparar entorno (Docker, healthcheck, variables corregidas)
 - [x] Documentar instalación/ejecución (README del proyecto)
 - [x] Documentar arquitectura (modelo de datos + flujos)
-- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs, paginación, errores)
+- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs, paginación, errores, auditoría UI, permisos)
 - [ ] Ejecutar prueba final end-to-end con un caso realista
 - [ ] Tag/versión para entrega
 

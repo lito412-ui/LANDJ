@@ -43,5 +43,6 @@ csrfGenerar();
 <script src="/assets/js/dashboard/cpanel-leads.js"></script>
 <script src="/assets/js/dashboard/cpanel-usuarios.js"></script>
 <script src="/assets/js/dashboard/cpanel-oportunidades.js"></script>
+<script src="/assets/js/dashboard/cpanel-auditoria.js"></script>
 </body>
 </html>

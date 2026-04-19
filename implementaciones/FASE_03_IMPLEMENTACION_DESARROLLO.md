@@ -4,7 +4,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 
 ## Estado actual
 - Avance estimado: `100%`
-- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas, cambio de etapa con confirm. Modal de confirmación con variantes `danger`/`success`/`info`. CRUD de actividades/notas ligadas a entidades. JS dividido en 6 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM. Paginación server-side en contactos y leads (`renderPaginacion` compartido en core.js). Manejo de errores unificado: `manejarApiError` en core, todos los `catch` con binding y logging, `monitorizacion.php` con formato estándar `{ok, data}`, `get_user.php` con 401.
+- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas. CRUD de actividades. JS dividido en 7 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM. Paginación server-side en contactos y leads. Manejo de errores unificado (`manejarApiError`). Permisos RBAC en la UI (secciones admin-only, badge de rol, guard en navegación). Sección Auditoría completa con diff expandible, filtros por entidad y acción, paginación offset.
 - Pendiente: ninguno del MVP. Fase 03 completa.
 
 ## Checklist de tareas (MVP primero)
@@ -35,7 +35,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Partials independientes: `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
 - [x] Secciones PHP bajo `modules/dashboard/partials/sections/`
 - [x] Assets organizados por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
-- [x] JS del panel dividido en 6 módulos independientes: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`
+- [x] JS del panel dividido en 7 módulos independientes: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`, `cpanel-auditoria.js`
 
 ### Monitorización del sistema
 - [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco) multiplataforma
@@ -124,6 +124,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Estados vacíos (`crm-empty`) y mensajes de carga (`crm-loading`) en todos los listados
 - [x] Toast notifications y confirm modal reutilizables en todas las secciones CRM
 - [x] Permisos reflejados en la UI: secciones admin-only (`users`, `logs`) ocultas en sidebar para rol `usuario`; badge de rol en header; guard en navegación JS; redirección al dashboard si la sección activa es restringida
+- [x] Sección Auditoría completa (`cpanel-auditoria.js`): tabla con diff expandible por fila (campos cambiados antes/después), filtros por entidad y acción, paginación offset (Anterior/Siguiente + "Mostrando X–Y de N"), API actualizada con filtro `accion`, COUNT total y whitelist de tablas
 
 ## Criterio de "Hecho"
 - El usuario puede: entrar, gestionar contactos, leads y usuarios, mover oportunidades en el pipeline y crear actividades, con permisos correctos y feedback claro.
