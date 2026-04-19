@@ -61,7 +61,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Implementar vista de perfil del usuario autenticado
 - [x] Modularizar panel: `cpanel.php` + partials PHP por sección
 - [x] Reorganizar assets por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
-- [x] JS del panel dividido en 6 módulos: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`
+- [x] JS del panel dividido en 8 módulos: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`, `cpanel-auditoria.js`, `cpanel-databases.js`
 
 ### CRM (completado)
 - [x] CRUD completo de contactos (API REST + módulo JS + validaciones JS+PHP + detalle lateral)
@@ -80,6 +80,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Permisos reflejados en la UI (secciones admin-only ocultas, badge de rol, guard en navegación JS)
 - [x] Manejo de errores unificado (manejarApiError en core, monitorizacion.php formato estándar, get_user.php 401)
 - [x] Sección Auditoría (UI completa: tabla con diff expandible, filtros por entidad y acción, paginación offset, módulo `cpanel-auditoria.js`)
+- [x] Sección Bases de Datos (vista de tablas MySQL con estadísticas — nombre, motor, filas, tamaño, colación, última modificación — módulo `cpanel-databases.js`, API admin-only con `SHOW TABLE STATUS` y `information_schema_stats_expiry=0` para MySQL 8 InnoDB)
 
 ## Fase 03 - UX mínima viable
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
@@ -100,7 +101,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Preparar entorno (Docker, healthcheck, variables corregidas)
 - [x] Documentar instalación/ejecución (README del proyecto)
 - [x] Documentar arquitectura (modelo de datos + flujos)
-- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs, paginación, errores, auditoría UI, permisos)
+- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs, paginación, errores, auditoría UI, permisos, bases de datos)
 - [ ] Ejecutar prueba final end-to-end con un caso realista
 - [ ] Tag/versión para entrega
 

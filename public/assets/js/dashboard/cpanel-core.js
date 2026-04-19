@@ -113,6 +113,7 @@ function initSidebarNavigation() {
             if (sectionId === 'users')         Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
             if (sectionId === 'logs')          Auditoria.init();
+            if (sectionId === 'databases')    Databases.init();
         });
     });
 }

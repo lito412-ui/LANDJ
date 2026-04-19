@@ -645,6 +645,51 @@ Devuelve el log de auditoría paginado.
 
 ---
 
+## Bases de Datos
+
+Base: `/api/databases.php`  
+Requiere sesión activa con rol `administrador`. Solo soporta `GET`.
+
+### `GET /api/databases.php`
+Devuelve estadísticas de las tablas de la base de datos activa.
+
+**Query params**: ninguno
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": {
+    "db": "landj_crm",
+    "total_tablas": 6,
+    "total_filas": 842,
+    "total_bytes": 1572864,
+    "tablas": [
+      {
+        "nombre": "contactos",
+        "motor": "InnoDB",
+        "filas": 120,
+        "bytes": 262144,
+        "colacion": "utf8mb4_unicode_ci",
+        "actualizada": "2026-04-18 14:32:00"
+      }
+    ]
+  }
+}
+```
+
+> `bytes` = `Data_length + Index_length` de `SHOW TABLE STATUS`.  
+> `actualizada` puede ser `null` en tablas vacías o con estadísticas no actualizadas; el cliente muestra `—` en ese caso.  
+> La sesión ejecuta `SET SESSION information_schema_stats_expiry = 0` para forzar estadísticas frescas en MySQL 8 InnoDB (evita `Update_time = NULL`).
+
+| Código | Condición |
+|--------|-----------|
+| `401` | Sin sesión |
+| `403` | Rol distinto de `administrador` |
+| `500` | Error de base de datos |
+
+---
+
 ## Estructura de la tabla `auditoria`
 
 | Campo | Tipo | Descripción |

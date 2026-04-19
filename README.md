@@ -6,7 +6,7 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 
 - **Landing** (`public/index.html`): página de presentación en la raíz del sitio (`/`).
 - **Autenticación** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
-- **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; JS dividido en 7 módulos independientes por dominio. Incluye: Contactos, Leads, Pipeline de Oportunidades, Gestión de usuarios, Perfil, Auditoría, Monitorización.
+- **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; JS dividido en 8 módulos independientes por dominio. Incluye: Contactos, Leads, Pipeline de Oportunidades, Gestión de usuarios, Perfil, Auditoría, Bases de Datos, Monitorización.
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro) vía `GET /api/get_user.php`.
 - **Monitorización**: `GET /api/monitorizacion.php` devuelve CPU, RAM y disco reales.
 - **CRM — Contactos**: CRUD completo con búsqueda debounced, filtros avanzados (empresa, fechas, orden), paginación server-side, detalle lateral con actividades, validaciones JS + PHP.
@@ -15,6 +15,7 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 - **CRM — Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
 - **Gestión de usuarios** (solo admin): CRUD de cuentas con roles, badges, protección anti-autoborrado y protección del último administrador.
 - **Auditoría** (solo admin): sección completa con tabla de cambios, diff expandible por fila (campos antes/después resaltados), filtros por entidad y tipo de acción, paginación offset.
+- **Bases de Datos** (solo admin): estadísticas de tablas MySQL en tiempo real — nombre, motor, filas, tamaño, colación y última modificación; tarjetas resumen con totales; `SHOW TABLE STATUS` con `information_schema_stats_expiry=0` para MySQL 8 InnoDB.
 - **Seguridad**: CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`), Content Security Policy, `X-Frame-Options`, `Referrer-Policy`.
 - **Manejo de errores**: `manejarApiError` compartido en core.js (console.error + toast unificado), todos los endpoints devuelven `{ok, data/error}` con código HTTP correcto.
 - **Base de datos**: esquema en `database/init.sql` (6 tablas con FKs); datos de prueba vía sistema de migraciones (`database/migrations/`).
@@ -57,7 +58,7 @@ LANDJ/
 │   │   │   ├── site/              # index-script.js
 │   │   │   └── dashboard/         # cpanel-core.js, cpanel-actividades.js, cpanel-contactos.js,
 │   │                          # cpanel-leads.js, cpanel-usuarios.js, cpanel-oportunidades.js,
-│   │                          # cpanel-auditoria.js
+│   │                          # cpanel-auditoria.js, cpanel-databases.js
 │   │   └── img/
 │   ├── modules/
 │   │   ├── site/                  # login.html
@@ -82,7 +83,8 @@ LANDJ/
 │   │   ├── oportunidades.php      # CRUD REST + filtros avanzados + acción etapa
 │   │   ├── actividades.php        # CRUD REST por entidad (contacto/lead/oportunidad)
 │   │   ├── usuarios.php           # CRUD REST (solo administrador)
-│   │   └── auditoria.php          # GET paginado con filtros tabla/accion/registro_id y total (solo administrador)
+│   │   ├── auditoria.php          # GET paginado con filtros tabla/accion/registro_id y total (solo administrador)
+│   │   └── databases.php          # GET estadísticas SHOW TABLE STATUS (solo administrador)
 │   └── config/                    # Bloqueado por Nginx (deny all)
 │       ├── conexion.php           # PDO: lee variables de entorno Docker
 │       ├── seguridad.php          # Cabeceras HTTP, CSRF (generar/validar/meta)
