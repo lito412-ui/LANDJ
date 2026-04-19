@@ -125,6 +125,7 @@
                     <span id="ldet-empresa" class="detalle-empresa"></span>
                 </div>
                 <div class="detalle-header-actions">
+                    <button class="btn-icon success" id="ldet-convertir-btn" title="Convertir a contacto"><i class="fas fa-user-check"></i></button>
                     <button class="btn-icon" id="ldet-editar-btn" title="Editar"><i class="fas fa-edit"></i></button>
                     <button class="btn-icon danger" id="ldet-eliminar-btn" title="Eliminar"><i class="fas fa-trash"></i></button>
                     <button class="btn-icon" id="ldet-cerrar-btn" title="Cerrar"><i class="fas fa-times"></i></button>

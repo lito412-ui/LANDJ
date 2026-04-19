@@ -197,6 +197,7 @@ Requiere sesión activa.
 | `estado` | enum | `nuevo` \| `contactado` \| `calificado` \| `convertido` \| `descartado` (defecto: `nuevo`) |
 | `notas` | string\|null | max 500 |
 | `creado_por` | int | FK → usuarios |
+| `contacto_id` | int\|null | FK → contactos.id_contacto (ON DELETE SET NULL); se asigna al convertir |
 | `created_at` | datetime | Auto |
 
 ---
@@ -259,6 +260,36 @@ Actualiza un lead. Body idéntico al POST (todos los campos opcionales excepto n
 |--------|-----------|
 | `200` | Actualizado |
 | `404` | No existe |
+
+---
+
+### `PUT /api/leads.php?id=<id>&action=convertir`
+Convierte un lead a contacto. Requiere `X-CSRF-Token`.
+
+Crea un nuevo registro en `contactos` con los datos del lead, actualiza el lead con `estado = 'convertido'` y `contacto_id = <nuevo_id>`, todo en una transacción atómica.
+
+**Protecciones:**
+- El lead ya fue convertido (`contacto_id IS NOT NULL`) → `400`
+- Email duplicado en tabla `contactos` → `400`
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": {
+    "contacto": { "id_contacto": 5, "nombre": "Carlos", "email": "carlos@empresa.com", "..." : "..." },
+    "lead":     { "id_lead": 3, "estado": "convertido", "contacto_id": 5, "..." : "..." }
+  }
+}
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Convertido — devuelve contacto creado y lead actualizado |
+| `400` | Lead ya convertido / email duplicado en contactos |
+| `403` | Token CSRF inválido |
+| `404` | Lead no encontrado |
+| `500` | Error en la transacción (rollback automático) |
 
 ---
 

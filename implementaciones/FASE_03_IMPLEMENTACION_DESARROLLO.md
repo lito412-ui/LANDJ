@@ -3,8 +3,8 @@
 Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-end.
 
 ## Estado actual
-- Avance estimado: `62%`
-- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos (validaciones JS+PHP, detalle lateral, toast/confirm), CRUD completo de leads (badges de estado, búsqueda + filtro, detalle lateral), CRUD completo de gestión de usuarios (admin-only, roles, autoprotección).
+- Avance estimado: `68%`
+- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos (validaciones JS+PHP, detalle lateral, toast/confirm), CRUD completo de leads (badges de estado, búsqueda + filtro, detalle lateral), CRUD completo de gestión de usuarios (admin-only, roles, autoprotección). Conversión de lead a contacto (transacción atómica, auditoría, detección de email duplicado). Modal de confirmación reutilizable con variantes visuales (danger/success).
 - Pendiente principal: oportunidades (pipeline), actividades/notas, búsqueda/filtros avanzados, paginación.
 
 ## Checklist de tareas (MVP primero)
@@ -17,6 +17,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Crear esquema SQL completo del MVP con 6 tablas y FKs (`database/init.sql`)
 - [x] Implementar sistema de migraciones (`database/migrate.php` + `database/migrations/`)
 - [x] Seed con datos de prueba vía migraciones (`002_seed_usuarios.php`, `003_seed_crm.sql`)
+- [x] Migración `002_leads_contacto_id.php`: añade columna `contacto_id` + FK a tabla `leads` de forma idempotente (compatible con volúmenes Docker persistentes)
 - [x] Añadir `try_files $uri =404` al bloque PHP de Nginx (seguridad + comportamiento correcto)
 
 ### Seguridad
@@ -74,7 +75,8 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Auditoría en crear/editar/eliminar
 
 ### CRM core (pendiente)
-- [ ] Conversión de lead a contacto y/o oportunidad
+- [x] Conversión de lead a contacto (transacción atómica: INSERT contactos + UPDATE leads, rollback on error, detección email duplicado, auditoría en ambas entidades)
+- [x] Modal de confirmación reutilizable con variante visual `success` (icono verde, botón verde) para acciones no destructivas
 - [ ] Pipeline de oportunidades — listado agrupado por etapa
 - [ ] Movimiento de oportunidades entre etapas
 - [ ] CRUD de actividades/notas ligadas a entidades

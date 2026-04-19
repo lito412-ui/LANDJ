@@ -10,7 +10,7 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro) vía `GET /api/get_user.php`.
 - **Monitorización**: `GET /api/monitorizacion.php` devuelve CPU, RAM y disco reales.
 - **CRM — Contactos**: CRUD completo con búsqueda debounced, detalle lateral, validaciones JS + PHP.
-- **CRM — Leads**: CRUD completo con búsqueda debounced, filtro por estado y panel de detalle.
+- **CRM — Leads**: CRUD completo con búsqueda debounced, filtro por estado, panel de detalle y conversión de lead a contacto (transacción atómica).
 - **Gestión de usuarios** (solo admin): CRUD de cuentas con roles, badges, protección anti-autoborrado y protección del último administrador.
 - **Auditoría**: log de cambios en todas las entidades, accesible solo para administradores.
 - **Seguridad**: CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`), Content Security Policy, `X-Frame-Options`, `Referrer-Policy`.
@@ -36,9 +36,11 @@ LANDJ/
 │   ├── init.sql                   # Esquema completo: 6 tablas (auditoria + 5 del CRM)
 │   ├── migrate.php                # Runner de migraciones (crea _migraciones, aplica .sql y .php)
 │   └── migrations/
-│       ├── 001_auditoria.sql      # CREATE TABLE auditoria (idempotente)
-│       ├── 002_seed_usuarios.php  # Seed: 1 admin + 3 usuarios (Argon2id)
-│       └── 003_seed_crm.sql       # Seed: contactos, leads, oportunidades, actividades
+│       ├── 001_auditoria.sql         # CREATE TABLE auditoria (idempotente)
+│       ├── 002_leads_contacto_id.php # Añade columna contacto_id + FK a leads (idempotente)
+│       ├── 002_leads_contacto_id.sql # No-op (placeholder para el runner)
+│       ├── 003_seed_usuarios.php     # Seed: 1 admin + 3 usuarios (Argon2id)
+│       └── 004_seed_crm.sql          # Seed: contactos, leads, oportunidades, actividades
 ├── docker/
 │   └── nginx/conf.d/default.conf  # try_files $uri =404 antes de fastcgi_pass
 ├── public/

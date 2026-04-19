@@ -5,10 +5,10 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `65%`**
+- **Avance estimado actual: `68%`**
   - Fase 01: 100% × 15% = 15
   - Fase 02: 100% × 20% = 20
-  - Fase 03:  62% × 40% = 24.8
+  - Fase 03:  68% × 40% = 27.2
   - Fase 04:   0% × 15% = 0
   - Fase 05:  60% × 10% = 6
 
@@ -41,7 +41,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Definir búsqueda/filtros (campos y paginación) → [`BUSQUEDA_FILTROS.md`](BUSQUEDA_FILTROS.md)
 - [x] Preparar estrategia de archivos/adjuntos → excluido del MVP; diseño de tabla `adjuntos` + reglas documentadas en FASE_02 para fase posterior
 
-## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 62%)
+## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 68%)
 
 ### Core (completado)
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
@@ -68,9 +68,12 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Toast notifications y confirm modal reutilizables
 - [x] CRUD completo de leads (API REST + módulo JS + badges estado + búsqueda + filtro + detalle)
 - [x] CRUD completo de gestión de usuarios — admin-only (API + JS + HTML + badges rol + autoprotección)
+- [x] Conversión de lead a contacto (transacción atómica, detección email duplicado, auditoría en ambas entidades, botón deshabilitado si ya convertido)
+- [x] Modal de confirmación con variante `success` (distinto de la variante destructiva `danger`)
+- [x] Migración idempotente `002_leads_contacto_id.php` para columna `contacto_id` en tabla `leads`
 
 ### CRM (pendiente)
-- [ ] Conversión de lead a contacto y/o oportunidad
+- [x] Conversión de lead a contacto
 - [ ] Pipeline de oportunidades (etapas y movimiento)
 - [ ] CRUD de actividades/notas ligadas a entidades
 - [ ] Búsqueda y filtros avanzados en listados

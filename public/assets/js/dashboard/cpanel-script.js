@@ -138,22 +138,24 @@ function mostrarToast(msg, tipo = 'info') {
     setTimeout(() => t.remove(), 3500);
 }
 
-function mostrarConfirm(titulo, texto, onConfirm) {
-    const overlay = document.createElement('div');
+function mostrarConfirm(titulo, texto, onConfirm, btnLabel = 'Eliminar', variant = 'danger') {
+    const iconos   = { danger: 'fa-exclamation-triangle', success: 'fa-user-check', info: 'fa-info-circle' };
+    const clases   = { danger: 'confirm-box',             success: 'confirm-box confirm-box--success', info: 'confirm-box confirm-box--info' };
+    const overlay  = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
-        <div class="confirm-box">
-            <i class="fas fa-exclamation-triangle"></i>
+        <div class="${clases[variant] ?? clases.danger}">
+            <i class="fas ${iconos[variant] ?? iconos.danger}"></i>
             <h4>${titulo}</h4>
             <p>${texto}</p>
             <div class="confirm-actions">
-                <button class="btn-primary" id="confirm-ok">Eliminar</button>
-                <button class="btn-secondary" id="confirm-cancel">Cancelar</button>
+                <button class="btn-primary confirm-ok">${btnLabel}</button>
+                <button class="btn-secondary confirm-cancel">Cancelar</button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('#confirm-ok').onclick = () => { overlay.remove(); onConfirm(); };
-    overlay.querySelector('#confirm-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('.confirm-ok').onclick     = () => { overlay.remove(); onConfirm(); };
+    overlay.querySelector('.confirm-cancel').onclick = () => overlay.remove();
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 }
 
@@ -828,13 +830,15 @@ const Leads = (() => {
         overlay?.classList.add('active');
         document.body.classList.add('detalle-open');
 
-        document.getElementById('ldet-cerrar-btn')
-            ?.addEventListener('click', cerrarDetalle, { once: true });
-        overlay?.addEventListener('click', (e) => { if (e.target === overlay) cerrarDetalle(); }, { once: true });
-        document.getElementById('ldet-editar-btn')
-            ?.addEventListener('click', () => { cerrarDetalle(); abrirForm(detalleId); }, { once: true });
-        document.getElementById('ldet-eliminar-btn')
-            ?.addEventListener('click', () => { cerrarDetalle(); eliminar(detalleId); }, { once: true });
+        const cerrarBtn = document.getElementById('ldet-cerrar-btn');
+        if (cerrarBtn) cerrarBtn.onclick = cerrarDetalle;
+        if (overlay) overlay.onclick = (e) => { if (e.target === overlay) cerrarDetalle(); };
+        const editarBtn = document.getElementById('ldet-editar-btn');
+        if (editarBtn) editarBtn.onclick = () => { cerrarDetalle(); abrirForm(detalleId); };
+        const eliminarBtn = document.getElementById('ldet-eliminar-btn');
+        if (eliminarBtn) eliminarBtn.onclick = () => { cerrarDetalle(); eliminar(detalleId); };
+        const convertirBtn = document.getElementById('ldet-convertir-btn');
+        if (convertirBtn) convertirBtn.onclick = () => convertir(detalleId);
 
         try {
             const r = await fetchSeguro(`/api/leads.php?id=${id}`);
@@ -868,6 +872,34 @@ const Leads = (() => {
         const notasEl     = document.getElementById('ldet-notas');
         if (notasEl) notasEl.textContent = l.notas || '';
         if (notasBloque) notasBloque.style.display = l.notas ? '' : 'none';
+
+        // Deshabilitar botón convertir si ya está convertido
+        const btnConvertir = document.getElementById('ldet-convertir-btn');
+        if (btnConvertir) {
+            const yaConvertido = l.estado === 'convertido' || !!l.contacto_id;
+btnConvertir.disabled = yaConvertido;
+            btnConvertir.title    = yaConvertido ? 'Este lead ya fue convertido' : 'Convertir a contacto';
+            btnConvertir.style.opacity = yaConvertido ? '0.35' : '';
+        }
+    }
+
+    function convertir(id) {
+        mostrarConfirm(
+            'Convertir lead a contacto',
+            'Se creará un nuevo contacto con los datos de este lead y se marcará como <strong>convertido</strong>.',
+            async () => {
+                try {
+                    const r = await fetchSeguro(`/api/leads.php?id=${id}&action=convertir`, { method: 'PUT' });
+                    const d = await r.json();
+                    if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+                    mostrarToast('Lead convertido a contacto correctamente', 'success');
+                    cerrarDetalle();
+                    cargar();
+                } catch { mostrarToast('Error al convertir el lead', 'error'); }
+            },
+            'Convertir',
+            'success'
+        );
     }
 
     function esc(str) {

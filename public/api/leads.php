@@ -138,9 +138,66 @@ try {
             ok($nuevo);
             break;
 
-        // ─── Actualizar ──────────────────────────────────────────────────
+        // ─── Convertir a contacto ────────────────────────────────────────
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
+
+            if (isset($_GET['action']) && $_GET['action'] === 'convertir') {
+                $sLead = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
+                $sLead->execute([$id]);
+                $lead = $sLead->fetch() ?: null;
+                if (!$lead) { err('Lead no encontrado', 404); break; }
+                if ($lead['contacto_id'] !== null) { err('Este lead ya fue convertido a contacto'); break; }
+
+                // Verificar email duplicado en contactos
+                if ($lead['email'] !== null) {
+                    $chk = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ?");
+                    $chk->execute([$lead['email']]);
+                    if ($chk->fetch()) { err('Ya existe un contacto con el email ' . $lead['email']); break; }
+                }
+
+                $pdo->beginTransaction();
+                try {
+                    // Crear contacto
+                    $ins = $pdo->prepare(
+                        "INSERT INTO contactos (nombre, email, telefono, empresa, notas, creado_por)
+                         VALUES (?, ?, ?, ?, ?, ?)"
+                    );
+                    $ins->execute([
+                        $lead['nombre'], $lead['email'], $lead['telefono'],
+                        $lead['empresa'], $lead['notas'], $userId,
+                    ]);
+                    $contactoId = (int) $pdo->lastInsertId();
+
+                    // Vincular lead → contacto y marcar convertido
+                    $upd = $pdo->prepare(
+                        "UPDATE leads SET estado = 'convertido', contacto_id = ? WHERE id_lead = ?"
+                    );
+                    $upd->execute([$contactoId, $id]);
+
+                    $pdo->commit();
+
+                    // Leer registros actualizados
+                    $sC = $pdo->prepare("SELECT id_contacto, nombre, email, telefono, empresa, notas, creado_por, created_at FROM contactos WHERE id_contacto = ?");
+                    $sC->execute([$contactoId]);
+                    $contacto = $sC->fetch();
+
+                    $sL = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
+                    $sL->execute([$id]);
+                    $leadActualizado = $sL->fetch();
+
+                    registrarAuditoria($pdo, 'leads', $id, 'editar', $lead, $leadActualizado ?: null);
+                    registrarAuditoria($pdo, 'contactos', $contactoId, 'crear', null, $contacto ?: null);
+
+                    ok(['contacto' => $contacto, 'lead' => $leadActualizado]);
+                } catch (PDOException $e) {
+                    $pdo->rollBack();
+                    err('Error al convertir el lead', 500);
+                }
+                break;
+            }
+
+            // ─── Actualizar (edición normal) ─────────────────────────────
             $v = validarLead(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
