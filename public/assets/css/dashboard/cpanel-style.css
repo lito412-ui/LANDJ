@@ -1260,9 +1260,74 @@ body.detalle-open { overflow: hidden; }
 .det-act-tarea    { background: #fce7f3; color: #be185d; }
 .det-act-email    { background: #ede9fe; color: #7c3aed; }
 
-.det-act-info { display: flex; flex-direction: column; gap: 2px; }
+.det-act-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .det-act-desc { font-size: 0.85rem; color: #1e293b; line-height: 1.4; }
 .det-act-fecha { font-size: 0.72rem; color: #94a3b8; }
+
+.det-act-actions { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+.det-act-item:hover .det-act-actions { opacity: 1; }
+
+.btn-icon-xs {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-icon-xs:hover { background: #f1f5f9; color: #475569; }
+.btn-icon-xs.danger:hover { background: #fee2e2; color: #dc2626; }
+
+.detalle-seccion-titulo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.15s;
+}
+.btn-sm:hover { opacity: 0.85; }
+
+.form-input-sm {
+    padding: 7px 10px;
+    font-size: 0.85rem;
+}
+
+/* Formulario inline de actividades */
+.act-form-inline {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.act-form-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.detalle-actividades {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
 /* ─── Toast ──────────────────────────────────────────────────────────────── */
 .toast-container {
@@ -1337,6 +1402,18 @@ body.detalle-open { overflow: hidden; }
 
 .confirm-box--success .btn-primary:hover {
     background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.confirm-box--info i {
+    color: #3b82f6;
+}
+
+.confirm-box--info .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.confirm-box--info .btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 
 .confirm-box h4 {
@@ -1477,5 +1554,301 @@ body.detalle-open { overflow: hidden; }
     padding: 1px 6px;
     font-weight: 600;
     margin-left: 4px;
+}
+
+/* ─── Filtros avanzados ──────────────────────────────────────────────────────── */
+
+.btn-filtros-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+}
+.btn-filtros-toggle:hover { border-color: #667eea; color: #667eea; }
+.btn-filtros-toggle.active { border-color: #667eea; background: #eef2ff; color: #4f46e5; }
+
+.filtros-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: #667eea;
+    color: white;
+    border-radius: 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.crm-filtros-avanzados {
+    display: none;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+.crm-filtros-avanzados.active { display: flex; }
+
+.crm-filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.crm-filtro-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.crm-orden-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-dir {
+    padding: 7px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: border-color 0.15s, color 0.15s;
+}
+.btn-dir:hover { border-color: #667eea; color: #667eea; }
+.btn-dir[data-dir="asc"] { border-color: #667eea; color: #4f46e5; background: #eef2ff; }
+
+.btn-filtros-clear {
+    align-self: flex-end;
+    padding: 7px 12px;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    background: white;
+    color: #ef4444;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.15s;
+}
+.btn-filtros-clear:hover { background: #fee2e2; }
+
+/* ─── Pipeline de oportunidades ─────────────────────────────────────────────── */
+
+.pipeline-board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(200px, 1fr));
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    align-items: start;
+}
+
+.pipeline-col {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+}
+
+.pipeline-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 12px 12px 0 0;
+    border-top: 3px solid transparent;
+}
+
+.pipeline-col-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pipeline-col-count {
+    font-size: 0.72rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 1px 8px;
+    background: rgba(0,0,0,0.07);
+    color: inherit;
+}
+
+/* Column themes */
+.pipeline-col--prospecto .pipeline-col-header { border-top-color: #8b5cf6; }
+.pipeline-col--prospecto .pipeline-col-title  { color: #7c3aed; }
+
+.pipeline-col--propuesta .pipeline-col-header { border-top-color: #3b82f6; }
+.pipeline-col--propuesta .pipeline-col-title  { color: #1d4ed8; }
+
+.pipeline-col--negociacion .pipeline-col-header { border-top-color: #f59e0b; }
+.pipeline-col--negociacion .pipeline-col-title  { color: #b45309; }
+
+.pipeline-col--ganada .pipeline-col-header { border-top-color: #22c55e; }
+.pipeline-col--ganada .pipeline-col-title  { color: #15803d; }
+
+.pipeline-col--perdida .pipeline-col-header { border-top-color: #ef4444; }
+.pipeline-col--perdida .pipeline-col-title  { color: #b91c1c; }
+
+.pipeline-cards {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 60px;
+}
+
+.pipeline-card {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.pipeline-card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    transform: translateY(-1px);
+}
+
+.pipeline-card-titulo {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+    line-height: 1.35;
+}
+
+.pipeline-card-valor {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 6px;
+}
+
+.pipeline-card-meta {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.pipeline-card-meta span { display: flex; align-items: center; gap: 4px; }
+
+.pipeline-empty {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    text-align: center;
+    padding: 24px 8px;
+    font-style: italic;
+}
+
+.pipeline-loading {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 1rem;
+    padding: 20px 0;
+}
+
+/* Etapa badge en detalle */
+.etapa-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+.etapa-prospecto  { background: #ede9fe; color: #7c3aed; }
+.etapa-propuesta  { background: #dbeafe; color: #1d4ed8; }
+.etapa-negociacion{ background: #fef9c3; color: #92400e; }
+.etapa-ganada     { background: #dcfce7; color: #15803d; }
+.etapa-perdida    { background: #fee2e2; color: #b91c1c; }
+
+/* Avatar oportunidad */
+.opor-avatar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-size: 1.2rem;
+}
+
+/* Sección cambiar etapa en detalle */
+.opor-etapa-cambio {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.opor-etapa-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.opor-etapa-btn {
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #475569;
+    transition: all 0.15s;
+}
+
+.opor-etapa-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    background: #eef2ff;
+}
+
+.opor-etapa-btn.active {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+    cursor: default;
+}
+
+@media (max-width: 900px) {
+    .pipeline-board {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .pipeline-board {
+        grid-template-columns: 1fr;
+    }
 }
 

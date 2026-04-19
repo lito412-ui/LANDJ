@@ -107,13 +107,18 @@ Requiere sesión activa.
 ---
 
 ### `GET /api/contactos.php`
-Lista todos los contactos, opcionalmente filtrados.
+Lista todos los contactos, opcionalmente filtrados y ordenados.
 
 **Query params**
 
 | Param | Tipo | Descripción |
 |-------|------|-------------|
 | `buscar` | string | LIKE en nombre, apellidos, email, empresa |
+| `empresa` | string | LIKE en empresa (filtro adicional) |
+| `desde` | `YYYY-MM-DD` | `DATE(created_at) >= ?` |
+| `hasta` | `YYYY-MM-DD` | `DATE(created_at) <= ?` |
+| `orden` | `nombre` \| `empresa` \| `created_at` | Campo de ordenación (defecto: `created_at`) |
+| `dir` | `asc` \| `desc` | Dirección (defecto: `desc`) |
 
 **Respuesta `200`**
 ```json
@@ -203,14 +208,19 @@ Requiere sesión activa.
 ---
 
 ### `GET /api/leads.php`
-Lista leads, filtrados opcionalmente.
+Lista leads, filtrados y ordenados opcionalmente.
 
 **Query params**
 
 | Param | Tipo | Descripción |
 |-------|------|-------------|
 | `buscar` | string | LIKE en nombre, email, empresa |
-| `estado` | string | Filtro exacto por estado (enum whitelist) |
+| `estado` | enum | Filtro exacto: `nuevo` \| `contactado` \| `calificado` \| `convertido` \| `descartado` |
+| `origen` | string | LIKE en campo origen |
+| `desde` | `YYYY-MM-DD` | `DATE(created_at) >= ?` |
+| `hasta` | `YYYY-MM-DD` | `DATE(created_at) <= ?` |
+| `orden` | `nombre` \| `estado` \| `created_at` | Campo de ordenación (defecto: `created_at`) |
+| `dir` | `asc` \| `desc` | Dirección (defecto: `desc`) |
 
 **Respuesta `200`**
 ```json
@@ -400,32 +410,187 @@ Elimina un usuario.
 
 ---
 
-## Oportunidades *(pendiente de implementar)*
+## Oportunidades
 
-Base: `/api/oportunidades.php`
+Base: `/api/oportunidades.php`  
+Requiere sesión activa. Los endpoints mutantes requieren `X-CSRF-Token`.
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/oportunidades.php` | Listar (con `?etapa=` y `?asignado=`) |
-| `GET` | `/api/oportunidades.php?id=<id>` | Detalle |
-| `POST` | `/api/oportunidades.php` | Crear |
-| `PUT` | `/api/oportunidades.php?id=<id>` | Actualizar datos |
-| `PUT` | `/api/oportunidades.php?id=<id>&action=etapa` | Mover de etapa → body: `{ "etapa": "propuesta" }` |
-| `DELETE` | `/api/oportunidades.php?id=<id>` | Eliminar |
+### Campos del recurso
+
+| Campo | Tipo | Restricciones |
+|-------|------|---------------|
+| `id_oportunidad` | int | PK, auto |
+| `titulo` | string | **Obligatorio**, max 150 |
+| `descripcion` | string\|null | max 500 |
+| `valor` | decimal\|null | ≥ 0 |
+| `etapa` | enum | `prospecto` \| `propuesta` \| `negociacion` \| `cerrada_ganada` \| `cerrada_perdida` (defecto: `prospecto`) |
+| `fecha_cierre_esperada` | date\|null | formato `YYYY-MM-DD` |
+| `contacto_id` | int\|null | FK → contactos |
+| `lead_id` | int\|null | FK → leads |
+| `creado_por` | int | FK → usuarios |
+| `created_at` | datetime | Auto |
+
+> El GET lista también devuelve `contacto_nombre` y `lead_nombre` (JOIN).
 
 ---
 
-## Actividades *(pendiente de implementar)*
+### `GET /api/oportunidades.php`
+Lista oportunidades filtradas y ordenadas.
 
-Base: `/api/actividades.php`
+**Query params**
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/actividades.php?contacto_id=<id>` | Actividades de un contacto |
-| `GET` | `/api/actividades.php?lead_id=<id>` | Actividades de un lead |
-| `POST` | `/api/actividades.php` | Crear actividad/nota |
-| `PUT` | `/api/actividades.php?id=<id>` | Editar |
-| `DELETE` | `/api/actividades.php?id=<id>` | Eliminar |
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `buscar` | string | LIKE en título, descripción, nombre contacto/lead |
+| `etapa` | enum | Filtro exacto por etapa (whitelist) |
+| `valor_min` | decimal | `valor >= ?` |
+| `valor_max` | decimal | `valor <= ?` |
+| `cierre_desde` | `YYYY-MM-DD` | `fecha_cierre_esperada >= ?` |
+| `cierre_hasta` | `YYYY-MM-DD` | `fecha_cierre_esperada <= ?` |
+| `orden` | `titulo` \| `valor` \| `etapa` \| `fecha_cierre_esperada` \| `created_at` | Defecto: `created_at` |
+| `dir` | `asc` \| `desc` | Defecto: `desc` |
+
+---
+
+### `GET /api/oportunidades.php?id=<id>`
+Detalle de una oportunidad (incluye `contacto_nombre`, `lead_nombre`).
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Encontrada |
+| `404` | No existe |
+
+---
+
+### `POST /api/oportunidades.php`
+Crea una nueva oportunidad.
+
+**Request body**
+```json
+{
+  "titulo": "Proyecto X",
+  "descripcion": "Descripción opcional",
+  "valor": 15000,
+  "etapa": "prospecto",
+  "fecha_cierre_esperada": "2026-06-30",
+  "contacto_id": 1,
+  "lead_id": null
+}
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Creada |
+| `400` | Validación fallida |
+| `403` | Token CSRF inválido |
+
+---
+
+### `PUT /api/oportunidades.php?id=<id>`
+Actualiza todos los campos. Body idéntico al POST.
+
+---
+
+### `PUT /api/oportunidades.php?id=<id>&action=etapa`
+Mueve la oportunidad a otra etapa. Registra auditoría.
+
+**Request body**
+```json
+{ "etapa": "propuesta" }
+```
+
+**Respuesta `200`**: devuelve la oportunidad actualizada completa (con nombres JOIN).
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Etapa actualizada |
+| `400` | Etapa no válida |
+| `404` | No existe |
+
+---
+
+### `DELETE /api/oportunidades.php?id=<id>`
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Eliminada → `{ "ok": true, "data": { "deleted": <id> } }` |
+| `404` | No existe |
+
+---
+
+## Actividades
+
+Base: `/api/actividades.php`  
+Requiere sesión activa. Los endpoints mutantes requieren `X-CSRF-Token`.
+
+### Campos del recurso
+
+| Campo | Tipo | Restricciones |
+|-------|------|---------------|
+| `id_actividad` | int | PK, auto |
+| `tipo` | enum | `nota` \| `llamada` \| `reunion` \| `tarea` \| `email` |
+| `descripcion` | string | **Obligatoria**, max 500 |
+| `fecha` | date\|null | formato `YYYY-MM-DD` |
+| `contacto_id` | int\|null | FK → contactos |
+| `lead_id` | int\|null | FK → leads |
+| `oportunidad_id` | int\|null | FK → oportunidades |
+| `creado_por` | int | FK → usuarios |
+| `created_at` | datetime | Auto |
+
+> Al menos una de las FKs (`contacto_id`, `lead_id`, `oportunidad_id`) debe ser no nula.
+
+---
+
+### `GET /api/actividades.php`
+Lista actividades de una entidad, ordenadas por `COALESCE(fecha, created_at) DESC`.
+
+**Query params** (se requiere al menos uno de los tres primeros)
+
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `contacto_id` | int | Actividades del contacto |
+| `lead_id` | int | Actividades del lead |
+| `oportunidad_id` | int | Actividades de la oportunidad |
+| `limite` | int | Máx resultados (defecto: 100) |
+
+---
+
+### `GET /api/actividades.php?id=<id>`
+Devuelve una actividad por ID.
+
+---
+
+### `POST /api/actividades.php`
+Crea una actividad ligada a una entidad.
+
+**Request body**
+```json
+{
+  "tipo": "llamada",
+  "descripcion": "Llamada de seguimiento",
+  "fecha": "2026-04-19",
+  "contacto_id": 3
+}
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Creada |
+| `400` | Descripción vacía / tipo inválido / sin FK |
+
+---
+
+### `PUT /api/actividades.php?id=<id>`
+Actualiza tipo, descripción y fecha. Body igual que POST.
+
+---
+
+### `DELETE /api/actividades.php?id=<id>`
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Eliminada → `{ "ok": true, "data": { "deleted": <id> } }` |
+| `404` | No existe |
 
 ---
 

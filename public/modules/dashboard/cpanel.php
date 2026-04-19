@@ -19,6 +19,7 @@ csrfGenerar();
         <?php include __DIR__ . '/partials/sections/dashboard.php'; ?>
         <?php include __DIR__ . '/partials/sections/contactos.php'; ?>
         <?php include __DIR__ . '/partials/sections/leads.php'; ?>
+        <?php include __DIR__ . '/partials/sections/oportunidades.php'; ?>
         <?php include __DIR__ . '/partials/sections/statistics.php'; ?>
         <?php include __DIR__ . '/partials/sections/file-manager.php'; ?>
         <?php include __DIR__ . '/partials/sections/ftp.php'; ?>
@@ -36,6 +37,11 @@ csrfGenerar();
 
 </div>
 
-<script src="/assets/js/dashboard/cpanel-script.js"></script>
+<script src="/assets/js/dashboard/cpanel-core.js"></script>
+<script src="/assets/js/dashboard/cpanel-actividades.js"></script>
+<script src="/assets/js/dashboard/cpanel-contactos.js"></script>
+<script src="/assets/js/dashboard/cpanel-leads.js"></script>
+<script src="/assets/js/dashboard/cpanel-usuarios.js"></script>
+<script src="/assets/js/dashboard/cpanel-oportunidades.js"></script>
 </body>
 </html>

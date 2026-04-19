@@ -108,23 +108,73 @@
 
                 <div class="detalle-actividades">
                     <div class="detalle-seccion-titulo">
-                        <i class="fas fa-history"></i> Actividades recientes
+                        <span><i class="fas fa-history"></i> Actividades</span>
+                        <button class="btn-icon-xs" id="det-act-nuevo-btn" title="Nueva actividad"><i class="fas fa-plus"></i></button>
                     </div>
-                    <ul class="det-actividades-lista" id="det-actividades-lista">
-                        <li class="det-act-vacio">Cargando...</li>
+                    <div class="act-form-inline" id="det-act-form" style="display:none">
+                        <select id="det-act-tipo" class="form-input form-input-sm">
+                            <option value="nota">Nota</option>
+                            <option value="llamada">Llamada</option>
+                            <option value="reunion">Reunión</option>
+                            <option value="tarea">Tarea</option>
+                            <option value="email">Email</option>
+                        </select>
+                        <textarea id="det-act-desc" class="form-textarea" rows="2" placeholder="Descripción de la actividad..." maxlength="500"></textarea>
+                        <input type="date" id="det-act-fecha" class="form-input form-input-sm">
+                        <div class="act-form-actions">
+                            <button id="det-act-guardar" class="btn-primary btn-sm">Guardar</button>
+                            <button id="det-act-cancelar" class="btn-secondary btn-sm">Cancelar</button>
+                        </div>
+                    </div>
+                    <ul class="det-actividades-lista" id="det-act-lista">
+                        <li class="det-act-vacio"><i class="fas fa-spinner fa-spin"></i> Cargando...</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Buscador -->
+    <!-- Buscador + filtros -->
     <div class="crm-toolbar">
         <div class="crm-search">
             <i class="fas fa-search"></i>
             <input type="text" id="contactos-buscar" class="crm-search-input"
                    placeholder="Buscar por nombre, email o empresa...">
         </div>
+        <div class="crm-filtros">
+            <button class="btn-filtros-toggle" id="ct-filtros-toggle" title="Filtros avanzados">
+                <i class="fas fa-sliders-h"></i> Filtros
+                <span class="filtros-badge" id="ct-filtros-badge" style="display:none">0</span>
+            </button>
+        </div>
+    </div>
+    <div class="crm-filtros-avanzados" id="ct-filtros-avanzados">
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Empresa</label>
+            <input type="text" id="ct-filtro-empresa" class="form-input form-input-sm" placeholder="Filtrar por empresa...">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Registrado desde</label>
+            <input type="date" id="ct-filtro-desde" class="form-input form-input-sm">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Hasta</label>
+            <input type="date" id="ct-filtro-hasta" class="form-input form-input-sm">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Ordenar por</label>
+            <div class="crm-orden-wrap">
+                <select id="ct-filtro-orden" class="crm-select">
+                    <option value="created_at">Fecha registro</option>
+                    <option value="nombre">Nombre</option>
+                    <option value="empresa">Empresa</option>
+                </select>
+                <button class="btn-dir" id="ct-filtro-dir" data-dir="desc" title="Dirección">
+                    <i class="fas fa-sort-amount-down"></i>
+                </button>
+            </div>
+        </div>
+        <button class="btn-filtros-clear" id="ct-filtros-clear"><i class="fas fa-times"></i> Limpiar</button>
     </div>
 
     <!-- Tabla -->

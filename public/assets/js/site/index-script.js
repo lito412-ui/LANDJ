@@ -29,8 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- 3. EFECTOS VISUALES (TU CÓDIGO ORIGINAL) ---
-    
+    // --- 3. EFECTOS VISUALES ---
     // Parallax Hero
     const hero = document.querySelector('.hero');
     window.addEventListener('scroll', () => {

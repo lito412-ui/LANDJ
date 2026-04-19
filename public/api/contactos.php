@@ -102,18 +102,43 @@ try {
                 $row = $s->fetch();
                 $row ? ok($row) : err('Contacto no encontrado', 404);
             } else {
+                $where  = [];
+                $params = [];
+
                 $buscar = clean($_GET['buscar'] ?? '');
                 if ($buscar !== '') {
-                    $like = '%' . $buscar . '%';
-                    $s = $pdo->prepare(
-                        "SELECT * FROM contactos
-                         WHERE nombre LIKE ? OR apellidos LIKE ? OR email LIKE ? OR empresa LIKE ?
-                         ORDER BY created_at DESC"
-                    );
-                    $s->execute([$like, $like, $like, $like]);
-                } else {
-                    $s = $pdo->query("SELECT * FROM contactos ORDER BY created_at DESC");
+                    $like    = '%' . $buscar . '%';
+                    $where[] = '(nombre LIKE ? OR apellidos LIKE ? OR email LIKE ? OR empresa LIKE ?)';
+                    array_push($params, $like, $like, $like, $like);
                 }
+
+                $empresa = clean($_GET['empresa'] ?? '');
+                if ($empresa !== '') {
+                    $where[]  = 'empresa LIKE ?';
+                    $params[] = '%' . $empresa . '%';
+                }
+
+                $desde = clean($_GET['desde'] ?? '');
+                if ($desde !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
+                    $where[]  = 'DATE(created_at) >= ?';
+                    $params[] = $desde;
+                }
+
+                $hasta = clean($_GET['hasta'] ?? '');
+                if ($hasta !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
+                    $where[]  = 'DATE(created_at) <= ?';
+                    $params[] = $hasta;
+                }
+
+                $colsPermitidas = ['nombre', 'empresa', 'created_at'];
+                $orden = in_array($_GET['orden'] ?? '', $colsPermitidas, true) ? $_GET['orden'] : 'created_at';
+                $dir   = ($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
+
+                $sql = "SELECT * FROM contactos"
+                     . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
+                     . " ORDER BY $orden $dir";
+                $s = $pdo->prepare($sql);
+                $s->execute($params);
                 ok($s->fetchAll());
             }
             break;

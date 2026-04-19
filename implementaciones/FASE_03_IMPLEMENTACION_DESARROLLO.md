@@ -3,9 +3,9 @@
 Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-end.
 
 ## Estado actual
-- Avance estimado: `68%`
-- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos (validaciones JS+PHP, detalle lateral, toast/confirm), CRUD completo de leads (badges de estado, búsqueda + filtro, detalle lateral), CRUD completo de gestión de usuarios (admin-only, roles, autoprotección). Conversión de lead a contacto (transacción atómica, auditoría, detección de email duplicado). Modal de confirmación reutilizable con variantes visuales (danger/success).
-- Pendiente principal: oportunidades (pipeline), actividades/notas, búsqueda/filtros avanzados, paginación.
+- Avance estimado: `88%`
+- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas, cambio de etapa con confirm. Modal de confirmación con variantes `danger`/`success`/`info`. CRUD de actividades/notas ligadas a entidades. JS dividido en 6 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM (empresa, origen, valor range, fechas, orden/dir con estado en objeto por módulo).
+- Pendiente principal: paginación, permisos en UI.
 
 ## Checklist de tareas (MVP primero)
 
@@ -35,6 +35,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Partials independientes: `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
 - [x] Secciones PHP bajo `modules/dashboard/partials/sections/`
 - [x] Assets organizados por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
+- [x] JS del panel dividido en 6 módulos independientes: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`
 
 ### Monitorización del sistema
 - [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco) multiplataforma
@@ -74,14 +75,45 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Estilos globales reutilizados: `crm-toolbar`, `crm-search`, `data-table`, `btn-icon`, `crm-avatar`
 - [x] Auditoría en crear/editar/eliminar
 
-### CRM core (pendiente)
+### CRM — Oportunidades (Pipeline)
+- [x] API REST `oportunidades.php`: GET lista/detalle (JOIN contactos+leads), POST, PUT, PUT `?action=etapa`, DELETE
+- [x] Validación PHP: título obligatorio max 150, descripción max 500, valor decimal ≥ 0, etapa enum, fecha YYYY-MM-DD
+- [x] Módulo JS `Oportunidades`: kanban board con 5 columnas (prospecto/propuesta/negociación/ganada/perdida)
+- [x] Cards con título, valor formateado (€ `Intl.NumberFormat`), contacto/lead asociado, fecha cierre
+- [x] Formulario crear/editar con panel animado (título, valor, etapa, fecha cierre, descripción)
+- [x] Panel detalle lateral: campos, etapa badge, botones de cambio de etapa con confirm
+- [x] Cambio de etapa (`PUT ?action=etapa`) con modal `info` (azul), actualización inmediata sin recargar detalle
+- [x] Búsqueda debounced (400 ms) + filtro por etapa en toolbar
+- [x] Columnas vacías con estado `pipeline-empty`; spinner de carga inicial
+- [x] Auditoría en crear/editar/eliminar/mover etapa
+- [x] Sidebar: enlace "Pipeline" en sección CRM
+
+### CRM core — fixes transversales
 - [x] Conversión de lead a contacto (transacción atómica: INSERT contactos + UPDATE leads, rollback on error, detección email duplicado, auditoría en ambas entidades)
-- [x] Modal de confirmación reutilizable con variante visual `success` (icono verde, botón verde) para acciones no destructivas
-- [ ] Pipeline de oportunidades — listado agrupado por etapa
-- [ ] Movimiento de oportunidades entre etapas
-- [ ] CRUD de actividades/notas ligadas a entidades
-- [ ] Listado de actividades por entidad y por usuario
-- [ ] Búsqueda y filtros avanzados en listados (campos acordados en Fase 02)
+- [x] Modal de confirmación reutilizable con variantes `danger` (rojo), `success` (verde), `info` (azul)
+- [x] Fix `detalleId` capturado en `const id` antes de llamar `cerrarDetalle()` en Contactos, Leads y Oportunidades
+
+### CRM — Actividades / Notas
+- [x] API REST `actividades.php`: GET por entidad (`contacto_id` / `lead_id` / `oportunidad_id`), GET por id, POST, PUT, DELETE
+- [x] Validación PHP: tipo enum (`nota/llamada/reunion/tarea/email`), descripción obligatoria max 500, fecha YYYY-MM-DD opcional, al menos una FK requerida
+- [x] `ActividadesWidget` IIFE compartido: init por `{ prefix, entityType, entityId }`, formulario inline con tipo/descripción/fecha, edición y eliminación por id
+- [x] Widget integrado en paneles de detalle de Contactos (`det`), Leads (`ldet`) y Oportunidades (`odet`)
+- [x] Lista con iconos por tipo y fecha formateada; estado vacío y spinner de carga
+- [x] Auditoría en crear/editar/eliminar
+- [x] HTML de actividades añadido a secciones de leads y contactos (paneles detalle)
+
+### CRM core — Búsqueda y filtros avanzados
+- [x] Estado de búsqueda por módulo: objeto `_estado` con todos los params (buscar, filtros, orden, dir)
+- [x] `cargar()` construye `URLSearchParams` desde `_estado`, sin leer el DOM directamente
+- [x] Panel de filtros avanzados colapsable por módulo (toggle con badge de filtros activos)
+- [x] Contactos: filtro `empresa` (LIKE), `desde`/`hasta` (DATE range), `orden` (nombre/empresa/created_at), `dir`
+- [x] Leads: filtro `origen` (LIKE), `desde`/`hasta`, `orden` (nombre/estado/created_at), `dir`
+- [x] Oportunidades: filtro `valor_min`/`valor_max`, `cierre_desde`/`cierre_hasta`, `orden` (titulo/valor/etapa/fecha_cierre/created_at), `dir`. Buscar extendido a `descripcion`
+- [x] Botón "Limpiar" resetea filtros avanzados manteniendo búsqueda principal y filtro de estado/etapa
+- [x] Botón de dirección (asc/desc) con icono reactivo
+- [x] API: validación whitelist de columnas ordenables; fechas validadas con regex; valores numéricos validados antes de bindear
+
+### CRM core (pendiente)
 - [ ] Paginación básica en listados
 - [ ] Manejo de errores unificado y consistente
 

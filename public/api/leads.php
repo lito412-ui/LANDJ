@@ -111,9 +111,31 @@ try {
                 $params[] = $estado;
             }
 
+            $origen = clean($_GET['origen'] ?? '');
+            if ($origen !== '') {
+                $where[]  = 'origen LIKE ?';
+                $params[] = '%' . $origen . '%';
+            }
+
+            $desde = clean($_GET['desde'] ?? '');
+            if ($desde !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
+                $where[]  = 'DATE(created_at) >= ?';
+                $params[] = $desde;
+            }
+
+            $hasta = clean($_GET['hasta'] ?? '');
+            if ($hasta !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
+                $where[]  = 'DATE(created_at) <= ?';
+                $params[] = $hasta;
+            }
+
+            $colsPermitidas = ['nombre', 'estado', 'created_at'];
+            $orden = in_array($_GET['orden'] ?? '', $colsPermitidas, true) ? $_GET['orden'] : 'created_at';
+            $dir   = ($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
+
             $sql = "SELECT * FROM leads"
                  . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
-                 . " ORDER BY created_at DESC";
+                 . " ORDER BY $orden $dir";
             $s = $pdo->prepare($sql);
             $s->execute($params);
             ok($s->fetchAll());

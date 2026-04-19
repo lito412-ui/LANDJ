@@ -16,6 +16,12 @@
                         <span>Leads</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="#oportunidades" class="nav-link" data-section="oportunidades">
+                        <i class="fas fa-handshake"></i>
+                        <span>Pipeline</span>
+                    </a>
+                </li>
             </ul>
         </div>
 

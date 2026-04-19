@@ -5,10 +5,10 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `68%`**
+- **Avance estimado actual: `76%`**
   - Fase 01: 100% × 15% = 15
   - Fase 02: 100% × 20% = 20
-  - Fase 03:  68% × 40% = 27.2
+  - Fase 03:  88% × 40% = 35.2
   - Fase 04:   0% × 15% = 0
   - Fase 05:  60% × 10% = 6
 
@@ -41,7 +41,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Definir búsqueda/filtros (campos y paginación) → [`BUSQUEDA_FILTROS.md`](BUSQUEDA_FILTROS.md)
 - [x] Preparar estrategia de archivos/adjuntos → excluido del MVP; diseño de tabla `adjuntos` + reglas documentadas en FASE_02 para fase posterior
 
-## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 68%)
+## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 88%)
 
 ### Core (completado)
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
@@ -61,23 +61,23 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Implementar vista de perfil del usuario autenticado
 - [x] Modularizar panel: `cpanel.php` + partials PHP por sección
 - [x] Reorganizar assets por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
+- [x] JS del panel dividido en 6 módulos: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`
 
 ### CRM (completado)
 - [x] CRUD completo de contactos (API REST + módulo JS + validaciones JS+PHP + detalle lateral)
 - [x] Búsqueda debounced y estado vacío en listado de contactos
-- [x] Toast notifications y confirm modal reutilizables
+- [x] Toast notifications y confirm modal reutilizables (variantes `danger`/`success`/`info`)
 - [x] CRUD completo de leads (API REST + módulo JS + badges estado + búsqueda + filtro + detalle)
 - [x] CRUD completo de gestión de usuarios — admin-only (API + JS + HTML + badges rol + autoprotección)
 - [x] Conversión de lead a contacto (transacción atómica, detección email duplicado, auditoría en ambas entidades, botón deshabilitado si ya convertido)
-- [x] Modal de confirmación con variante `success` (distinto de la variante destructiva `danger`)
 - [x] Migración idempotente `002_leads_contacto_id.php` para columna `contacto_id` en tabla `leads`
+- [x] Pipeline kanban de oportunidades: 5 etapas, cards, cambio de etapa con confirm, búsqueda + filtro
+- [x] CRUD de actividades/notas ligadas a contactos, leads y oportunidades (`ActividadesWidget` compartido)
+- [x] Búsqueda y filtros avanzados: panel colapsable con estado por módulo, badge de filtros activos, ordenación asc/desc y limpiar
 
 ### CRM (pendiente)
-- [x] Conversión de lead a contacto
-- [ ] Pipeline de oportunidades (etapas y movimiento)
-- [ ] CRUD de actividades/notas ligadas a entidades
-- [ ] Búsqueda y filtros avanzados en listados
 - [ ] Paginación básica en listados
+- [ ] Permisos reflejados en la UI (mostrar/ocultar acciones según rol)
 - [ ] Manejo de errores unificado
 
 ## Fase 03 - UX mínima viable
@@ -85,7 +85,8 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Feedback visual en métricas del dashboard (tiempo real)
 - [x] Vista de perfil con datos reales del usuario autenticado
 - [x] Estados vacíos (`crm-empty`) y carga (`crm-loading`) en todos los listados CRM
-- [ ] Permisos reflejados en la UI (botones/acciones según rol en contactos y leads)
+- [x] Filtros avanzados con panel colapsable y badge de filtros activos
+- [ ] Permisos reflejados en la UI (botones/acciones según rol)
 
 ## Fase 04 - Pruebas y Validación (Peso: 15% | Avance: 0%)
 - [ ] Plan de pruebas (funcionales y de regresión)
@@ -125,7 +126,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [ ] Multilenguaje y personalización básica de interfaz (impacto: medio-bajo | esfuerzo: medio)
 
 ## Siguiente iteración recomendada
-- [ ] Implementar pipeline de oportunidades (mayor valor de negocio pendiente)
-- [ ] Implementar CRUD de actividades/notas ligadas a contactos y leads
+- [ ] Paginación básica (mayor valor de usabilidad pendiente con listados grandes)
 - [ ] Añadir permisos en la UI (mostrar/ocultar botones según rol)
 - [ ] Endurecer login (rate limit, intentos fallidos, mensajes no reveladores)
+- [ ] Pruebas manuales de flujos críticos (Fase 04)

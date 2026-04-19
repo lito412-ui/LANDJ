@@ -271,10 +271,10 @@ La paginación se renderiza como una barra debajo de la tabla:
 
 ## Estado actual por módulo
 
-| Módulo | Búsqueda textual | Filtros | Paginación |
-|--------|:---:|:---:|:---:|
-| Contactos | ✅ implementado | ❌ pendiente | ❌ pendiente |
-| Leads | ❌ pendiente | ❌ pendiente | ❌ pendiente |
-| Oportunidades | ❌ pendiente | ❌ pendiente | ❌ pendiente |
-| Actividades | ❌ pendiente | ❌ pendiente | ❌ pendiente |
-| Auditoría | ✅ implementado | ✅ implementado | ✅ (offset manual) |
+| Módulo | Búsqueda textual | Filtros | Ordenación | Paginación |
+|--------|:---:|:---:|:---:|:---:|
+| Contactos | ✅ implementado | ✅ empresa, desde, hasta | ✅ nombre/empresa/created_at + dir | ❌ pendiente |
+| Leads | ✅ implementado | ✅ estado, origen, desde, hasta | ✅ nombre/estado/created_at + dir | ❌ pendiente |
+| Oportunidades | ✅ implementado (+ descripción) | ✅ etapa, valor_min/max, cierre_desde/hasta | ✅ titulo/valor/etapa/fecha_cierre/created_at + dir | ❌ pendiente |
+| Actividades | ✅ por entidad_id | ❌ pendiente | ❌ pendiente | ❌ pendiente |
+| Auditoría | ✅ implementado | ✅ implementado | — | ✅ (offset manual) |

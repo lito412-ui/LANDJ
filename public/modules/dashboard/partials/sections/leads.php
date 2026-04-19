@@ -86,7 +86,39 @@
                 <option value="convertido">Convertido</option>
                 <option value="descartado">Descartado</option>
             </select>
+            <button class="btn-filtros-toggle" id="ld-filtros-toggle" title="Filtros avanzados">
+                <i class="fas fa-sliders-h"></i> Filtros
+                <span class="filtros-badge" id="ld-filtros-badge" style="display:none">0</span>
+            </button>
         </div>
+    </div>
+    <div class="crm-filtros-avanzados" id="ld-filtros-avanzados">
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Origen</label>
+            <input type="text" id="ld-filtro-origen" class="form-input form-input-sm" placeholder="web, referido...">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Registrado desde</label>
+            <input type="date" id="ld-filtro-desde" class="form-input form-input-sm">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Hasta</label>
+            <input type="date" id="ld-filtro-hasta" class="form-input form-input-sm">
+        </div>
+        <div class="crm-filtro-grupo">
+            <label class="crm-filtro-label">Ordenar por</label>
+            <div class="crm-orden-wrap">
+                <select id="ld-filtro-orden" class="crm-select">
+                    <option value="created_at">Fecha registro</option>
+                    <option value="nombre">Nombre</option>
+                    <option value="estado">Estado</option>
+                </select>
+                <button class="btn-dir" id="ld-filtro-dir" data-dir="desc" title="Dirección">
+                    <i class="fas fa-sort-amount-down"></i>
+                </button>
+            </div>
+        </div>
+        <button class="btn-filtros-clear" id="ld-filtros-clear"><i class="fas fa-times"></i> Limpiar</button>
     </div>
 
     <!-- Tabla -->
@@ -158,6 +190,30 @@
                 <div class="detalle-notas" id="ldet-notas-bloque">
                     <span class="detalle-label"><i class="fas fa-sticky-note"></i> Notas</span>
                     <p id="ldet-notas"></p>
+                </div>
+                <div class="detalle-actividades">
+                    <div class="detalle-seccion-titulo">
+                        <span><i class="fas fa-history"></i> Actividades</span>
+                        <button class="btn-icon-xs" id="ldet-act-nuevo-btn" title="Nueva actividad"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="act-form-inline" id="ldet-act-form" style="display:none">
+                        <select id="ldet-act-tipo" class="form-input form-input-sm">
+                            <option value="nota">Nota</option>
+                            <option value="llamada">Llamada</option>
+                            <option value="reunion">Reunión</option>
+                            <option value="tarea">Tarea</option>
+                            <option value="email">Email</option>
+                        </select>
+                        <textarea id="ldet-act-desc" class="form-textarea" rows="2" placeholder="Descripción de la actividad..." maxlength="500"></textarea>
+                        <input type="date" id="ldet-act-fecha" class="form-input form-input-sm">
+                        <div class="act-form-actions">
+                            <button id="ldet-act-guardar" class="btn-primary btn-sm">Guardar</button>
+                            <button id="ldet-act-cancelar" class="btn-secondary btn-sm">Cancelar</button>
+                        </div>
+                    </div>
+                    <ul class="det-actividades-lista" id="ldet-act-lista">
+                        <li class="det-act-vacio"><i class="fas fa-spinner fa-spin"></i> Cargando...</li>
+                    </ul>
                 </div>
             </div>
         </div>

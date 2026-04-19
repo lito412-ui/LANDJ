@@ -6,11 +6,13 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 
 - **Landing** (`public/index.html`): página de presentación en la raíz del sitio (`/`).
 - **Autenticación** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
-- **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; activa las secciones vía JS (`cpanel-script.js`). Incluye: Contactos, Leads, Gestión de usuarios, Perfil, Auditoría, Monitorización.
+- **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; JS dividido en 6 módulos independientes por dominio. Incluye: Contactos, Leads, Pipeline de Oportunidades, Gestión de usuarios, Perfil, Auditoría, Monitorización.
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro) vía `GET /api/get_user.php`.
 - **Monitorización**: `GET /api/monitorizacion.php` devuelve CPU, RAM y disco reales.
-- **CRM — Contactos**: CRUD completo con búsqueda debounced, detalle lateral, validaciones JS + PHP.
-- **CRM — Leads**: CRUD completo con búsqueda debounced, filtro por estado, panel de detalle y conversión de lead a contacto (transacción atómica).
+- **CRM — Contactos**: CRUD completo con búsqueda debounced, filtros avanzados (empresa, fechas, orden), detalle lateral con actividades, validaciones JS + PHP.
+- **CRM — Leads**: CRUD completo con búsqueda, filtros avanzados (estado, origen, fechas, orden), panel de detalle con actividades y conversión de lead a contacto (transacción atómica).
+- **CRM — Pipeline de Oportunidades**: kanban board con 5 etapas, cambio de etapa con confirm, filtros avanzados (valor range, fecha cierre, orden), detalle lateral con actividades.
+- **CRM — Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
 - **Gestión de usuarios** (solo admin): CRUD de cuentas con roles, badges, protección anti-autoborrado y protección del último administrador.
 - **Auditoría**: log de cambios en todas las entidades, accesible solo para administradores.
 - **Seguridad**: CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`), Content Security Policy, `X-Frame-Options`, `Referrer-Policy`.
@@ -52,7 +54,8 @@ LANDJ/
 │   │   │   └── dashboard/         # cpanel-style.css
 │   │   ├── js/
 │   │   │   ├── site/              # index-script.js
-│   │   │   └── dashboard/         # cpanel-script.js (módulos: Contactos, Leads, Usuarios)
+│   │   │   └── dashboard/         # cpanel-core.js, cpanel-actividades.js, cpanel-contactos.js,
+│   │                          # cpanel-leads.js, cpanel-usuarios.js, cpanel-oportunidades.js
 │   │   └── img/
 │   ├── modules/
 │   │   ├── site/                  # login.html
@@ -65,14 +68,17 @@ LANDJ/
 │   │           └── sections/      # Una sección PHP por módulo del panel
 │   │               ├── contactos.php
 │   │               ├── leads.php
+│   │               ├── oportunidades.php
 │   │               ├── users.php
 │   │               └── ...
 │   ├── auth/                      # login.php, logout.php
 │   ├── api/
 │   │   ├── get_user.php           # GET: datos del usuario autenticado
-│   │   ├── monitorizacion.php     # GET: CPU / RAM / Disco (solo admin)
-│   │   ├── contactos.php          # CRUD REST (sesión activa)
-│   │   ├── leads.php              # CRUD REST (sesión activa)
+│   │   ├── monitorizacion.php     # GET: CPU / RAM / Disco
+│   │   ├── contactos.php          # CRUD REST + filtros avanzados
+│   │   ├── leads.php              # CRUD REST + filtros avanzados + conversión
+│   │   ├── oportunidades.php      # CRUD REST + filtros avanzados + acción etapa
+│   │   ├── actividades.php        # CRUD REST por entidad (contacto/lead/oportunidad)
 │   │   ├── usuarios.php           # CRUD REST (solo administrador)
 │   │   └── auditoria.php          # GET paginado (solo administrador)
 │   └── config/                    # Bloqueado por Nginx (deny all)
