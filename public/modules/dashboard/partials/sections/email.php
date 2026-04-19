@@ -3,7 +3,9 @@
         <h2 class="section-title">Cuentas de Correo</h2>
         <p class="section-subtitle">Gestiona las cuentas de correo electrónico</p>
     </div>
-    <div class="content-card">
-        <p>Gestión de correo en desarrollo...</p>
+    <div class="content-card proximamente">
+        <i class="fas fa-envelope proximamente-icon"></i>
+        <h3>Próximamente</h3>
+        <p>Esta sección está en desarrollo y estará disponible en una próxima versión.</p>
     </div>
 </section>

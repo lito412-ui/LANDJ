@@ -110,10 +110,10 @@ function initSidebarNavigation() {
             if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
             if (sectionId === 'contactos')     Contactos.init();
             if (sectionId === 'leads')         Leads.init();
-            if (sectionId === 'users')         Usuarios.init();
+            if (sectionId === 'users'        && typeof Usuarios   !== 'undefined') Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
-            if (sectionId === 'logs')          Auditoria.init();
-            if (sectionId === 'databases')    Databases.init();
+            if (sectionId === 'logs'         && typeof Auditoria  !== 'undefined') Auditoria.init();
+            if (sectionId === 'databases'    && typeof Databases  !== 'undefined') Databases.init();
         });
     });
 }

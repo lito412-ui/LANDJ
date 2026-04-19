@@ -3,7 +3,9 @@
         <h2 class="section-title">Estadísticas</h2>
         <p class="section-subtitle">Análisis detallado del rendimiento del servidor</p>
     </div>
-    <div class="content-card">
-        <p>Sección de estadísticas en desarrollo...</p>
+    <div class="content-card proximamente">
+        <i class="fas fa-chart-bar proximamente-icon"></i>
+        <h3>Próximamente</h3>
+        <p>Esta sección está en desarrollo y estará disponible en una próxima versión.</p>
     </div>
 </section>

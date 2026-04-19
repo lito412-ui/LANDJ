@@ -1,23 +1,5 @@
 SET NAMES utf8mb4;
 
--- ─── Auditoría ────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `auditoria` (
-  `id_auditoria`  BIGINT       AUTO_INCREMENT PRIMARY KEY,
-  `tabla`         VARCHAR(50)  NOT NULL,
-  `registro_id`   INT          NOT NULL,
-  `accion`        ENUM('crear','editar','eliminar') NOT NULL,
-  `usuario_id`    INT          DEFAULT NULL,
-  `datos_antes`   JSON         DEFAULT NULL,
-  `datos_despues` JSON         DEFAULT NULL,
-  `ip`            VARCHAR(45)  DEFAULT NULL,
-  `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_audit_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id_usuario`) ON DELETE SET NULL,
-  INDEX `idx_audit_entidad`  (`tabla`, `registro_id`),
-  INDEX `idx_audit_usuario`  (`usuario_id`),
-  INDEX `idx_audit_fecha`    (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 -- ─── Usuarios ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `usuarios` (
   `id_usuario`      INT          AUTO_INCREMENT PRIMARY KEY,
@@ -63,18 +45,18 @@ CREATE TABLE IF NOT EXISTS `leads` (
 
 -- ─── Oportunidades ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `oportunidades` (
-  `id_oportunidad`       INT            AUTO_INCREMENT PRIMARY KEY,
-  `titulo`               VARCHAR(150)   NOT NULL,
-  `descripcion`          TEXT           DEFAULT NULL,
-  `valor`                DECIMAL(12,2)  DEFAULT NULL,
-  `etapa`                ENUM('prospecto','propuesta','negociacion','cerrada_ganada','cerrada_perdida') NOT NULL DEFAULT 'prospecto',
-  `contacto_id`          INT            DEFAULT NULL,
-  `lead_id`              INT            DEFAULT NULL,
-  `asignado_a`           INT            DEFAULT NULL,
-  `creado_por`           INT            NOT NULL,
-  `fecha_cierre_esperada` DATE          DEFAULT NULL,
-  `created_at`           TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`           TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `id_oportunidad`        INT            AUTO_INCREMENT PRIMARY KEY,
+  `titulo`                VARCHAR(150)   NOT NULL,
+  `descripcion`           TEXT           DEFAULT NULL,
+  `valor`                 DECIMAL(12,2)  DEFAULT NULL,
+  `etapa`                 ENUM('prospecto','propuesta','negociacion','cerrada_ganada','cerrada_perdida') NOT NULL DEFAULT 'prospecto',
+  `contacto_id`           INT            DEFAULT NULL,
+  `lead_id`               INT            DEFAULT NULL,
+  `asignado_a`            INT            DEFAULT NULL,
+  `creado_por`            INT            NOT NULL,
+  `fecha_cierre_esperada` DATE           DEFAULT NULL,
+  `created_at`            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`            TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT `fk_opor_contacto`   FOREIGN KEY (`contacto_id`) REFERENCES `contactos`(`id_contacto`)  ON DELETE SET NULL,
   CONSTRAINT `fk_opor_lead`       FOREIGN KEY (`lead_id`)     REFERENCES `leads`(`id_lead`)           ON DELETE SET NULL,
   CONSTRAINT `fk_opor_asignado`   FOREIGN KEY (`asignado_a`)  REFERENCES `usuarios`(`id_usuario`)     ON DELETE SET NULL,
@@ -83,18 +65,35 @@ CREATE TABLE IF NOT EXISTS `oportunidades` (
 
 -- ─── Actividades ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `actividades` (
-  `id_actividad`    INT       AUTO_INCREMENT PRIMARY KEY,
+  `id_actividad`    INT        AUTO_INCREMENT PRIMARY KEY,
   `tipo`            ENUM('nota','llamada','reunion','tarea','email') NOT NULL DEFAULT 'nota',
-  `descripcion`     TEXT      NOT NULL,
-  `fecha`           DATETIME  DEFAULT NULL,
+  `descripcion`     TEXT       NOT NULL,
+  `fecha`           DATETIME   DEFAULT NULL,
   `completada`      TINYINT(1) NOT NULL DEFAULT 0,
-  `contacto_id`     INT       DEFAULT NULL,
-  `lead_id`         INT       DEFAULT NULL,
-  `oportunidad_id`  INT       DEFAULT NULL,
-  `creado_por`      INT       NOT NULL,
-  `created_at`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_act_contacto`    FOREIGN KEY (`contacto_id`)    REFERENCES `contactos`(`id_contacto`)       ON DELETE SET NULL,
-  CONSTRAINT `fk_act_lead`        FOREIGN KEY (`lead_id`)        REFERENCES `leads`(`id_lead`)               ON DELETE SET NULL,
+  `contacto_id`     INT        DEFAULT NULL,
+  `lead_id`         INT        DEFAULT NULL,
+  `oportunidad_id`  INT        DEFAULT NULL,
+  `creado_por`      INT        NOT NULL,
+  `created_at`      TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_act_contacto`    FOREIGN KEY (`contacto_id`)    REFERENCES `contactos`(`id_contacto`)        ON DELETE SET NULL,
+  CONSTRAINT `fk_act_lead`        FOREIGN KEY (`lead_id`)        REFERENCES `leads`(`id_lead`)                ON DELETE SET NULL,
   CONSTRAINT `fk_act_oportunidad` FOREIGN KEY (`oportunidad_id`) REFERENCES `oportunidades`(`id_oportunidad`) ON DELETE SET NULL,
-  CONSTRAINT `fk_act_creador`     FOREIGN KEY (`creado_por`)     REFERENCES `usuarios`(`id_usuario`)         ON DELETE RESTRICT
+  CONSTRAINT `fk_act_creador`     FOREIGN KEY (`creado_por`)     REFERENCES `usuarios`(`id_usuario`)          ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─── Auditoría ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `auditoria` (
+  `id_auditoria`  BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  `tabla`         VARCHAR(50)  NOT NULL,
+  `registro_id`   INT          NOT NULL,
+  `accion`        ENUM('crear','editar','eliminar') NOT NULL,
+  `usuario_id`    INT          DEFAULT NULL,
+  `datos_antes`   JSON         DEFAULT NULL,
+  `datos_despues` JSON         DEFAULT NULL,
+  `ip`            VARCHAR(45)  DEFAULT NULL,
+  `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_audit_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id_usuario`) ON DELETE SET NULL,
+  INDEX `idx_audit_entidad` (`tabla`, `registro_id`),
+  INDEX `idx_audit_usuario` (`usuario_id`),
+  INDEX `idx_audit_fecha`   (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

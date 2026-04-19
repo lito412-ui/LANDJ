@@ -1067,6 +1067,37 @@ html, body {
 
 .crm-empty p { margin: 8px 0 0; }
 
+.content-card.proximamente {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    text-align: center;
+    gap: 12px;
+}
+
+.proximamente-icon {
+    font-size: 3rem;
+    color: var(--color-primary, #6366f1);
+    opacity: 0.4;
+    margin-bottom: 8px;
+}
+
+.content-card.proximamente h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary, #1e293b);
+    margin: 0;
+}
+
+.content-card.proximamente p {
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.9rem;
+    margin: 0;
+    max-width: 360px;
+}
+
 .btn-link {
     background: none;
     border: none;

@@ -3,7 +3,9 @@
         <h2 class="section-title">Dominios</h2>
         <p class="section-subtitle">Administra tus dominios y subdominios</p>
     </div>
-    <div class="content-card">
-        <p>Gestión de dominios en desarrollo...</p>
+    <div class="content-card proximamente">
+        <i class="fas fa-globe proximamente-icon"></i>
+        <h3>Próximamente</h3>
+        <p>Esta sección está en desarrollo y estará disponible en una próxima versión.</p>
     </div>
 </section>
