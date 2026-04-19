@@ -3,9 +3,9 @@
 Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-end.
 
 ## Estado actual
-- Avance estimado: `88%`
-- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas, cambio de etapa con confirm. Modal de confirmación con variantes `danger`/`success`/`info`. CRUD de actividades/notas ligadas a entidades. JS dividido en 6 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM (empresa, origen, valor range, fechas, orden/dir con estado en objeto por módulo).
-- Pendiente principal: paginación, permisos en UI.
+- Avance estimado: `100%`
+- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas, cambio de etapa con confirm. Modal de confirmación con variantes `danger`/`success`/`info`. CRUD de actividades/notas ligadas a entidades. JS dividido en 6 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM. Paginación server-side en contactos y leads (`renderPaginacion` compartido en core.js). Manejo de errores unificado: `manejarApiError` en core, todos los `catch` con binding y logging, `monitorizacion.php` con formato estándar `{ok, data}`, `get_user.php` con 401.
+- Pendiente: ninguno del MVP. Fase 03 completa.
 
 ## Checklist de tareas (MVP primero)
 
@@ -113,9 +113,9 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Botón de dirección (asc/desc) con icono reactivo
 - [x] API: validación whitelist de columnas ordenables; fechas validadas con regex; valores numéricos validados antes de bindear
 
-### CRM core (pendiente)
-- [ ] Paginación básica en listados
-- [ ] Manejo de errores unificado y consistente
+### CRM core (completado)
+- [x] Paginación básica en contactos y leads (server-side LIMIT/OFFSET, `renderPaginacion` en core.js, `pagina`/`limite` en `_estado`, reset al cambiar filtros, barra "← 1 2 [3] 4 5 → Mostrando X–Y de Z")
+- [x] Manejo de errores unificado: `manejarApiError(e, msg)` en core (console.error + toast), todos los `catch` con binding, `monitorizacion.php` devuelve `{ok, data}`, `get_user.php` devuelve 401, mensajes de éxito consistentes (`X creado/a`, `X actualizado/a`, `X eliminado/a`) en todos los módulos
 
 ## Checklist de UX (mínimo viable)
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
@@ -123,7 +123,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Vista de perfil con datos reales del usuario autenticado
 - [x] Estados vacíos (`crm-empty`) y mensajes de carga (`crm-loading`) en todos los listados
 - [x] Toast notifications y confirm modal reutilizables en todas las secciones CRM
-- [ ] Permisos reflejados en la UI (botones/acciones según rol en contactos y leads)
+- [x] Permisos reflejados en la UI: secciones admin-only (`users`, `logs`) ocultas en sidebar para rol `usuario`; badge de rol en header; guard en navegación JS; redirección al dashboard si la sección activa es restringida
 
 ## Criterio de "Hecho"
 - El usuario puede: entrar, gestionar contactos, leads y usuarios, mover oportunidades en el pipeline y crear actividades, con permisos correctos y feedback claro.

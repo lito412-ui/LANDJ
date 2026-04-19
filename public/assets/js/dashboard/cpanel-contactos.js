@@ -116,7 +116,7 @@ const Contactos = (() => {
     let editId      = null;
     let buscarTimer = null;
 
-    let _estado = { buscar: '', empresa: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc' };
+    let _estado = { buscar: '', empresa: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc', pagina: 1, limite: 20 };
 
     function _contarFiltrosActivos() {
         return ['empresa', 'desde', 'hasta'].filter(k => _estado[k] !== '').length;
@@ -144,6 +144,7 @@ const Contactos = (() => {
             ?.addEventListener('input', (e) => {
                 clearTimeout(buscarTimer);
                 _estado.buscar = e.target.value.trim();
+                _estado.pagina = 1;
                 buscarTimer = setTimeout(cargar, 400);
             });
 
@@ -157,6 +158,7 @@ const Contactos = (() => {
         const filtroImmediate = (key, id) => {
             document.getElementById(id)?.addEventListener('change', (e) => {
                 _estado[key] = e.target.value;
+                _estado.pagina = 1;
                 _actualizarBadge();
                 cargar();
             });
@@ -165,6 +167,7 @@ const Contactos = (() => {
             document.getElementById(id)?.addEventListener('input', (e) => {
                 clearTimeout(buscarTimer);
                 _estado[key] = e.target.value.trim();
+                _estado.pagina = 1;
                 buscarTimer = setTimeout(() => { _actualizarBadge(); cargar(); }, 400);
             });
         };
@@ -177,6 +180,7 @@ const Contactos = (() => {
         document.getElementById('ct-filtro-dir')?.addEventListener('click', (e) => {
             const btn = e.currentTarget;
             _estado.dir = _estado.dir === 'desc' ? 'asc' : 'desc';
+            _estado.pagina = 1;
             btn.dataset.dir = _estado.dir;
             btn.querySelector('i').className = _estado.dir === 'asc'
                 ? 'fas fa-sort-amount-up' : 'fas fa-sort-amount-down';
@@ -184,7 +188,7 @@ const Contactos = (() => {
         });
 
         document.getElementById('ct-filtros-clear')?.addEventListener('click', () => {
-            _estado = { buscar: _estado.buscar, empresa: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc' };
+            _estado = { buscar: _estado.buscar, empresa: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc', pagina: 1, limite: 20 };
             ['ct-filtro-empresa','ct-filtro-desde','ct-filtro-hasta'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
@@ -201,14 +205,19 @@ const Contactos = (() => {
 
     async function cargar() {
         const params = new URLSearchParams();
-        Object.entries(_estado).forEach(([k, v]) => { if (v !== '') params.set(k, v); });
+        Object.entries(_estado).forEach(([k, v]) => { if (v !== '' && v !== 0) params.set(k, v); });
         const url = '/api/contactos.php' + (params.size ? '?' + params : '');
         try {
             const r = await fetchSeguro(url);
             const d = await r.json();
-            d.ok ? renderTabla(d.data) : mostrarToast(d.error, 'error');
-        } catch {
-            mostrarToast('Error al cargar contactos', 'error');
+            if (d.ok) {
+                renderTabla(d.data);
+                renderPaginacion(d.meta, 'ct-paginacion', (p) => { _estado.pagina = p; cargar(); });
+            } else {
+                mostrarToast(d.error, 'error');
+            }
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar contactos');
         }
     }
 
@@ -276,7 +285,7 @@ const Contactos = (() => {
                 const r = await fetchSeguro(`/api/contactos.php?id=${id}`);
                 const d = await r.json();
                 if (d.ok) rellenarForm(d.data);
-            } catch { mostrarToast('Error al cargar datos', 'error'); return; }
+            } catch (e) { manejarApiError(e, 'Error al cargar datos'); return; }
         }
         panel?.classList.add('active');
         panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -332,8 +341,8 @@ const Contactos = (() => {
             } else {
                 mostrarToast(d.error || 'Error al guardar', 'error');
             }
-        } catch {
-            mostrarToast('Error de conexión', 'error');
+        } catch (e) {
+            manejarApiError(e, 'Error de conexión');
         } finally {
             btn.disabled = false;
         }
@@ -353,8 +362,8 @@ const Contactos = (() => {
                     } else {
                         mostrarToast(d.error || 'Error al eliminar', 'error');
                     }
-                } catch {
-                    mostrarToast('Error de conexión', 'error');
+                } catch (e) {
+                    manejarApiError(e, 'Error de conexión');
                 }
             }
         );
@@ -394,8 +403,8 @@ const Contactos = (() => {
             const d = await r.json();
             if (d.ok) renderDetalle(d.data);
             else mostrarToast(d.error, 'error');
-        } catch {
-            mostrarToast('Error al cargar el contacto', 'error');
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar el contacto');
         }
 
         ActividadesWidget.init({ prefix: 'det', entityType: 'contacto', entityId: id });

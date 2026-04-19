@@ -5,10 +5,10 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `76%`**
+- **Avance estimado actual: `81%`**
   - Fase 01: 100% × 15% = 15
   - Fase 02: 100% × 20% = 20
-  - Fase 03:  88% × 40% = 35.2
+  - Fase 03: 100% × 40% = 40
   - Fase 04:   0% × 15% = 0
   - Fase 05:  60% × 10% = 6
 
@@ -41,7 +41,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Definir búsqueda/filtros (campos y paginación) → [`BUSQUEDA_FILTROS.md`](BUSQUEDA_FILTROS.md)
 - [x] Preparar estrategia de archivos/adjuntos → excluido del MVP; diseño de tabla `adjuntos` + reglas documentadas en FASE_02 para fase posterior
 
-## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 88%)
+## Fase 03 - Implementación y Desarrollo (Peso: 40% | Avance: 100%)
 
 ### Core (completado)
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
@@ -76,9 +76,9 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Búsqueda y filtros avanzados: panel colapsable con estado por módulo, badge de filtros activos, ordenación asc/desc y limpiar
 
 ### CRM (pendiente)
-- [ ] Paginación básica en listados
+- [x] Paginación básica en listados (contactos y leads: server-side LIMIT/OFFSET, renderPaginacion compartido en core.js)
 - [ ] Permisos reflejados en la UI (mostrar/ocultar acciones según rol)
-- [ ] Manejo de errores unificado
+- [x] Manejo de errores unificado (manejarApiError en core, monitorizacion.php formato estándar, get_user.php 401)
 
 ## Fase 03 - UX mínima viable
 - [x] Navegación consistente (menú, estados activos, dropdown de usuario)
@@ -86,7 +86,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Vista de perfil con datos reales del usuario autenticado
 - [x] Estados vacíos (`crm-empty`) y carga (`crm-loading`) en todos los listados CRM
 - [x] Filtros avanzados con panel colapsable y badge de filtros activos
-- [ ] Permisos reflejados en la UI (botones/acciones según rol)
+- [x] Permisos reflejados en la UI (secciones admin-only ocultas, badge de rol, guard en navegación)
 
 ## Fase 04 - Pruebas y Validación (Peso: 15% | Avance: 0%)
 - [ ] Plan de pruebas (funcionales y de regresión)
@@ -99,7 +99,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Preparar entorno (Docker, healthcheck, variables corregidas)
 - [x] Documentar instalación/ejecución (README del proyecto)
 - [x] Documentar arquitectura (modelo de datos + flujos)
-- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs)
+- [x] Actualizar documentación con todos los cambios (estructura, BD, APIs, seguridad, bugs, paginación, errores)
 - [ ] Ejecutar prueba final end-to-end con un caso realista
 - [ ] Tag/versión para entrega
 
@@ -126,7 +126,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [ ] Multilenguaje y personalización básica de interfaz (impacto: medio-bajo | esfuerzo: medio)
 
 ## Siguiente iteración recomendada
-- [ ] Paginación básica (mayor valor de usabilidad pendiente con listados grandes)
-- [ ] Añadir permisos en la UI (mostrar/ocultar botones según rol)
+- [x] Paginación básica (mayor valor de usabilidad pendiente con listados grandes)
+- [x] Añadir permisos en la UI (mostrar/ocultar botones según rol)
 - [ ] Endurecer login (rate limit, intentos fallidos, mensajes no reveladores)
 - [ ] Pruebas manuales de flujos críticos (Fase 04)

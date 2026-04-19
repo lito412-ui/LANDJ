@@ -18,7 +18,11 @@ $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
-function ok($data): void { echo json_encode(['ok' => true, 'data' => $data]); }
+function ok($data, ?array $meta = null): void {
+    $r = ['ok' => true, 'data' => $data];
+    if ($meta !== null) $r['meta'] = $meta;
+    echo json_encode($r);
+}
 function err(string $msg, int $code = 400): void {
     http_response_code($code);
     echo json_encode(['ok' => false, 'error' => $msg]);
@@ -134,12 +138,21 @@ try {
                 $orden = in_array($_GET['orden'] ?? '', $colsPermitidas, true) ? $_GET['orden'] : 'created_at';
                 $dir   = ($_GET['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 
-                $sql = "SELECT * FROM contactos"
-                     . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
-                     . " ORDER BY $orden $dir";
+                $limite = min(max((int) ($_GET['limite'] ?? 20), 1), 100);
+                $pagina = max((int) ($_GET['pagina'] ?? 1), 1);
+                $offset = ($pagina - 1) * $limite;
+
+                $clausulaWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+
+                $stCount = $pdo->prepare("SELECT COUNT(*) FROM contactos$clausulaWhere");
+                $stCount->execute($params);
+                $total   = (int) $stCount->fetchColumn();
+                $paginas = (int) ceil($total / $limite);
+
+                $sql = "SELECT * FROM contactos$clausulaWhere ORDER BY $orden $dir LIMIT ? OFFSET ?";
                 $s = $pdo->prepare($sql);
-                $s->execute($params);
-                ok($s->fetchAll());
+                $s->execute([...$params, $limite, $offset]);
+                ok($s->fetchAll(), compact('total', 'pagina', 'limite', 'paginas'));
             }
             break;
 

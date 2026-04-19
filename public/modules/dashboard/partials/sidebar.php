@@ -115,19 +115,19 @@
             </ul>
         </div>
 
-        <div class="nav-section">
+        <div class="nav-section" data-admin-only>
             <h3 class="nav-section-title">Sistema</h3>
             <ul class="nav-list">
-                <li class="nav-item">
+                <li class="nav-item" data-admin-only>
                     <a href="#users" class="nav-link" data-section="users">
                         <i class="fas fa-users"></i>
                         <span>Gestión de Usuarios</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-admin-only>
                     <a href="#logs" class="nav-link" data-section="logs">
                         <i class="fas fa-file-alt"></i>
-                        <span>Logs del Sistema</span>
+                        <span>Auditoría</span>
                     </a>
                 </li>
             </ul>

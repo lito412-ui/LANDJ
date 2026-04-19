@@ -53,10 +53,10 @@ const ActividadesWidget = (() => {
                 });
                 const d = await r.json();
                 if (!d.ok) { mostrarToast(d.error, 'error'); return; }
-                mostrarToast(editActId ? 'Actividad actualizada' : 'Actividad registrada', 'success');
+                mostrarToast(editActId ? 'Actividad actualizada' : 'Actividad creada', 'success');
                 cerrarForm();
                 cargar();
-            } catch { mostrarToast('Error al guardar', 'error'); }
+            } catch (e) { manejarApiError(e, 'Error al guardar'); }
             finally { if (guardarBtn) guardarBtn.disabled = false; }
         }
 
@@ -68,7 +68,7 @@ const ActividadesWidget = (() => {
                     if (!d.ok) { mostrarToast(d.error, 'error'); return; }
                     mostrarToast('Actividad eliminada', 'success');
                     cargar();
-                } catch { mostrarToast('Error al eliminar', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error al eliminar'); }
             });
         }
 
@@ -106,7 +106,8 @@ const ActividadesWidget = (() => {
                 listaEl.querySelectorAll('.act-del-btn').forEach(btn => {
                     btn.onclick = () => eliminar(parseInt(btn.dataset.id));
                 });
-            } catch {
+            } catch (e) {
+                console.error('[API]', 'Error al cargar actividades', e);
                 listaEl.innerHTML = '<li class="det-act-vacio">No disponible</li>';
             }
         }

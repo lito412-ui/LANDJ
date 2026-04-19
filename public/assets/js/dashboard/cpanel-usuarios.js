@@ -59,7 +59,7 @@ const Usuarios = (() => {
             if (rol) lista = lista.filter(u => u.rol === rol);
 
             renderTabla(lista);
-        } catch { mostrarToast('Error al cargar usuarios', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al cargar usuarios'); }
     }
 
     function renderTabla(lista) {
@@ -143,7 +143,7 @@ const Usuarios = (() => {
             setValue('uf-email',    u.email ?? '');
             setValue('uf-rol',      u.rol);
             setValue('uf-password', '');
-        } catch { mostrarToast('Error al cargar usuario', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al cargar usuario'); }
     }
 
     function cerrarForm() {
@@ -178,7 +178,7 @@ const Usuarios = (() => {
             mostrarToast(editId ? 'Usuario actualizado' : 'Usuario creado', 'success');
             cerrarForm();
             cargar();
-        } catch { mostrarToast('Error al guardar', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al guardar'); }
     }
 
     function eliminar(id, nombre) {
@@ -192,7 +192,7 @@ const Usuarios = (() => {
                     if (!d.ok) { mostrarToast(d.error, 'error'); cargar(); return; }
                     mostrarToast('Usuario eliminado', 'success');
                     cargar();
-                } catch { mostrarToast('Error al eliminar', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error al eliminar'); }
             }
         );
     }

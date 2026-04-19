@@ -9,13 +9,14 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 - **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; JS dividido en 6 módulos independientes por dominio. Incluye: Contactos, Leads, Pipeline de Oportunidades, Gestión de usuarios, Perfil, Auditoría, Monitorización.
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro) vía `GET /api/get_user.php`.
 - **Monitorización**: `GET /api/monitorizacion.php` devuelve CPU, RAM y disco reales.
-- **CRM — Contactos**: CRUD completo con búsqueda debounced, filtros avanzados (empresa, fechas, orden), detalle lateral con actividades, validaciones JS + PHP.
-- **CRM — Leads**: CRUD completo con búsqueda, filtros avanzados (estado, origen, fechas, orden), panel de detalle con actividades y conversión de lead a contacto (transacción atómica).
+- **CRM — Contactos**: CRUD completo con búsqueda debounced, filtros avanzados (empresa, fechas, orden), paginación server-side, detalle lateral con actividades, validaciones JS + PHP.
+- **CRM — Leads**: CRUD completo con búsqueda, filtros avanzados (estado, origen, fechas, orden), paginación server-side, panel de detalle con actividades y conversión de lead a contacto (transacción atómica).
 - **CRM — Pipeline de Oportunidades**: kanban board con 5 etapas, cambio de etapa con confirm, filtros avanzados (valor range, fecha cierre, orden), detalle lateral con actividades.
 - **CRM — Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
 - **Gestión de usuarios** (solo admin): CRUD de cuentas con roles, badges, protección anti-autoborrado y protección del último administrador.
 - **Auditoría**: log de cambios en todas las entidades, accesible solo para administradores.
 - **Seguridad**: CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`), Content Security Policy, `X-Frame-Options`, `Referrer-Policy`.
+- **Manejo de errores**: `manejarApiError` compartido en core.js (console.error + toast unificado), todos los endpoints devuelven `{ok, data/error}` con código HTTP correcto.
 - **Base de datos**: esquema en `database/init.sql` (6 tablas con FKs); datos de prueba vía sistema de migraciones (`database/migrations/`).
 
 ## Stack

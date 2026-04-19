@@ -18,7 +18,7 @@ const Leads = (() => {
         return `<span class="lead-badge ${e.cls}">${e.label}</span>`;
     }
 
-    let _estado = { buscar: '', estado: '', origen: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc' };
+    let _estado = { buscar: '', estado: '', origen: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc', pagina: 1, limite: 20 };
 
     function _contarFiltrosActivos() {
         return ['origen', 'desde', 'hasta'].filter(k => _estado[k] !== '').length;
@@ -45,11 +45,12 @@ const Leads = (() => {
             ?.addEventListener('input', (e) => {
                 clearTimeout(buscarTimer);
                 _estado.buscar = e.target.value.trim();
+                _estado.pagina = 1;
                 buscarTimer = setTimeout(cargar, 400);
             });
 
         document.getElementById('leads-filtro-estado')
-            ?.addEventListener('change', (e) => { _estado.estado = e.target.value; cargar(); });
+            ?.addEventListener('change', (e) => { _estado.estado = e.target.value; _estado.pagina = 1; cargar(); });
 
         // Toggle filtros avanzados
         document.getElementById('ld-filtros-toggle')
@@ -61,6 +62,7 @@ const Leads = (() => {
         const filtroImmediate = (key, id) => {
             document.getElementById(id)?.addEventListener('change', (e) => {
                 _estado[key] = e.target.value;
+                _estado.pagina = 1;
                 _actualizarBadge();
                 cargar();
             });
@@ -69,6 +71,7 @@ const Leads = (() => {
             document.getElementById(id)?.addEventListener('input', (e) => {
                 clearTimeout(buscarTimer);
                 _estado[key] = e.target.value.trim();
+                _estado.pagina = 1;
                 buscarTimer = setTimeout(() => { _actualizarBadge(); cargar(); }, 400);
             });
         };
@@ -81,6 +84,7 @@ const Leads = (() => {
         document.getElementById('ld-filtro-dir')?.addEventListener('click', (e) => {
             const btn = e.currentTarget;
             _estado.dir = _estado.dir === 'desc' ? 'asc' : 'desc';
+            _estado.pagina = 1;
             btn.dataset.dir = _estado.dir;
             btn.querySelector('i').className = _estado.dir === 'asc'
                 ? 'fas fa-sort-amount-up' : 'fas fa-sort-amount-down';
@@ -88,7 +92,7 @@ const Leads = (() => {
         });
 
         document.getElementById('ld-filtros-clear')?.addEventListener('click', () => {
-            _estado = { buscar: _estado.buscar, estado: _estado.estado, origen: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc' };
+            _estado = { buscar: _estado.buscar, estado: _estado.estado, origen: '', desde: '', hasta: '', orden: 'created_at', dir: 'desc', pagina: 1, limite: 20 };
             ['ld-filtro-origen','ld-filtro-desde','ld-filtro-hasta'].forEach(id => {
                 const el = document.getElementById(id); if (el) el.value = '';
             });
@@ -180,14 +184,19 @@ const Leads = (() => {
 
     async function cargar() {
         const params = new URLSearchParams();
-        Object.entries(_estado).forEach(([k, v]) => { if (v !== '') params.set(k, v); });
+        Object.entries(_estado).forEach(([k, v]) => { if (v !== '' && v !== 0) params.set(k, v); });
         const url = '/api/leads.php' + (params.size ? '?' + params : '');
         try {
             const r = await fetchSeguro(url);
             const d = await r.json();
-            d.ok ? renderTabla(d.data) : mostrarToast(d.error, 'error');
-        } catch {
-            mostrarToast('Error al cargar leads', 'error');
+            if (d.ok) {
+                renderTabla(d.data);
+                renderPaginacion(d.meta, 'ld-paginacion', (p) => { _estado.pagina = p; cargar(); });
+            } else {
+                mostrarToast(d.error, 'error');
+            }
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar leads');
         }
     }
 
@@ -248,7 +257,7 @@ const Leads = (() => {
                 const r = await fetchSeguro(`/api/leads.php?id=${id}`);
                 const d = await r.json();
                 if (d.ok) rellenarForm(d.data);
-            } catch { mostrarToast('Error al cargar datos', 'error'); return; }
+            } catch (e) { manejarApiError(e, 'Error al cargar datos'); return; }
         }
         panel?.classList.add('active');
         panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -305,8 +314,8 @@ const Leads = (() => {
             } else {
                 mostrarToast(d.error || 'Error al guardar', 'error');
             }
-        } catch {
-            mostrarToast('Error de conexión', 'error');
+        } catch (e) {
+            manejarApiError(e, 'Error de conexión');
         } finally {
             btn.disabled = false;
         }
@@ -320,7 +329,7 @@ const Leads = (() => {
                     const d = await r.json();
                     if (d.ok) { cargar(); mostrarToast('Lead eliminado', 'success'); }
                     else { mostrarToast(d.error || 'Error al eliminar', 'error'); cargar(); }
-                } catch { mostrarToast('Error de conexión', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error de conexión'); }
             }
         );
     }
@@ -346,7 +355,7 @@ const Leads = (() => {
             const d = await r.json();
             if (d.ok) renderDetalle(d.data);
             else mostrarToast(d.error, 'error');
-        } catch { mostrarToast('Error al cargar el lead', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al cargar el lead'); }
 
         ActividadesWidget.init({ prefix: 'ldet', entityType: 'lead', entityId: id });
     }
@@ -397,7 +406,7 @@ const Leads = (() => {
                     mostrarToast('Lead convertido a contacto correctamente', 'success');
                     cerrarDetalle();
                     cargar();
-                } catch { mostrarToast('Error al convertir el lead', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error al convertir el lead'); }
             },
             'Convertir',
             'success'

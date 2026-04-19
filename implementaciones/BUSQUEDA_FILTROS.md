@@ -273,8 +273,8 @@ La paginación se renderiza como una barra debajo de la tabla:
 
 | Módulo | Búsqueda textual | Filtros | Ordenación | Paginación |
 |--------|:---:|:---:|:---:|:---:|
-| Contactos | ✅ implementado | ✅ empresa, desde, hasta | ✅ nombre/empresa/created_at + dir | ❌ pendiente |
-| Leads | ✅ implementado | ✅ estado, origen, desde, hasta | ✅ nombre/estado/created_at + dir | ❌ pendiente |
+| Contactos | ✅ implementado | ✅ empresa, desde, hasta | ✅ nombre/empresa/created_at + dir | ✅ implementado |
+| Leads | ✅ implementado | ✅ estado, origen, desde, hasta | ✅ nombre/estado/created_at + dir | ✅ implementado |
 | Oportunidades | ✅ implementado (+ descripción) | ✅ etapa, valor_min/max, cierre_desde/hasta | ✅ titulo/valor/etapa/fecha_cierre/created_at + dir | ❌ pendiente |
 | Actividades | ✅ por entidad_id | ❌ pendiente | ❌ pendiente | ❌ pendiente |
 | Auditoría | ✅ implementado | ✅ implementado | — | ✅ (offset manual) |

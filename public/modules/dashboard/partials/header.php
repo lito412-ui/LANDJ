@@ -9,6 +9,7 @@
                 <button class="user-menu-btn" id="user-menu-btn">
                     <i class="fas fa-user-circle"></i>
                     <span id="header-username">Usuario</span>
+                    <span id="header-rol-badge" class="rol-badge" style="display:none"></span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="user-dropdown" id="user-dropdown">

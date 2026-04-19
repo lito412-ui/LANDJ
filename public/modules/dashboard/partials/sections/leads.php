@@ -146,6 +146,7 @@
             </table>
         </div>
     </div>
+    <div class="crm-paginacion" id="ld-paginacion"></div>
 
     <!-- Panel detalle -->
     <div class="detalle-overlay" id="lead-detalle-overlay" style="display:none">

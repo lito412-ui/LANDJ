@@ -37,6 +37,8 @@ async function checkAuth() {
         const userName = document.getElementById('user-name');
         if (headerUsername) headerUsername.textContent = data.nombre;
         if (userName) userName.textContent = data.nombre;
+
+        aplicarPermisosUI(data.rol);
     } catch (error) {
         console.error('Error validando sesion:', error.message);
         window.location.href = '/modules/site/login.html';
@@ -65,21 +67,22 @@ function mostrarPerfil(data) {
 async function actualizarMetricas() {
     try {
         const r = await fetchSeguro('/api/monitorizacion.php?t=' + Date.now());
-        if (!r.ok) throw new Error('Error de conexión con el servidor');
+        if (!r.ok) return;
         const d = await r.json();
-        if (d.error) return;
+        if (!d.ok) return;
 
-        setMetrica('disco-texto', 'disco-barra', d.disco);
+        const m = d.data;
+        setMetrica('disco-texto', 'disco-barra', m.disco);
 
-        const ramPct = d.ram_total > 0
-            ? Math.min((d.ram_usada / d.ram_total) * 100, 100).toFixed(1)
+        const ramPct = m.ram_total > 0
+            ? Math.min((m.ram_usada / m.ram_total) * 100, 100).toFixed(1)
             : '0.0';
         setMetrica('ram-texto', 'ram-barra', ramPct);
 
-        setMetrica('cpu-texto', 'cpu-barra', d.cpu);
+        setMetrica('cpu-texto', 'cpu-barra', m.cpu);
 
     } catch (e) {
-        console.error('Error en actualización:', e.message);
+        console.error('[monitorizacion]', e);
     }
 }
 
@@ -97,6 +100,7 @@ function initSidebarNavigation() {
             const sectionId = link.getAttribute('data-section');
             if (!sectionId) return;
             e.preventDefault();
+            if (ADMIN_SECTIONS.includes(sectionId) && perfilData?.rol !== 'administrador') return;
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             link.parentElement.classList.add('active');
@@ -158,4 +162,83 @@ function mostrarConfirm(titulo, texto, onConfirm, btnLabel = 'Eliminar', variant
     overlay.querySelector('.confirm-ok').onclick     = () => { overlay.remove(); onConfirm(); };
     overlay.querySelector('.confirm-cancel').onclick = () => overlay.remove();
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+// ─── Permisos UI ─────────────────────────────────────────────────────────────
+
+const ADMIN_SECTIONS = ['users', 'logs'];
+
+function aplicarPermisosUI(rol) {
+    const esAdmin = rol === 'administrador';
+
+    // Mostrar/ocultar elementos marcados con data-admin-only
+    document.querySelectorAll('[data-admin-only]').forEach(el => {
+        el.style.display = esAdmin ? '' : 'none';
+    });
+
+    // Badge de rol en el header
+    const rolBadge = document.getElementById('header-rol-badge');
+    if (rolBadge) {
+        rolBadge.textContent  = esAdmin ? 'Admin' : 'Usuario';
+        rolBadge.className    = 'rol-badge rol-badge--' + (esAdmin ? 'admin' : 'usuario');
+        rolBadge.style.display = '';
+    }
+
+    // Si la sección activa es de admin y el usuario no lo es, volver al dashboard
+    if (!esAdmin) {
+        const activo = document.querySelector('.content-section.active');
+        if (activo && ADMIN_SECTIONS.includes(activo.id)) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('dashboard')?.classList.add('active');
+            document.querySelector('[data-section="dashboard"]')?.parentElement.classList.add('active');
+        }
+    }
+}
+
+// ─── Manejo de errores unificado ──────────────────────────────────────────────
+
+function manejarApiError(e, msg) {
+    console.error('[API]', msg, e);
+    mostrarToast(msg, 'error');
+}
+
+// ─── Paginación ───────────────────────────────────────────────────────────────
+
+function renderPaginacion(meta, containerId, onPageChange) {
+    const cont = document.getElementById(containerId);
+    if (!cont) return;
+    if (!meta || meta.paginas <= 1) { cont.innerHTML = ''; return; }
+
+    const { total, pagina, limite, paginas } = meta;
+    const desde = (pagina - 1) * limite + 1;
+    const hasta  = Math.min(pagina * limite, total);
+
+    let start = Math.max(1, pagina - 2);
+    let end   = Math.min(paginas, start + 4);
+    if (end - start < 4) start = Math.max(1, end - 4);
+
+    let pagesHtml = '';
+    if (start > 1) pagesHtml += `<button class="pag-btn" data-pag="1">1</button>`;
+    if (start > 2) pagesHtml += `<span class="pag-sep">…</span>`;
+    for (let i = start; i <= end; i++) {
+        pagesHtml += `<button class="pag-btn${i === pagina ? ' active' : ''}" data-pag="${i}">${i}</button>`;
+    }
+    if (end < paginas - 1) pagesHtml += `<span class="pag-sep">…</span>`;
+    if (end < paginas) pagesHtml += `<button class="pag-btn" data-pag="${paginas}">${paginas}</button>`;
+
+    cont.innerHTML = `
+        <div class="pag-info">Mostrando ${desde}–${hasta} de ${total}</div>
+        <div class="pag-controles">
+            <button class="pag-btn pag-prev" data-pag="${pagina - 1}" ${pagina <= 1 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            ${pagesHtml}
+            <button class="pag-btn pag-next" data-pag="${pagina + 1}" ${pagina >= paginas ? 'disabled' : ''}>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>`;
+
+    cont.querySelectorAll('.pag-btn:not([disabled])').forEach(btn =>
+        btn.addEventListener('click', () => onPageChange(parseInt(btn.dataset.pag))));
 }

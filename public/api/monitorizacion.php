@@ -6,8 +6,14 @@ header("Pragma: no-cache");
 header("Expires: 0");
 header('Content-Type: application/json');
 
+function ok(array $data): void { echo json_encode(['ok' => true, 'data' => $data]); }
+function err(string $msg, int $code = 400): void {
+    http_response_code($code);
+    echo json_encode(['ok' => false, 'error' => $msg]);
+}
+
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['error' => 'No autorizado']);
+    err('No autorizado', 401);
     exit;
 }
 
@@ -85,8 +91,7 @@ function get_ram_info() {
 $cpu = get_cpu_pct();
 $ram = get_ram_info();
 
-echo json_encode([
-    'status'    => 'success',
+ok([
     'disco'     => $disco_pct,
     'cpu'       => $cpu,
     'ram_usada' => $ram['usada'],

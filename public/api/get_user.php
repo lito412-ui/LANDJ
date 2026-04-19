@@ -4,6 +4,7 @@ require_once __DIR__ . '/../config/seguridad.php';
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['nombre'])) {
+    http_response_code(401);
     echo json_encode(['logged' => false]);
     exit;
 }

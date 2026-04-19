@@ -113,7 +113,7 @@ const Oportunidades = (() => {
             const r = await fetchSeguro(url);
             const d = await r.json();
             d.ok ? renderBoard(d.data) : mostrarToast(d.error, 'error');
-        } catch { mostrarToast('Error al cargar oportunidades', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al cargar oportunidades'); }
     }
 
     function renderBoard(lista) {
@@ -159,7 +159,7 @@ const Oportunidades = (() => {
                 const r = await fetchSeguro(`/api/oportunidades.php?id=${id}`);
                 const d = await r.json();
                 if (d.ok) rellenarForm(d.data);
-            } catch { mostrarToast('Error al cargar datos', 'error'); return; }
+            } catch (e) { manejarApiError(e, 'Error al cargar datos'); return; }
         }
         panel?.classList.add('active');
         panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -217,7 +217,7 @@ const Oportunidades = (() => {
             } else {
                 mostrarToast(d.error || 'Error al guardar', 'error');
             }
-        } catch { mostrarToast('Error de conexión', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error de conexión'); }
         finally { if (btn) btn.disabled = false; }
     }
 
@@ -240,7 +240,7 @@ const Oportunidades = (() => {
             const d = await r.json();
             if (d.ok) renderDetalle(d.data);
             else mostrarToast(d.error, 'error');
-        } catch { mostrarToast('Error al cargar la oportunidad', 'error'); }
+        } catch (e) { manejarApiError(e, 'Error al cargar la oportunidad'); }
 
         ActividadesWidget.init({ prefix: 'odet', entityType: 'oportunidad', entityId: id });
     }
@@ -301,7 +301,7 @@ const Oportunidades = (() => {
                     mostrarToast(`Movida a ${ETAPAS[etapa]?.label ?? etapa}`, 'success');
                     renderDetalle(d.data);
                     cargar();
-                } catch { mostrarToast('Error al cambiar etapa', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error al cambiar etapa'); }
             },
             'Mover',
             'info'
@@ -319,7 +319,7 @@ const Oportunidades = (() => {
                     if (!d.ok) { mostrarToast(d.error, 'error'); cargar(); return; }
                     mostrarToast('Oportunidad eliminada', 'success');
                     cargar();
-                } catch { mostrarToast('Error al eliminar', 'error'); }
+                } catch (e) { manejarApiError(e, 'Error al eliminar'); }
             }
         );
     }
