@@ -37,12 +37,10 @@ El directorio servido por Nginx es `public/` → `/usr/share/nginx/html/public` 
 ```text
 LANDJ/
 ├── database/
-│   ├── init.sql                   # Esquema completo: 6 tablas (auditoria + 5 del CRM)
+│   ├── init.sql                   # Esquema completo: 6 tablas en orden correcto de FKs
 │   ├── migrate.php                # Runner de migraciones (crea _migraciones, aplica .sql y .php)
 │   └── migrations/
-│       ├── 001_auditoria.sql         # CREATE TABLE auditoria (idempotente)
-│       ├── 002_leads_contacto_id.php # Añade columna contacto_id + FK a leads (idempotente)
-│       ├── 002_leads_contacto_id.sql # No-op (placeholder para el runner)
+│       ├── 002_leads_contacto_id.php # Backward-compat: añade contacto_id + FK a leads (idempotente)
 │       ├── 003_seed_usuarios.php     # Seed: 1 admin + 3 usuarios (Argon2id)
 │       └── 004_seed_crm.sql          # Seed: contactos, leads, oportunidades, actividades
 ├── docker/
@@ -98,16 +96,18 @@ LANDJ/
 
 | Tabla | Descripción | Relaciones |
 |-------|-------------|------------|
-| `auditoria` | Log de cambios: tabla, registro, acción, usuario, JSON antes/después | → `usuarios` (SET NULL) |
 | `usuarios` | Cuentas con rol (`usuario`/`administrador`) y hash Argon2id | — |
 | `contactos` | Clientes/contactos del CRM | → `usuarios` |
 | `leads` | Prospectos con estado y origen | → `usuarios`, → `contactos` |
 | `oportunidades` | Negociaciones por etapas | → `contactos`, `leads`, `usuarios` |
 | `actividades` | Notas/tareas/llamadas ligadas a entidades | → `contactos`, `leads`, `oportunidades` |
+| `auditoria` | Log de cambios: tabla, registro, acción, usuario, JSON antes/después | → `usuarios` (SET NULL) |
+
+> El orden de la tabla refleja el orden de creación en `init.sql`, garantizando que todas las FKs referencian tablas ya existentes.
 
 ## Usuarios de prueba
 
-Definidos en `database/migrations/002_seed_usuarios.php`. Solo para entornos locales.
+Definidos en `database/migrations/003_seed_usuarios.php`. Solo para entornos locales.
 
 | Usuario | Contraseña | Rol |
 |---------|-----------|-----|
@@ -121,7 +121,16 @@ Definidos en `database/migrations/002_seed_usuarios.php`. Solo para entornos loc
 ## Requisitos previos
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución.
-- Puertos libres: **91** (app), **3307** (MySQL), **8082** (phpMyAdmin), **8080** (cAdvisor).
+- Puertos libres por defecto: **91** (app), **3307** (MySQL), **8082** (phpMyAdmin), **8080** (cAdvisor).
+
+Si algún puerto está ocupado en tu máquina, edita `.env` antes de arrancar:
+
+```env
+PORT_WEB=91
+PORT_DB=3307
+PORT_PMA=8082
+PORT_CADVISOR=8080
+```
 
 ## Cómo arrancar el proyecto
 
@@ -129,7 +138,7 @@ Definidos en `database/migrations/002_seed_usuarios.php`. Solo para entornos loc
 docker compose up -d --build
 ```
 
-Al arrancar, el servicio `migrate` ejecuta automáticamente las migraciones pendientes (crea la tabla `auditoria` e inserta los datos de prueba). Se puede relanzar manualmente:
+Al arrancar, el servicio `migrate` ejecuta automáticamente las migraciones pendientes e inserta los datos de prueba. Se puede relanzar manualmente:
 
 ```bash
 docker compose run --rm migrate
@@ -151,7 +160,7 @@ docker compose ps
 | phpMyAdmin | http://localhost:8082 |
 | cAdvisor | http://localhost:8080 |
 
-MySQL expuesto en el host: puerto **3307**.
+MySQL expuesto en el host: puerto **3307** (configurable en `.env` con `PORT_DB`).
 
 ### Parar el entorno
 
