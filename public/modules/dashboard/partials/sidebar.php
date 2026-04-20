@@ -58,13 +58,13 @@
                         <span>Cuentas FTP</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-admin-only>
                     <a href="#databases" class="nav-link" data-section="databases">
                         <i class="fas fa-database"></i>
                         <span>Bases de Datos MySQL</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" data-admin-only>
                     <a href="#backups" class="nav-link" data-section="backups">
                         <i class="fas fa-shield-alt"></i>
                         <span>Copias de Seguridad</span>

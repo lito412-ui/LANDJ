@@ -108,12 +108,14 @@ function initSidebarNavigation() {
             document.getElementById('user-dropdown')?.classList.remove('show');
 
             if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
+            if (sectionId === 'statistics')    Estadisticas.init();
             if (sectionId === 'contactos')     Contactos.init();
             if (sectionId === 'leads')         Leads.init();
             if (sectionId === 'users'        && typeof Usuarios   !== 'undefined') Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
             if (sectionId === 'logs'         && typeof Auditoria  !== 'undefined') Auditoria.init();
             if (sectionId === 'databases'    && typeof Databases  !== 'undefined') Databases.init();
+            if (sectionId === 'backups'      && typeof Backups    !== 'undefined') Backups.init();
         });
     });
 }
@@ -168,7 +170,7 @@ function mostrarConfirm(titulo, texto, onConfirm, btnLabel = 'Eliminar', variant
 
 // ─── Permisos UI ─────────────────────────────────────────────────────────────
 
-const ADMIN_SECTIONS = ['users', 'logs'];
+const ADMIN_SECTIONS = ['users', 'logs', 'databases', 'backups'];
 
 function aplicarPermisosUI(rol) {
     const esAdmin = rol === 'administrador';

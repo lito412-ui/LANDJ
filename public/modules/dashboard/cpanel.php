@@ -42,10 +42,12 @@ csrfGenerar();
 <script src="/assets/js/dashboard/cpanel-contactos.js"></script>
 <script src="/assets/js/dashboard/cpanel-leads.js"></script>
 <script src="/assets/js/dashboard/cpanel-oportunidades.js"></script>
+<script src="/assets/js/dashboard/cpanel-estadisticas.js"></script>
 <?php if ($_SESSION['rol'] === 'administrador'): ?>
 <script src="/assets/js/dashboard/cpanel-usuarios.js"></script>
 <script src="/assets/js/dashboard/cpanel-auditoria.js"></script>
 <script src="/assets/js/dashboard/cpanel-databases.js"></script>
+<script src="/assets/js/dashboard/cpanel-backups.js"></script>
 <?php endif; ?>
 </body>
 </html>
