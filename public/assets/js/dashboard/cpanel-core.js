@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(actualizarMetricas, 3000);
     initSidebarNavigation();
     initUserMenu();
+    initThemeToggle();
+    initQuickActions();
 });
 
 let perfilData = null;
@@ -39,6 +41,7 @@ async function checkAuth() {
         if (userName) userName.textContent = data.nombre;
 
         aplicarPermisosUI(data.rol);
+        cargarActividadReciente();
     } catch (error) {
         console.error('Error validando sesion:', error.message);
         window.location.href = '/modules/site/login.html';
@@ -108,11 +111,13 @@ function initSidebarNavigation() {
             document.getElementById('user-dropdown')?.classList.remove('show');
 
             if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
+            if (sectionId === 'configuracion') Configuracion.init();
             if (sectionId === 'statistics')    Estadisticas.init();
             if (sectionId === 'contactos')     Contactos.init();
             if (sectionId === 'leads')         Leads.init();
             if (sectionId === 'users'        && typeof Usuarios   !== 'undefined') Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
+            if (sectionId === 'email')        Email.init();
             if (sectionId === 'domains')      Dominios.init();
             if (sectionId === 'logs'         && typeof Auditoria  !== 'undefined') Auditoria.init();
             if (sectionId === 'databases'    && typeof Databases  !== 'undefined') Databases.init();
@@ -128,6 +133,29 @@ function initUserMenu() {
         btn.onclick = (e) => { e.stopPropagation(); menu.classList.toggle('show'); };
         window.onclick = () => menu.classList.remove('show');
     }
+}
+
+function initThemeToggle() {
+    const btn         = document.getElementById('theme-toggle-btn');
+    const STORAGE_KEY = 'theme';
+    const temaGuardado = localStorage.getItem(STORAGE_KEY) ?? 'light';
+
+    _aplicarTema(temaGuardado, btn);
+
+    btn?.addEventListener('click', () => {
+        const oscuro = document.documentElement.dataset.theme === 'dark';
+        const nuevo  = oscuro ? 'light' : 'dark';
+        _aplicarTema(nuevo, btn);
+        localStorage.setItem(STORAGE_KEY, nuevo);
+    });
+}
+
+function _aplicarTema(tema, btn) {
+    document.documentElement.dataset.theme = tema;
+    if (!btn) return;
+    const oscuro = tema === 'dark';
+    btn.querySelector('i').className = oscuro ? 'fas fa-sun' : 'fas fa-moon';
+    btn.title = oscuro ? 'Tema claro' : 'Tema oscuro';
 }
 
 // ─── Utilidades globales ──────────────────────────────────────────────────────
@@ -246,4 +274,104 @@ function renderPaginacion(meta, containerId, onPageChange) {
 
     cont.querySelectorAll('.pag-btn:not([disabled])').forEach(btn =>
         btn.addEventListener('click', () => onPageChange(parseInt(btn.dataset.pag))));
+}
+
+// ─── Actividad Reciente ───────────────────────────────────────────────────────
+
+const _ACTIVIDAD_ICONOS = {
+    success: 'fa-check',
+    info:    'fa-pencil-alt',
+    danger:  'fa-trash',
+};
+
+async function cargarActividadReciente() {
+    try {
+        const r = await fetchSeguro('/api/actividad_reciente.php?t=' + Date.now());
+        const d = await r.json();
+        if (!d.ok) return;
+
+        const lista = document.getElementById('actividad-lista');
+        if (!lista) return;
+
+        if (!d.data.length) {
+            lista.innerHTML = `
+                <div class="activity-item">
+                    <div class="activity-icon info"><i class="fas fa-inbox"></i></div>
+                    <div class="activity-content">
+                        <p class="activity-text">Sin actividad registrada</p>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        lista.innerHTML = d.data.map(a => {
+            const ico = _ACTIVIDAD_ICONOS[a.tipo] ?? 'fa-circle';
+            return `
+                <div class="activity-item">
+                    <div class="activity-icon ${a.tipo}"><i class="fas ${ico}"></i></div>
+                    <div class="activity-content">
+                        <p class="activity-text">${a.texto}</p>
+                        <span class="activity-time">${a.tiempo} · ${a.usuario}</span>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch (_) { /* silencio — no crítico */ }
+}
+
+// ─── Navegación programática ──────────────────────────────────────────────────
+
+function navegarA(sectionId) {
+    if (ADMIN_SECTIONS.includes(sectionId) && perfilData?.rol !== 'administrador') return;
+
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+    const link = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
+    if (link) link.parentElement.classList.add('active');
+    document.getElementById(sectionId)?.classList.add('active');
+
+    if (sectionId === 'configuracion') Configuracion.init();
+    if (sectionId === 'statistics')  Estadisticas.init();
+    if (sectionId === 'contactos')   Contactos.init();
+    if (sectionId === 'leads')       Leads.init();
+    if (sectionId === 'oportunidades') Oportunidades.init();
+    if (sectionId === 'email')       Email.init();
+    if (sectionId === 'domains')     Dominios.init();
+    if (sectionId === 'users'      && typeof Usuarios  !== 'undefined') Usuarios.init();
+    if (sectionId === 'logs'       && typeof Auditoria !== 'undefined') Auditoria.init();
+    if (sectionId === 'databases'  && typeof Databases !== 'undefined') Databases.init();
+    if (sectionId === 'backups'    && typeof Backups   !== 'undefined') Backups.init();
+}
+
+// ─── Acciones rápidas del dashboard ──────────────────────────────────────────
+
+function initQuickActions() {
+    document.querySelectorAll('.quick-action-btn[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => manejarAccionRapida(btn.dataset.action));
+    });
+}
+
+function manejarAccionRapida(action) {
+    switch (action) {
+        case 'backup':
+            if (typeof Backups !== 'undefined') {
+                Backups.confirmarCrear();
+            } else {
+                mostrarToast('Solo los administradores pueden crear backups', 'error');
+            }
+            break;
+
+        case 'create-email':
+            navegarA('email');
+            setTimeout(() => document.getElementById('email-nuevo-btn')?.click(), 50);
+            break;
+
+        case 'create-ftp':
+            navegarA('ftp');
+            break;
+
+        case 'install-ssl':
+            navegarA('ssl');
+            break;
+    }
 }

@@ -71,26 +71,11 @@
 
     <div class="recent-activity">
         <h3 class="activity-title">Actividad Reciente</h3>
-        <div class="activity-list">
+        <div class="activity-list" id="actividad-lista">
             <div class="activity-item">
-                <div class="activity-icon success"><i class="fas fa-check"></i></div>
+                <div class="activity-icon info"><i class="fas fa-spinner fa-spin"></i></div>
                 <div class="activity-content">
-                    <p class="activity-text">Certificado SSL instalado para ejemplo.com</p>
-                    <span class="activity-time">Hace 2 horas</span>
-                </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon info"><i class="fas fa-info"></i></div>
-                <div class="activity-content">
-                    <p class="activity-text">Nueva cuenta FTP creada: usuario_ftp</p>
-                    <span class="activity-time">Hace 4 horas</span>
-                </div>
-            </div>
-            <div class="activity-item">
-                <div class="activity-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="activity-content">
-                    <p class="activity-text">Backup programado completado</p>
-                    <span class="activity-time">Hace 1 día</span>
+                    <p class="activity-text">Cargando actividad...</p>
                 </div>
             </div>
         </div>

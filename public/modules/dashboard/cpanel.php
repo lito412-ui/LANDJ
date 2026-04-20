@@ -37,18 +37,21 @@ csrfGenerar();
 
         <?php include __DIR__ . '/partials/sections/sistema/users.php'; ?>
         <?php include __DIR__ . '/partials/sections/sistema/logs.php'; ?>
+        <?php include __DIR__ . '/partials/sections/sistema/configuracion.php'; ?>
 
         <?php include __DIR__ . '/partials/sections/perfil.php'; ?>
     </main>
 
 </div>
 
+<script src="/assets/js/dashboard/cpanel-configuracion.js"></script>
 <script src="/assets/js/dashboard/cpanel-core.js"></script>
 <script src="/assets/js/dashboard/cpanel-actividades.js"></script>
 <script src="/assets/js/dashboard/cpanel-contactos.js"></script>
 <script src="/assets/js/dashboard/cpanel-leads.js"></script>
 <script src="/assets/js/dashboard/cpanel-oportunidades.js"></script>
 <script src="/assets/js/dashboard/cpanel-estadisticas.js"></script>
+<script src="/assets/js/dashboard/cpanel-email.js"></script>
 <script src="/assets/js/dashboard/cpanel-dominios.js"></script>
 <?php if ($_SESSION['rol'] === 'administrador'): ?>
 <script src="/assets/js/dashboard/cpanel-usuarios.js"></script>

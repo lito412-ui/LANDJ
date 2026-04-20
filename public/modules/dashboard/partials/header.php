@@ -5,6 +5,9 @@
             <span class="welcome-text">Bienvenido, <span id="user-name">Usuario</span></span>
         </div>
         <div class="header-right">
+            <button class="theme-toggle-btn" id="theme-toggle-btn" title="Cambiar tema">
+                <i class="fas fa-moon"></i>
+            </button>
             <div class="user-menu">
                 <button class="user-menu-btn" id="user-menu-btn">
                     <i class="fas fa-user-circle"></i>
@@ -17,7 +20,7 @@
                         <i class="fas fa-user"></i>
                         Mi Perfil
                     </a>
-                    <a href="#" class="dropdown-item">
+                    <a href="#configuracion" class="dropdown-item nav-link" data-section="configuracion">
                         <i class="fas fa-cog"></i>
                         Configuración
                     </a>

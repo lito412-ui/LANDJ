@@ -27,7 +27,7 @@ $where  = [];
 $params = [];
 
 if ($tabla !== '') {
-    $tablasValidas = ['contactos', 'leads', 'oportunidades', 'actividades', 'usuarios', 'dominios'];
+    $tablasValidas = ['contactos', 'leads', 'oportunidades', 'actividades', 'usuarios', 'dominios', 'cuentas_correo'];
     if (in_array($tabla, $tablasValidas, true)) {
         $where[]  = 'a.tabla = ?';
         $params[] = $tabla;

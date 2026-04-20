@@ -321,32 +321,19 @@ const Dominios = (() => {
     // ─── Helpers de presentación ──────────────────────────────────────────────
 
     function badgeTipo(tipo) {
-        const map = {
-            principal:  ['#ede9fe','#7c3aed'],
-            subdominio: ['#dbeafe','#1d4ed8'],
-            addon:      ['#fef9c3','#92400e'],
-            parked:     ['#f1f5f9','#475569'],
-        };
-        const [bg, color] = map[tipo] ?? ['#f1f5f9','#475569'];
         const label = { principal:'Principal', subdominio:'Subdominio', addon:'Addon', parked:'Parked' }[tipo] ?? tipo;
-        return `<span class="status-badge" style="background:${bg};color:${color}">${label}</span>`;
+        return `<span class="status-badge status-badge--${tipo}">${label}</span>`;
     }
 
     function badgeEstado(estado) {
-        const map = {
-            activo:     ['#dcfce7','#15803d'],
-            pendiente:  ['#fef9c3','#92400e'],
-            suspendido: ['#fee2e2','#b91c1c'],
-        };
-        const [bg, color] = map[estado] ?? ['#f1f5f9','#475569'];
         const label = { activo:'Activo', pendiente:'Pendiente', suspendido:'Suspendido' }[estado] ?? estado;
-        return `<span class="status-badge" style="background:${bg};color:${color}">${label}</span>`;
+        return `<span class="status-badge status-badge--${estado}">${label}</span>`;
     }
 
     function badgeSSL(ssl) {
         return parseInt(ssl)
-            ? '<span style="color:#15803d"><i class="fas fa-lock"></i> Sí</span>'
-            : '<span style="color:#94a3b8"><i class="fas fa-lock-open"></i> No</span>';
+            ? '<span class="ssl-on"><i class="fas fa-lock"></i> Sí</span>'
+            : '<span class="ssl-off"><i class="fas fa-lock-open"></i> No</span>';
     }
 
     function formatFecha(fecha) {

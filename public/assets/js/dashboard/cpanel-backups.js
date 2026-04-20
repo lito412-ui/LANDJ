@@ -33,7 +33,9 @@ const Backups = (() => {
             return;
         }
 
-        setTabla(lista.map(b => `
+        const tbody = document.getElementById('backup-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = lista.map(b => `
             <tr>
                 <td><i class="fas fa-file-code" style="color:#6366f1;margin-right:8px"></i>${b.nombre}</td>
                 <td>${b.tamano}</td>
@@ -44,13 +46,15 @@ const Backups = (() => {
                            class="btn-icon" title="Descargar" download>
                             <i class="fas fa-download"></i>
                         </a>
-                        <button class="btn-icon danger" title="Eliminar"
-                                onclick="Backups._eliminar('${b.nombre}')">
+                        <button class="btn-icon danger" data-del="${b.nombre}" title="Eliminar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
-            </tr>`).join(''));
+            </tr>`).join('');
+
+        tbody.querySelectorAll('[data-del]').forEach(btn =>
+            btn.addEventListener('click', () => eliminar(btn.dataset.del)));
     }
 
     function confirmarCrear() {
@@ -119,5 +123,5 @@ const Backups = (() => {
         return (bytes / 1048576).toFixed(2) + ' MB';
     }
 
-    return { init, _eliminar: eliminar };
+    return { init, confirmarCrear };
 })();
