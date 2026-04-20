@@ -4,128 +4,127 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 
 ## Estado actual
 - Avance estimado: `100%`
-- Completado: infraestructura Docker + sistema de migraciones, auth con CSRF/CSP, esquema BD completo (6 tablas), seed vía migraciones, monitorización real, vista de perfil, panel modularizado (partials PHP + assets por dominio), CRUD completo de contactos, leads, usuarios y oportunidades. Conversión lead→contacto (transacción atómica). Pipeline kanban de oportunidades con 5 etapas. CRUD de actividades. JS dividido en 8 módulos independientes. Búsqueda y filtros avanzados en los 3 listados CRM. Paginación server-side en contactos y leads. Manejo de errores unificado (`manejarApiError`). Permisos RBAC en la UI (secciones admin-only, badge de rol, guard en navegación). Sección Auditoría completa con diff expandible, filtros por entidad y acción, paginación offset. Sección Bases de Datos con estadísticas de tablas MySQL (motor, filas, tamaño, colación, última modificación).
-- Pendiente: ninguno del MVP. Fase 03 completa.
+- Pendiente del MVP: ninguno. Fase 03 completa.
 
-## Checklist de tareas (MVP primero)
+**Completado**: infraestructura Docker + migraciones, auth con CSRF/CSP, esquema BD completo (8 tablas), seed vía migraciones, monitorización real, perfil de usuario, panel modularizado (13 módulos JS). CRUD de contactos, leads, usuarios, oportunidades, actividades. Conversión lead→contacto atómica. Pipeline kanban. Búsqueda/filtros avanzados en todos los módulos. Paginación server-side. Auditoría con diff expandible. Bases de datos con estadísticas MySQL. Backups SQL. Dominios y cuentas de correo (hosting). Estadísticas CRM. Actividad reciente. Acciones rápidas. Tema claro/oscuro WCAG AA. Configuración de cuenta.
+
+---
+
+## Checklist de tareas
 
 ### Infraestructura y base
 - [x] Preparar estructura del proyecto (carpetas por dominio, convenciones, rutas)
 - [x] Configurar entorno Docker (Nginx + PHP-FPM + MySQL + migrate + phpMyAdmin + cAdvisor)
 - [x] Corregir healthcheck MySQL y variable `MYSQL_ALLOW_EMPTY_PASSWORD`
-- [x] Corregir bug de contraseña vacía en `public/config/conexion.php`
 - [x] Crear esquema SQL completo del MVP con 6 tablas y FKs (`database/init.sql`)
-- [x] Implementar sistema de migraciones (`database/migrate.php` + `database/migrations/`)
-- [x] Seed con datos de prueba vía migraciones (`002_seed_usuarios.php`, `003_seed_crm.sql`)
-- [x] Migración `002_leads_contacto_id.php`: añade columna `contacto_id` + FK a tabla `leads` de forma idempotente (compatible con volúmenes Docker persistentes)
-- [x] Añadir `try_files $uri =404` al bloque PHP de Nginx (seguridad + comportamiento correcto)
+- [x] Ampliar esquema con tablas `dominios` y `cuentas_correo` (migrations 005, 006)
+- [x] Implementar sistema de migraciones idempotente (`database/migrate.php` + tabla `_migraciones`)
+- [x] Seed con datos de prueba vía migraciones (usuarios Argon2id + datos CRM)
+- [x] Añadir `try_files $uri =404` al bloque PHP de Nginx
 
 ### Seguridad
-- [x] Implementar `public/config/seguridad.php`: cabeceras HTTP (CSP, X-Frame-Options, Referrer-Policy), funciones CSRF (`csrfGenerar`, `csrfMeta`, `csrfValidar`)
+- [x] `public/config/seguridad.php`: cabeceras HTTP (CSP `script-src 'self'`, X-Frame-Options, Referrer-Policy), funciones CSRF (`csrfGenerar`, `csrfMeta`, `csrfValidar`)
 - [x] `fetchSeguro()` en cliente: añade `X-CSRF-Token` automáticamente a POST/PUT/DELETE/PATCH
-- [x] `registrarAuditoria()` tolerante a fallos: captura `PDOException` internamente para no bloquear operaciones si la tabla no existe
+- [x] `registrarAuditoria()` tolerante a fallos: captura `PDOException` internamente
+- [x] Event delegation con `data-edit`/`data-del` — sin handlers inline (CSP compliant)
 
 ### Autenticación y sesión
-- [x] Implementar autenticación (hash Argon2id, login, logout, sesión PHP)
-- [x] Implementar control de acceso (RBAC) en rutas y endpoints protegidos
+- [x] Autenticación: hash Argon2id, login, logout, sesión PHP
+- [x] RBAC: control de acceso en rutas y endpoints protegidos
 - [x] `api/get_user.php` devuelve `id_usuario`, `nombre`, `rol`, `email`, `created_at`
 
 ### Panel de control y estructura
-- [x] Modularizar panel: `cpanel.php` con includes PHP por sección
-- [x] Partials independientes: `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
-- [x] Secciones PHP bajo `modules/dashboard/partials/sections/`
-- [x] Assets organizados por dominio (`css/site/`, `css/dashboard/`, `js/site/`, `js/dashboard/`)
-- [x] JS del panel dividido en 8 módulos independientes: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-usuarios.js`, `cpanel-oportunidades.js`, `cpanel-auditoria.js`, `cpanel-databases.js`
+- [x] `cpanel.php` con includes PHP por sección (partials)
+- [x] `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
+- [x] Secciones PHP organizadas por dominio bajo `sections/`
+- [x] 13 módulos JS IIFE con `_initialized` guard: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-oportunidades.js`, `cpanel-estadisticas.js`, `cpanel-email.js`, `cpanel-dominios.js`, `cpanel-configuracion.js`, `cpanel-usuarios.js`, `cpanel-auditoria.js`, `cpanel-databases.js`, `cpanel-backups.js`
 
-### Monitorización del sistema
-- [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco) multiplataforma
-- [x] `setMetrica()` helper en cliente para eliminar duplicación
+### Dashboard y sistema
+- [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco), actualización cada 3 s
+- [x] Actividad reciente: `api/actividad_reciente.php` devuelve últimos 10 eventos con tiempo relativo; admins ven todos, usuarios solo los propios
+- [x] Estadísticas CRM: `api/estadisticas.php` + `cpanel-estadisticas.js` — distribución de leads y oportunidades
+- [x] Acciones rápidas del dashboard: `initQuickActions()` + `manejarAccionRapida(action)` con navegación programática `navegarA(sectionId)`
+- [x] Vista de perfil (`#perfil`) con avatar de iniciales, nombre, email, rol y fecha
 
-### Perfil de usuario
-- [x] Vista `#perfil` con avatar de iniciales, nombre, email, rol y fecha de registro
-- [x] Accesible desde dropdown "Mi Perfil" en cabecera
+### Configuración de cuenta (`#configuracion`)
+- [x] `api/configuracion.php`: `PUT` actualiza nombre/email; `PUT?accion=password` cambia contraseña con verificación
+- [x] `cpanel-configuracion.js`: pre-rellena formulario con `perfilData`, medidor de fortaleza de contraseña, selector visual de tema
+- [x] Actualiza header (nombre) tras guardar sin recargar página
+
+### Tema claro/oscuro
+- [x] `initThemeToggle()` + `_aplicarTema()` en `cpanel-core.js`: toggle en cabecera, persiste en `localStorage`
+- [x] `[data-theme="dark"]` completo en CSS con contraste WCAG AA
+- [x] Badges de estado con clases semánticas CSS (sin `style=""` inline): `status-badge--activo/suspendido/pendiente/principal/subdominio/addon/parked`
+- [x] Correcciones de contraste: nav-section-title, crm-empty, chart-label, quick-action-btn span
+- [x] Overrides dark por sección: pipeline cards, backup stats, db summary, badges usuario, badges auditoría, configuración
 
 ### CRM — Contactos
 - [x] CRUD base (API REST + módulo JS `Contactos`)
-- [x] Listado con búsqueda debounced (400ms) server-side LIKE
-- [x] Formulario crear/editar con panel animado
-- [x] Eliminación con confirmación modal e integridad referencial
-- [x] Validación JS en tiempo real + PHP servidor: nombre, apellidos, email, teléfono español, maxlength, counter notas
-- [x] Vista de detalle (panel lateral fijo `position:fixed, top:64px`, z-index 1100, movido a `<body>` por JS)
-- [x] Toast notifications (success/error/info) y confirm modal reutilizables
+- [x] Búsqueda debounced (400 ms) server-side LIKE
+- [x] Formulario crear/editar con panel animado (`.form-panel.active`)
+- [x] Validaciones JS + PHP: nombre, apellidos, email, teléfono español, maxlength, counter notas
+- [x] Vista de detalle lateral fija con actividades
+- [x] Toast y confirm modal reutilizables
 - [x] Auditoría en crear/editar/eliminar
+- [x] Paginación server-side (LIMIT/OFFSET), `renderPaginacion` compartido
 
 ### CRM — Leads
-- [x] CRUD base (API REST + módulo JS `Leads` + sección HTML)
-- [x] Listado con búsqueda debounced y filtro por estado (combinados con `URLSearchParams`)
-- [x] Formulario crear/editar con validaciones JS + PHP
-- [x] Badges de estado con color semántico (nuevo/contactado/calificado/convertido/descartado)
-- [x] Panel de detalle lateral (mismo patrón que contactos)
-- [x] Auditoría en crear/editar/eliminar
-- [x] Estado vacío `crm-empty` en tbody cuando no hay resultados
-
-### CRM — Gestión de Usuarios (admin-only)
-- [x] API REST `usuarios.php` con CRUD completo (GET lista/detalle, POST, PUT, DELETE)
-- [x] Validación PHP: nombre alfanumérico único, email único, contraseña mín 8 car. letras+números
-- [x] Protecciones: no auto-eliminación, no eliminar último admin, no cambiar propio rol
-- [x] Módulo JS `Usuarios`: listado, badges de rol (administrador/usuario), etiqueta "Tú" en fila propia
-- [x] Filtro por rol client-side
-- [x] Botón eliminar deshabilitado para cuenta propia
-- [x] Formulario con contraseña obligatoria en creación, opcional en edición
-- [x] Estilos globales reutilizados: `crm-toolbar`, `crm-search`, `data-table`, `btn-icon`, `crm-avatar`
-- [x] Auditoría en crear/editar/eliminar
+- [x] CRUD completo con búsqueda, filtros (estado, origen, fechas, orden), paginación
+- [x] Badges de estado semánticos (nuevo/contactado/calificado/convertido/descartado)
+- [x] Panel de detalle lateral con actividades
+- [x] Conversión lead → contacto: transacción atómica, detección email duplicado, auditoría en ambas entidades, botón deshabilitado si ya convertido
+- [x] Auditoría en crear/editar/eliminar/convertir
 
 ### CRM — Oportunidades (Pipeline)
-- [x] API REST `oportunidades.php`: GET lista/detalle (JOIN contactos+leads), POST, PUT, PUT `?action=etapa`, DELETE
-- [x] Validación PHP: título obligatorio max 150, descripción max 500, valor decimal ≥ 0, etapa enum, fecha YYYY-MM-DD
-- [x] Módulo JS `Oportunidades`: kanban board con 5 columnas (prospecto/propuesta/negociación/ganada/perdida)
-- [x] Cards con título, valor formateado (€ `Intl.NumberFormat`), contacto/lead asociado, fecha cierre
-- [x] Formulario crear/editar con panel animado (título, valor, etapa, fecha cierre, descripción)
-- [x] Panel detalle lateral: campos, etapa badge, botones de cambio de etapa con confirm
-- [x] Cambio de etapa (`PUT ?action=etapa`) con modal `info` (azul), actualización inmediata sin recargar detalle
-- [x] Búsqueda debounced (400 ms) + filtro por etapa en toolbar
-- [x] Columnas vacías con estado `pipeline-empty`; spinner de carga inicial
+- [x] API: GET lista (JOIN contactos+leads), POST, PUT, PUT `?action=etapa`, DELETE
+- [x] Kanban board con 5 columnas: prospecto/propuesta/negociación/ganada/perdida
+- [x] Cards con título, valor (€ `Intl.NumberFormat`), contacto/lead asociado, fecha cierre
+- [x] Cambio de etapa con modal `info` (azul), sin recargar toda la vista
+- [x] Búsqueda debounced + filtro por etapa + filtros avanzados (valor, fecha)
 - [x] Auditoría en crear/editar/eliminar/mover etapa
-- [x] Sidebar: enlace "Pipeline" en sección CRM
-
-### CRM core — fixes transversales
-- [x] Conversión de lead a contacto (transacción atómica: INSERT contactos + UPDATE leads, rollback on error, detección email duplicado, auditoría en ambas entidades)
-- [x] Modal de confirmación reutilizable con variantes `danger` (rojo), `success` (verde), `info` (azul)
-- [x] Fix `detalleId` capturado en `const id` antes de llamar `cerrarDetalle()` en Contactos, Leads y Oportunidades
 
 ### CRM — Actividades / Notas
-- [x] API REST `actividades.php`: GET por entidad (`contacto_id` / `lead_id` / `oportunidad_id`), GET por id, POST, PUT, DELETE
-- [x] Validación PHP: tipo enum (`nota/llamada/reunion/tarea/email`), descripción obligatoria max 500, fecha YYYY-MM-DD opcional, al menos una FK requerida
-- [x] `ActividadesWidget` IIFE compartido: init por `{ prefix, entityType, entityId }`, formulario inline con tipo/descripción/fecha, edición y eliminación por id
-- [x] Widget integrado en paneles de detalle de Contactos (`det`), Leads (`ldet`) y Oportunidades (`odet`)
-- [x] Lista con iconos por tipo y fecha formateada; estado vacío y spinner de carga
+- [x] API por entidad (`contacto_id` / `lead_id` / `oportunidad_id`)
+- [x] `ActividadesWidget` IIFE compartido: init por `{ prefix, entityType, entityId }`
+- [x] Formulario inline con tipo/descripción/fecha; edición y eliminación por id
+- [x] Tipos: nota/llamada/reunión/tarea/email con iconos
 - [x] Auditoría en crear/editar/eliminar
-- [x] HTML de actividades añadido a secciones de leads y contactos (paneles detalle)
 
-### CRM core — Búsqueda y filtros avanzados
-- [x] Estado de búsqueda por módulo: objeto `_estado` con todos los params (buscar, filtros, orden, dir)
-- [x] `cargar()` construye `URLSearchParams` desde `_estado`, sin leer el DOM directamente
-- [x] Panel de filtros avanzados colapsable por módulo (toggle con badge de filtros activos)
-- [x] Contactos: filtro `empresa` (LIKE), `desde`/`hasta` (DATE range), `orden` (nombre/empresa/created_at), `dir`
-- [x] Leads: filtro `origen` (LIKE), `desde`/`hasta`, `orden` (nombre/estado/created_at), `dir`
-- [x] Oportunidades: filtro `valor_min`/`valor_max`, `cierre_desde`/`cierre_hasta`, `orden` (titulo/valor/etapa/fecha_cierre/created_at), `dir`. Buscar extendido a `descripcion`
-- [x] Botón "Limpiar" resetea filtros avanzados manteniendo búsqueda principal y filtro de estado/etapa
-- [x] Botón de dirección (asc/desc) con icono reactivo
-- [x] API: validación whitelist de columnas ordenables; fechas validadas con regex; valores numéricos validados antes de bindear
+### CRM — Gestión de Usuarios (admin-only)
+- [x] API REST CRUD completo con protecciones
+- [x] Validación: nombre alfanumérico único, email único, contraseña mín 8 car. letras+números
+- [x] Protecciones: no auto-eliminación, no eliminar último admin, no cambiar propio rol
+- [x] Módulo JS `Usuarios`: badges de rol (`user-badge badge-administrador/badge-usuario`), etiqueta "Tú" (`user-yo-tag`)
+- [x] Filtro por rol client-side; botón eliminar deshabilitado para cuenta propia
 
-### CRM core (completado)
-- [x] Paginación básica en contactos y leads (server-side LIMIT/OFFSET, `renderPaginacion` en core.js, `pagina`/`limite` en `_estado`, reset al cambiar filtros, barra "← 1 2 [3] 4 5 → Mostrando X–Y de Z")
-- [x] Manejo de errores unificado: `manejarApiError(e, msg)` en core (console.error + toast), todos los `catch` con binding, `monitorizacion.php` devuelve `{ok, data}`, `get_user.php` devuelve 401, mensajes de éxito consistentes (`X creado/a`, `X actualizado/a`, `X eliminado/a`) en todos los módulos
+### Hosting — Dominios
+- [x] `api/dominios.php`: CRUD completo con búsqueda/filtros (tipo, estado, orden, dir, paginación)
+- [x] Validaciones: dominio (DOMAIN_RE), IP (IP_RE), tipo enum, estado enum
+- [x] `cpanel-dominios.js`: badges semánticos para tipo y estado, `badgeSSL()` con `.ssl-on/.ssl-off`
+- [x] CSP fix: `data-edit`/`data-del` con `querySelectorAll` post-render
+- [x] Bug fixes: `registrarAuditoria` sin `$userId`; `` `ssl` `` backtick-escapado (reservada MySQL)
 
-## Checklist de UX (mínimo viable)
-- [x] Navegación consistente (menú, estados activos, dropdown de usuario)
-- [x] Feedback visual en métricas del dashboard (barras en tiempo real)
-- [x] Vista de perfil con datos reales del usuario autenticado
-- [x] Estados vacíos (`crm-empty`) y mensajes de carga (`crm-loading`) en todos los listados
-- [x] Toast notifications y confirm modal reutilizables en todas las secciones CRM
-- [x] Permisos reflejados en la UI: secciones admin-only (`users`, `logs`) ocultas en sidebar para rol `usuario`; badge de rol en header; guard en navegación JS; redirección al dashboard si la sección activa es restringida
-- [x] Sección Auditoría completa (`cpanel-auditoria.js`): tabla con diff expandible por fila (campos cambiados antes/después), filtros por entidad y acción, paginación offset (Anterior/Siguiente + "Mostrando X–Y de N"), API actualizada con filtro `accion`, COUNT total y whitelist de tablas
-- [x] Sección Bases de Datos (`cpanel-databases.js`, `api/databases.php`, `sections/databases.php`): tarjetas resumen (nombre BD, total tablas, total filas, tamaño total), tabla con nombre, motor, filas, tamaño formateado, colación y última modificación; `SHOW TABLE STATUS` con `SET SESSION information_schema_stats_expiry=0` para evitar `Update_time = NULL` en MySQL 8 InnoDB; acceso restringido a administradores
+### Hosting — Cuentas de correo
+- [x] `api/cuentas_correo.php`: CRUD completo con búsqueda/filtros (estado, orden, paginación)
+- [x] `extraerDominio()`: extrae dominio del email automáticamente
+- [x] `formatCuota()`: 0 → "Sin límite", ≥ 1024 MB → GB con 1 decimal
+- [x] Validaciones: EMAIL_RE, cuota INT ≥ 0
+
+### Panel — Auditoría (admin-only)
+- [x] `api/auditoria.php` con filtros tabla/accion + COUNT total + whitelist tablas
+- [x] `cpanel-auditoria.js`: tabla con diff expandible (before/after resaltados), filtros, paginación offset
+
+### Panel — Bases de Datos (admin-only)
+- [x] `api/databases.php`: `SHOW TABLE STATUS` con `SET SESSION information_schema_stats_expiry=0`
+- [x] Tarjetas resumen (nombre BD, total tablas, total filas, tamaño); tabla con motor, filas, tamaño, colación, última modificación
+- [x] Botón phpMyAdmin (enlace externo)
+
+### Panel — Copias de Seguridad (admin-only)
+- [x] `api/backups.php`: creación de dump `.sql`, listado, descarga y eliminación
+- [x] `cpanel-backups.js`: confirmar antes de eliminar, `event delegation` con `data-del`
+- [x] Acceso público a `confirmarCrear` para acción rápida del dashboard
+
+---
 
 ## Criterio de "Hecho"
-- El usuario puede: entrar, gestionar contactos, leads y usuarios, mover oportunidades en el pipeline y crear actividades, con permisos correctos y feedback claro.
+- El usuario puede: autenticarse, gestionar contactos/leads/oportunidades/actividades, administrar dominios y cuentas de correo, configurar su cuenta y tema, ver estadísticas y actividad reciente, con permisos correctos y feedback claro en ambos modos de color.

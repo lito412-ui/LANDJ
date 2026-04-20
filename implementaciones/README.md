@@ -1,166 +1,190 @@
-# Implementaciones CRM - Guía de proyecto
+# Implementaciones CRM — Guía de proyecto
 
 Este directorio centraliza planificación, seguimiento y operación del proyecto.
 
 ## Contenido de esta carpeta
 
-- `SEGUIMIENTO.md`: avance global por fases y backlog de mejoras.
-- `MVP_HISTORIAS_Y_CRITERIOS.md`: epics del MVP, criterios Given/When/Then, matriz de roles y RNF (cierre Fase 01).
-- `FASE_01_ANALISIS_PLANIFICACION.md`: alcance y definición funcional.
-- `FASE_02_DISENO_ARQUITECTURA.md`: diseño técnico, modelo de datos y contratos.
-- `FASE_03_IMPLEMENTACION_DESARROLLO.md`: checklist de implementación.
-- `FASE_04_PRUEBAS_VALIDACION.md`: checklist de calidad y seguridad.
-- `FASE_05_DESPLIEGUE_DOCUMENTACION.md`: checklist de entrega y despliegue.
+| Archivo | Descripción |
+|---------|-------------|
+| `SEGUIMIENTO.md` | Avance global por fases y backlog de mejoras |
+| `MVP_HISTORIAS_Y_CRITERIOS.md` | Epics, criterios Given/When/Then, matriz de roles y RNF |
+| `FASE_01_ANALISIS_PLANIFICACION.md` | Alcance y definición funcional |
+| `FASE_02_DISENO_ARQUITECTURA.md` | Diseño técnico, modelo de datos y contratos |
+| `FASE_03_IMPLEMENTACION_DESARROLLO.md` | Checklist de implementación completo |
+| `FASE_04_PRUEBAS_VALIDACION.md` | Checklist de calidad y seguridad |
+| `FASE_05_DESPLIEGUE_DOCUMENTACION.md` | Checklist de entrega y despliegue |
+| `CONTRATOS_API.md` | Contratos REST de todos los endpoints |
+| `VALIDACIONES.md` | Reglas de validación JS + PHP por entidad |
+| `BUSQUEDA_FILTROS.md` | Diseño de búsqueda, filtros y paginación |
+| `SEGURIDAD_CSRF_XSS.md` | Cabeceras de seguridad y mecanismo CSRF |
+
+---
 
 ## Arquitectura actual del proyecto
 
 ### Stack y componentes
 
-- **Frontend**: HTML, CSS, JavaScript vanilla (landing en `public/index.html`, login en `public/modules/site/login.html`, panel en `public/modules/dashboard/cpanel.php`).
-- **Backend**: PHP 8.3-FPM (autenticación, sesión, API endpoints, monitorización).
-- **Base de datos**: MySQL 8.4 — 5 tablas: `usuarios`, `contactos`, `leads`, `oportunidades`, `actividades`.
-- **Servidor web**: Nginx Alpine + PHP-FPM.
-- **Entorno**: Docker Compose.
-- **Herramientas**: phpMyAdmin (BD visual), cAdvisor (métricas de contenedores).
+| Capa | Tecnología |
+|------|------------|
+| Frontend | HTML, CSS, JavaScript vanilla (IIFE modules) |
+| Backend | PHP 8.3-FPM + PDO |
+| Base de datos | MySQL 8.4 — 8 tablas |
+| Servidor web | Nginx Alpine |
+| Entorno | Docker Compose |
+| Herramientas | phpMyAdmin (BD visual), cAdvisor (métricas contenedores) |
 
 ### Servicios Docker
 
-| Servicio | Imagen | Puerto host | Descripción |
-|----------|--------|-------------|-------------|
+| Servicio | Imagen | Puerto | Descripción |
+|----------|--------|--------|-------------|
 | `web` | nginx:alpine | 91 | Sirve `public/`; raíz en `http://localhost:91` |
-| `php` | php:8.3-fpm-alpine | — | Ejecuta PHP-FPM; variables `DB_*` para MySQL |
+| `php` | php:8.3-fpm-alpine | — | Ejecuta PHP-FPM; variables `DB_*` inyectadas por Docker |
 | `db` | mysql:8.4 | 3307 | Inicializado con `database/init.sql` |
-| `seed` | (build local) | — | Ejecuta `database/seed.php` una vez al arrancar |
+| `migrate` | (build local) | — | Runner de migraciones al arrancar |
 | `phpmyadmin` | phpmyadmin:latest | 8082 | Gestión visual de BD |
 | `cadvisor` | gcr.io/cadvisor/cadvisor | 8080 | Monitorización de contenedores |
+
+---
 
 ### Flujo de autenticación
 
 1. El usuario abre `public/modules/site/login.html`.
 2. El formulario envía credenciales por POST a `public/auth/login.php`.
-3. `login.php` valida contra la tabla `usuarios` en MySQL con `password_verify` (Argon2id).
-4. Si es correcto, se crean `$_SESSION['user_id']`, `$_SESSION['nombre']`, `$_SESSION['rol']` y se redirige a `public/admin/cpanel.php`.
-5. `admin/cpanel.php` comprueba sesión e incluye `public/modules/dashboard/cpanel.php` (layout con partials).
-6. `public/api/get_user.php` devuelve sesión activa en JSON (`nombre`, `rol`, `email`, `created_at`).
+3. `login.php` valida contra la tabla `usuarios` con `password_verify` (Argon2id).
+4. Si es correcto, crea `$_SESSION['user_id']`, `$_SESSION['nombre']`, `$_SESSION['rol']` y redirige al panel.
+5. `public/modules/dashboard/cpanel.php` genera CSRF token, comprueba sesión e incluye los partials.
+6. `public/api/get_user.php` devuelve sesión activa en JSON.
 7. `public/auth/logout.php` destruye la sesión y redirige al login.
 
-### Assets estáticos — estructura por dominio
+---
+
+### Modelo de datos (8 tablas)
 
 ```text
-public/assets/
-├── css/
-│   ├── site/           # Landing (index-style.css) y login (style.css)
-│   └── dashboard/      # Panel de control (cpanel-style.css)
-├── js/
-│   ├── site/           # Landing (index-script.js)
-│   └── dashboard/      # Panel (cpanel-script.js)
-└── img/                # Logos e iconos
+usuarios             ← cuentas con rol (usuario/administrador) y hash Argon2id
+contactos            → FK usuarios (creado_por)
+leads                → FK usuarios, FK contactos (si convertido)
+oportunidades        → FK contactos, FK leads, FK usuarios (asignado_a, creado_por)
+actividades          → FK contactos, FK leads, FK oportunidades
+auditoria            → FK usuarios (ON DELETE SET NULL)
+dominios             ← dominios con tipo, estado, IP, SSL
+cuentas_correo       ← cuentas de correo con cuota y estado
+_migraciones         ← registro de migraciones aplicadas (sistema interno)
 ```
 
-### Panel de control — estructura modular
+Esquema completo: [`database/init.sql`](../database/init.sql)
+
+#### ENUMs relevantes
+
+| Tabla | Campo | Valores |
+|-------|-------|---------|
+| `leads` | `estado` | `nuevo`, `contactado`, `calificado`, `convertido`, `descartado` |
+| `oportunidades` | `etapa` | `prospecto`, `propuesta`, `negociacion`, `cerrada_ganada`, `cerrada_perdida` |
+| `actividades` | `tipo` | `nota`, `llamada`, `reunion`, `tarea`, `email` |
+| `dominios` | `tipo` | `principal`, `subdominio`, `addon`, `parked` |
+| `dominios` | `estado` | `activo`, `pendiente`, `suspendido` |
+| `cuentas_correo` | `estado` | `activo`, `suspendido` |
+
+---
+
+### Módulos JavaScript (13 ficheros)
+
+Todos en `public/assets/js/dashboard/`. Patrón IIFE con `_initialized` guard.
+
+| Módulo | Scope | Descripción |
+|--------|-------|-------------|
+| `cpanel-core.js` | Global | `fetchSeguro`, `mostrarToast`, `mostrarConfirm`, `renderPaginacion`, `manejarApiError`, `navegarA`, `initThemeToggle`, `cargarActividadReciente` |
+| `cpanel-actividades.js` | CRM | Widget compartido de actividades (notas/llamadas/reuniones/tareas/email) |
+| `cpanel-contactos.js` | CRM | CRUD contactos + detalle lateral |
+| `cpanel-leads.js` | CRM | CRUD leads + conversión a contacto |
+| `cpanel-oportunidades.js` | CRM | Pipeline kanban 5 etapas |
+| `cpanel-estadisticas.js` | Dashboard | Métricas y gráficos CRM |
+| `cpanel-email.js` | Hosting | CRUD cuentas de correo |
+| `cpanel-dominios.js` | Hosting | CRUD dominios |
+| `cpanel-configuracion.js` | Sistema | Perfil, contraseña, tema |
+| `cpanel-usuarios.js` | Admin | Gestión de usuarios (admin-only) |
+| `cpanel-auditoria.js` | Admin | Log de auditoría con diff (admin-only) |
+| `cpanel-databases.js` | Admin | Estadísticas MySQL (admin-only) |
+| `cpanel-backups.js` | Admin | Copias de seguridad (admin-only) |
+
+---
+
+### Endpoints API
+
+| Endpoint | Métodos | Auth | Descripción |
+|----------|---------|------|-------------|
+| `/api/get_user.php` | GET | Sesión | Usuario autenticado |
+| `/api/monitorizacion.php` | GET | Sesión | CPU, RAM, Disco |
+| `/api/actividad_reciente.php` | GET | Sesión | Últimos 10 eventos de auditoría |
+| `/api/estadisticas.php` | GET | Sesión | Métricas CRM |
+| `/api/contactos.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD contactos |
+| `/api/leads.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD leads + conversión |
+| `/api/oportunidades.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD oportunidades + etapa |
+| `/api/actividades.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD actividades |
+| `/api/dominios.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD dominios |
+| `/api/cuentas_correo.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD cuentas correo |
+| `/api/configuracion.php` | PUT | Sesión + CSRF | Perfil propio + contraseña |
+| `/api/usuarios.php` | GET/POST/PUT/DELETE | Sesión + CSRF + Admin | CRUD usuarios |
+| `/api/auditoria.php` | GET | Sesión + Admin | Log de auditoría |
+| `/api/databases.php` | GET | Sesión + Admin | Estadísticas tablas |
+| `/api/backups.php` | GET/POST/DELETE | Sesión + CSRF + Admin | Backups |
+
+---
+
+### Estructura de secciones del panel
 
 ```text
-public/modules/dashboard/
-├── cpanel.php              # Layout principal: incluye todos los partials
-└── partials/
-    ├── head.php            # <head>: meta, CSS, fuentes
-    ├── header.php          # Cabecera: logo, bienvenida, menú de usuario
-    ├── sidebar.php         # Navegación lateral
-    └── sections/           # Una sección por módulo del panel
-        ├── dashboard.php   # Métricas, acciones rápidas, actividad reciente
-        ├── perfil.php      # Perfil del usuario autenticado
-        ├── ftp.php
-        ├── ssl.php
-        ├── statistics.php
-        ├── file-manager.php
-        ├── databases.php
-        ├── backups.php
-        ├── security.php
-        ├── firewall.php
-        ├── email.php
-        ├── domains.php
-        ├── users.php
-        └── logs.php
+public/modules/dashboard/partials/sections/
+├── panel/
+│   ├── dashboard.php       # Métricas, acciones rápidas, actividad reciente
+│   └── statistics.php      # Estadísticas CRM
+├── crm/
+│   ├── contactos.php
+│   ├── leads.php
+│   └── oportunidades.php   # Pipeline kanban
+├── correo/
+│   ├── email.php            # Cuentas de correo
+│   └── domains.php          # Dominios
+├── sistema/
+│   ├── users.php            # Gestión de usuarios (admin)
+│   ├── logs.php             # Auditoría (admin)
+│   └── configuracion.php    # Configuración de cuenta
+├── archivos/
+│   ├── databases.php        # Estadísticas BD (admin)
+│   ├── backups.php          # Copias de seguridad (admin)
+│   ├── file-manager.php     # Gestor de archivos (próximamente)
+│   └── ftp.php              # Configuración FTP (próximamente)
+├── seguridad/
+│   ├── ssl.php              # SSL (próximamente)
+│   ├── security.php         # Seguridad (próximamente)
+│   └── firewall.php         # Firewall (próximamente)
+└── perfil.php               # Perfil del usuario
 ```
 
-### Esquema de base de datos
+---
 
-```text
-usuarios         ← base de cuentas con rol y hash Argon2id
-contactos        → FK usuarios (creado_por)
-leads            → FK usuarios, FK contactos (si convertido)
-oportunidades    → FK contactos, FK leads, FK usuarios (asignado_a, creado_por)
-actividades      → FK contactos, FK leads, FK oportunidades
-```
+### Roles y permisos
 
-Esquema completo: [`database/init.sql`](../database/init.sql).  
-Datos de prueba: [`database/seed.php`](../database/seed.php) (lee [`database/db.json`](../database/db.json) y puebla todas las tablas).
+| Rol | Acceso |
+|-----|--------|
+| No autenticado | Solo landing y login |
+| `usuario` | Panel completo (CRM, Dominios, Correo, Configuración, Perfil) |
+| `administrador` | Todo lo anterior + Usuarios, Auditoría, Bases de Datos, Backups |
 
-### Estructura general del repositorio
+Secciones admin-only: `users`, `logs`, `databases`, `backups`.
 
-```text
-LANDJ/
-├── database/
-│   ├── init.sql                # Esquema completo del MVP (5 tablas)
-│   ├── db.json                 # Usuarios de ejemplo (contraseñas en texto plano, solo local)
-│   └── seed.php                # Seed completo: usuarios, contactos, leads, oportunidades, actividades
-├── docker/
-│   └── nginx/conf.d/default.conf
-├── implementaciones/
-│   ├── README.md
-│   ├── SEGUIMIENTO.md
-│   ├── FASE_01_ANALISIS_PLANIFICACION.md
-│   ├── FASE_02_DISENO_ARQUITECTURA.md
-│   ├── FASE_03_IMPLEMENTACION_DESARROLLO.md
-│   ├── FASE_04_PRUEBAS_VALIDACION.md
-│   └── FASE_05_DESPLIEGUE_DOCUMENTACION.md
-├── public/
-│   ├── index.html
-│   ├── login.html              # Redirección → /modules/site/login.html
-│   ├── cpanel.html             # Redirección → /admin/cpanel.php
-│   ├── assets/
-│   │   ├── css/site/           # index-style.css, style.css
-│   │   ├── css/dashboard/      # cpanel-style.css
-│   │   ├── js/site/            # index-script.js
-│   │   ├── js/dashboard/       # cpanel-script.js
-│   │   └── img/
-│   ├── modules/
-│   │   ├── site/login.html
-│   │   └── dashboard/
-│   │       ├── cpanel.php
-│   │       └── partials/...
-│   ├── auth/                   # login.php, logout.php, registro.php
-│   ├── admin/                  # cpanel.php (guard), crearusuario.php, reset_admin.php
-│   ├── api/                    # get_user.php, monitorizacion.php
-│   └── config/conexion.php     # Bloqueado por Nginx ante peticiones directas
-├── Dockerfile
-├── docker-compose.yml
-├── wait-for-it.sh
-└── install.cmd
-```
+---
 
 ## Pasos para desplegar en local (Docker)
 
-### Requisitos
-- Docker Desktop instalado y en ejecución.
-- Puertos `91`, `3307`, `8082` y `8080` libres.
-
 ### Arranque
-
 ```bash
 docker compose up -d --build
 ```
 
-### Poblar datos de prueba
-
+### Aplicar migraciones (si necesario)
 ```bash
-docker compose run --rm seed
-```
-
-### Verificar servicios
-
-```bash
-docker compose ps
+docker compose run --rm migrate
 ```
 
 ### URLs de acceso
@@ -169,56 +193,27 @@ docker compose ps
 |----------|-----|
 | App web | http://localhost:91 |
 | Login | http://localhost:91/modules/site/login.html |
-| Panel (con sesión) | http://localhost:91/admin/cpanel.php |
+| Panel | http://localhost:91/modules/dashboard/cpanel.php |
 | phpMyAdmin | http://localhost:8082 |
 | cAdvisor | http://localhost:8080 |
 
-### Parar entorno
-
+### Comandos útiles
 ```bash
-docker compose down
-```
-
-### Reset completo de BD (borra volúmenes)
-
-```bash
-docker compose down -v
-```
-
-## Comandos útiles
-
-```bash
-# Logs
-docker compose logs -f
-docker compose logs -f web
-docker compose logs -f php
-docker compose logs -f db
-
-# Estado y reinicio
 docker compose ps
-docker compose restart
-docker compose restart php
-
-# Acceso a contenedores
+docker compose logs -f
+docker compose down
+docker compose down -v   # Reset completo de BD
 docker compose exec php sh
 docker compose exec db mysql -uroot
-
-# Validar config
-docker compose config
 ```
 
-## Roles y permisos actuales
+---
 
-| Rol | Acceso |
-|-----|--------|
-| No autenticado | Solo landing y login |
-| `usuario` | Panel completo, CRUD según módulo |
-| `administrador` | Panel + gestión de usuarios del sistema |
-
-Endpoints protegidos (`api/get_user.php`, `api/monitorizacion.php`, `admin/cpanel.php`) comprueban `$_SESSION['user_id']` antes de responder.
-
-## Convenciones de seguimiento
+## Convenciones
 
 - "Hecho" = tarea completada, verificada y documentada.
 - Marca tareas con `[x]` en cada fase del `SEGUIMIENTO.md`.
 - Si una tarea se bloquea, anota motivo, impacto y decisión tomada.
+- Todos los endpoints responden `{ ok: true, data: ... }` o `{ ok: false, error: "..." }`.
+- Los endpoints mutantes requieren `X-CSRF-Token` header; `fetchSeguro()` lo inyecta automáticamente.
+- Event delegation con `data-*` en todos los botones generados dinámicamente (CSP `script-src 'self'`).

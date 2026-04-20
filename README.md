@@ -4,106 +4,145 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 
 ## Qué incluye este proyecto
 
-- **Landing** (`public/index.html`): página de presentación en la raíz del sitio (`/`).
-- **Autenticación** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
-- **Panel CRM** (`public/modules/dashboard/cpanel.php`): layout modular con partials PHP; JS dividido en 8 módulos independientes por dominio. Incluye: Contactos, Leads, Pipeline de Oportunidades, Gestión de usuarios, Perfil, Auditoría, Bases de Datos, Monitorización.
-- **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro) vía `GET /api/get_user.php`.
-- **Monitorización**: `GET /api/monitorizacion.php` devuelve CPU, RAM y disco reales.
-- **CRM — Contactos**: CRUD completo con búsqueda debounced, filtros avanzados (empresa, fechas, orden), paginación server-side, detalle lateral con actividades, validaciones JS + PHP.
-- **CRM — Leads**: CRUD completo con búsqueda, filtros avanzados (estado, origen, fechas, orden), paginación server-side, panel de detalle con actividades y conversión de lead a contacto (transacción atómica).
-- **CRM — Pipeline de Oportunidades**: kanban board con 5 etapas, cambio de etapa con confirm, filtros avanzados (valor range, fecha cierre, orden), detalle lateral con actividades.
-- **CRM — Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
-- **Gestión de usuarios** (solo admin): CRUD de cuentas con roles, badges, protección anti-autoborrado y protección del último administrador.
-- **Auditoría** (solo admin): sección completa con tabla de cambios, diff expandible por fila (campos antes/después resaltados), filtros por entidad y tipo de acción, paginación offset.
-- **Bases de Datos** (solo admin): estadísticas de tablas MySQL en tiempo real — nombre, motor, filas, tamaño, colación y última modificación; tarjetas resumen con totales; `SHOW TABLE STATUS` con `information_schema_stats_expiry=0` para MySQL 8 InnoDB.
-- **Seguridad**: CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`), Content Security Policy, `X-Frame-Options`, `Referrer-Policy`.
-- **Manejo de errores**: `manejarApiError` compartido en core.js (console.error + toast unificado), todos los endpoints devuelven `{ok, data/error}` con código HTTP correcto.
-- **Base de datos**: esquema en `database/init.sql` (6 tablas con FKs); datos de prueba vía sistema de migraciones (`database/migrations/`).
+### Autenticación y sesión
+- **Login** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
+- **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro).
+- **Configuración de cuenta** (`#configuracion`): edición de nombre/email, cambio de contraseña con verificación, selector de tema claro/oscuro.
+
+### Dashboard principal
+- **Monitorización**: métricas en tiempo real de CPU, RAM y disco actualizadas cada 3 s.
+- **Actividad reciente**: los 10 últimos eventos de auditoría, con tiempo relativo y usuario.
+- **Acciones rápidas**: botones para crear backup, nueva cuenta de correo, FTP y SSL.
+- **Estadísticas CRM**: distribución de leads por estado, oportunidades por etapa y valor potencial.
+- **Tema claro/oscuro**: toggle en la cabecera, persistido en `localStorage`, con contraste WCAG AA en ambos modos.
+
+### CRM
+- **Contactos**: CRUD completo, búsqueda debounced (400 ms), filtros avanzados (empresa, fechas, orden), paginación server-side, detalle lateral con actividades.
+- **Leads**: CRUD completo, búsqueda, filtros (estado, origen, fechas), paginación, panel de detalle con actividades, conversión de lead a contacto (transacción atómica).
+- **Pipeline de Oportunidades**: kanban board con 5 etapas, cambio de etapa con modal de confirmación, filtros avanzados (valor, fecha cierre, orden), detalle lateral con actividades.
+- **Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
+
+### cPanel — Hosting
+- **Dominios**: CRUD completo con filtros por tipo (principal/subdominio/addon/parked), estado, IP, SSL toggle; paginación y ordenación.
+- **Cuentas de correo**: CRUD completo con cuota (MB/GB/ilimitada), estado, filtros y paginación. El dominio se extrae automáticamente del email.
+
+### Administración (solo admin)
+- **Gestión de usuarios**: CRUD de cuentas con roles, protección anti-autoborrado y del último administrador.
+- **Auditoría**: tabla de cambios con diff expandible (antes/después resaltados), filtros por entidad y acción, paginación offset.
+- **Bases de datos**: estadísticas de tablas MySQL en tiempo real — motor, filas, tamaño, colación, última modificación; botón phpMyAdmin.
+- **Copias de seguridad**: creación, descarga y eliminación de backups `.sql` completos de la base de datos.
+
+### Seguridad transversal
+- CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`) en todos los endpoints mutantes.
+- Content Security Policy (`script-src 'self'`), `X-Frame-Options`, `Referrer-Policy`, `X-Content-Type-Options`.
+- Event delegation con atributos `data-*` — sin handlers inline (CSP compliant).
+- `manejarApiError` compartido en `core.js`; todos los endpoints devuelven `{ ok, data/error }` con código HTTP correcto.
+
+---
 
 ## Stack
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | HTML, CSS, JavaScript (vanilla) |
+| Frontend | HTML, CSS, JavaScript vanilla |
 | Backend | PHP 8.3-FPM, PDO + MySQL |
 | Servidor | Nginx Alpine |
 | Datos | MySQL 8.4 |
 | Entorno | Docker Compose |
 
-## Estructura principal del código
+---
 
-El directorio servido por Nginx es `public/` → `/usr/share/nginx/html/public` en el contenedor.
+## Estructura principal del código
 
 ```text
 LANDJ/
 ├── database/
-│   ├── init.sql                   # Esquema completo: 6 tablas en orden correcto de FKs
-│   ├── migrate.php                # Runner de migraciones (crea _migraciones, aplica .sql y .php)
+│   ├── init.sql                        # Esquema: 8 tablas con FKs
+│   ├── migrate.php                     # Runner de migraciones idempotente
 │   └── migrations/
-│       ├── 002_leads_contacto_id.php # Backward-compat: añade contacto_id + FK a leads (idempotente)
-│       ├── 003_seed_usuarios.php     # Seed: 1 admin + 3 usuarios (Argon2id)
-│       └── 004_seed_crm.sql          # Seed: contactos, leads, oportunidades, actividades
+│       ├── 002_leads_contacto_id.php   # FK contacto_id en leads
+│       ├── 003_seed_usuarios.php       # Seed: 1 admin + 3 usuarios (Argon2id)
+│       ├── 004_seed_crm.sql            # Seed: contactos, leads, oportunidades, actividades
+│       ├── 005_dominios.sql            # Tabla dominios
+│       └── 006_cuentas_correo.sql      # Tabla cuentas_correo
 ├── docker/
-│   └── nginx/conf.d/default.conf  # try_files $uri =404 antes de fastcgi_pass
+│   └── nginx/conf.d/default.conf
 ├── public/
-│   ├── index.html
-│   ├── login.html                 # Redirección → /modules/site/login.html
 │   ├── assets/
-│   │   ├── css/
-│   │   │   ├── site/              # index-style.css, login style.css
-│   │   │   └── dashboard/         # cpanel-style.css
-│   │   ├── js/
-│   │   │   ├── site/              # index-script.js
-│   │   │   └── dashboard/         # cpanel-core.js, cpanel-actividades.js, cpanel-contactos.js,
-│   │                          # cpanel-leads.js, cpanel-usuarios.js, cpanel-oportunidades.js,
-│   │                          # cpanel-auditoria.js, cpanel-databases.js
-│   │   └── img/
+│   │   ├── css/site/                   # index-style.css, style.css
+│   │   ├── css/dashboard/              # cpanel-style.css (tema claro + oscuro)
+│   │   ├── js/site/                    # index-script.js
+│   │   └── js/dashboard/
+│   │       ├── cpanel-core.js          # Shared: fetchSeguro, toast, modal, paginación, temas, navegación
+│   │       ├── cpanel-actividades.js   # Widget de actividades compartido
+│   │       ├── cpanel-contactos.js     # CRM: Contactos
+│   │       ├── cpanel-leads.js         # CRM: Leads
+│   │       ├── cpanel-oportunidades.js # CRM: Pipeline kanban
+│   │       ├── cpanel-estadisticas.js  # Dashboard: Estadísticas
+│   │       ├── cpanel-email.js         # Cuentas de correo
+│   │       ├── cpanel-dominios.js      # Dominios
+│   │       ├── cpanel-configuracion.js # Configuración de cuenta
+│   │       ├── cpanel-usuarios.js      # Gestión de usuarios (admin)
+│   │       ├── cpanel-auditoria.js     # Auditoría (admin)
+│   │       ├── cpanel-databases.js     # Bases de datos (admin)
+│   │       └── cpanel-backups.js       # Copias de seguridad (admin)
 │   ├── modules/
-│   │   ├── site/                  # login.html
+│   │   ├── site/login.html
 │   │   └── dashboard/
-│   │       ├── cpanel.php         # Layout principal (ob_start, session, CSRF, includes)
+│   │       ├── cpanel.php              # Layout principal (session, CSRF, includes)
 │   │       └── partials/
-│   │           ├── head.php       # <head> con meta csrf-token
-│   │           ├── header.php
-│   │           ├── sidebar.php
-│   │           └── sections/      # Una sección PHP por módulo del panel
-│   │               ├── contactos.php
-│   │               ├── leads.php
-│   │               ├── oportunidades.php
-│   │               ├── users.php
-│   │               └── ...
-│   ├── auth/                      # login.php, logout.php
+│   │           ├── head.php            # <head> con meta csrf-token
+│   │           ├── header.php          # Cabecera: logo, tema toggle, menú usuario
+│   │           ├── sidebar.php         # Navegación lateral
+│   │           └── sections/
+│   │               ├── panel/          # dashboard.php, statistics.php
+│   │               ├── crm/            # contactos.php, leads.php, oportunidades.php
+│   │               ├── correo/         # email.php, domains.php
+│   │               ├── sistema/        # users.php, logs.php, configuracion.php
+│   │               ├── archivos/       # databases.php, backups.php, file-manager.php, ftp.php
+│   │               ├── seguridad/      # ssl.php, security.php, firewall.php
+│   │               └── perfil.php
 │   ├── api/
-│   │   ├── get_user.php           # GET: datos del usuario autenticado
-│   │   ├── monitorizacion.php     # GET: CPU / RAM / Disco
-│   │   ├── contactos.php          # CRUD REST + filtros avanzados
-│   │   ├── leads.php              # CRUD REST + filtros avanzados + conversión
-│   │   ├── oportunidades.php      # CRUD REST + filtros avanzados + acción etapa
-│   │   ├── actividades.php        # CRUD REST por entidad (contacto/lead/oportunidad)
-│   │   ├── usuarios.php           # CRUD REST (solo administrador)
-│   │   ├── auditoria.php          # GET paginado con filtros tabla/accion/registro_id y total (solo administrador)
-│   │   └── databases.php          # GET estadísticas SHOW TABLE STATUS (solo administrador)
-│   └── config/                    # Bloqueado por Nginx (deny all)
-│       ├── conexion.php           # PDO: lee variables de entorno Docker
-│       ├── seguridad.php          # Cabeceras HTTP, CSRF (generar/validar/meta)
-│       └── auditoria.php          # Helper registrarAuditoria() tolerante a fallos
+│   │   ├── get_user.php                # GET: usuario autenticado
+│   │   ├── monitorizacion.php          # GET: CPU / RAM / Disco
+│   │   ├── actividad_reciente.php      # GET: últimos 10 eventos de auditoría
+│   │   ├── estadisticas.php            # GET: métricas CRM
+│   │   ├── contactos.php               # CRUD + filtros + paginación
+│   │   ├── leads.php                   # CRUD + filtros + paginación + conversión
+│   │   ├── oportunidades.php           # CRUD + filtros + cambio de etapa
+│   │   ├── actividades.php             # CRUD por entidad
+│   │   ├── dominios.php                # CRUD + filtros + paginación
+│   │   ├── cuentas_correo.php          # CRUD + filtros + paginación
+│   │   ├── configuracion.php           # PUT perfil / PUT password (usuario propio)
+│   │   ├── usuarios.php                # CRUD (admin-only)
+│   │   ├── auditoria.php               # GET paginado (admin-only)
+│   │   ├── databases.php               # GET estadísticas (admin-only)
+│   │   └── backups.php                 # CRUD backups (admin-only)
+│   ├── auth/                           # login.php, logout.php
+│   └── config/                         # Bloqueado por Nginx
+│       ├── conexion.php                # PDO: lee variables de entorno
+│       ├── seguridad.php               # Cabeceras HTTP + CSRF
+│       └── auditoria.php               # registrarAuditoria() tolerante a fallos
 ├── docker-compose.yml
-├── Dockerfile
 └── README.md
 ```
 
-## Base de datos — esquema del MVP
+---
 
-| Tabla | Descripción | Relaciones |
-|-------|-------------|------------|
+## Base de datos — esquema
+
+| Tabla | Descripción | Relaciones principales |
+|-------|-------------|------------------------|
 | `usuarios` | Cuentas con rol (`usuario`/`administrador`) y hash Argon2id | — |
 | `contactos` | Clientes/contactos del CRM | → `usuarios` |
 | `leads` | Prospectos con estado y origen | → `usuarios`, → `contactos` |
 | `oportunidades` | Negociaciones por etapas | → `contactos`, `leads`, `usuarios` |
-| `actividades` | Notas/tareas/llamadas ligadas a entidades | → `contactos`, `leads`, `oportunidades` |
-| `auditoria` | Log de cambios: tabla, registro, acción, usuario, JSON antes/después | → `usuarios` (SET NULL) |
+| `actividades` | Notas/tareas/llamadas por entidad | → `contactos`, `leads`, `oportunidades` |
+| `auditoria` | Log de cambios: tabla, registro, acción, JSON antes/después | → `usuarios` (SET NULL) |
+| `dominios` | Dominios con tipo, estado, IP y SSL | — |
+| `cuentas_correo` | Cuentas de correo con cuota y estado | — |
 
-> El orden de la tabla refleja el orden de creación en `init.sql`, garantizando que todas las FKs referencian tablas ya existentes.
+---
 
 ## Usuarios de prueba
 
@@ -116,14 +155,16 @@ Definidos en `database/migrations/003_seed_usuarios.php`. Solo para entornos loc
 | lito412 | lolito412/ | usuario |
 | Cuervo | soyunchulo | usuario |
 
-> Las contraseñas se almacenan como hash Argon2id. Nunca se guardan en texto plano.
+> Las contraseñas se almacenan como hash Argon2id. Nunca en texto plano.
+
+---
 
 ## Requisitos previos
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución.
-- Puertos libres por defecto: **91** (app), **3307** (MySQL), **8082** (phpMyAdmin), **8080** (cAdvisor).
+- Puertos libres: **91** (app), **3307** (MySQL), **8082** (phpMyAdmin), **8080** (cAdvisor).
 
-Si algún puerto está ocupado en tu máquina, edita `.env` antes de arrancar:
+Si algún puerto está ocupado, edita `.env` antes de arrancar:
 
 ```env
 PORT_WEB=91
@@ -132,22 +173,18 @@ PORT_PMA=8082
 PORT_CADVISOR=8080
 ```
 
+---
+
 ## Cómo arrancar el proyecto
 
 ```bash
 docker compose up -d --build
 ```
 
-Al arrancar, el servicio `migrate` ejecuta automáticamente las migraciones pendientes e inserta los datos de prueba. Se puede relanzar manualmente:
+Al arrancar, el servicio `migrate` ejecuta automáticamente las migraciones pendientes e inserta los datos de prueba. Para relanzar manualmente:
 
 ```bash
 docker compose run --rm migrate
-```
-
-Verificar contenedores:
-
-```bash
-docker compose ps
 ```
 
 ### URLs útiles
@@ -160,77 +197,60 @@ docker compose ps
 | phpMyAdmin | http://localhost:8082 |
 | cAdvisor | http://localhost:8080 |
 
-MySQL expuesto en el host: puerto **3307** (configurable en `.env` con `PORT_DB`).
-
 ### Parar el entorno
 
 ```bash
 docker compose down
 ```
 
-Reset completo de BD (borra volúmenes, útil si hay datos inconsistentes):
+Reset completo de BD (borra volúmenes):
 
 ```bash
 docker compose down -v && docker compose up -d --build
 ```
 
+---
+
 ## Comandos útiles (Docker)
 
-### Logs y depuración
-
 ```bash
+# Logs
 docker compose logs -f
 docker compose logs -f web
 docker compose logs -f php
 docker compose logs -f db
-```
 
-### Estado, reinicio y reconstrucción
-
-```bash
+# Estado y reinicio
 docker compose ps
 docker compose restart
 docker compose restart php
 docker compose up -d --build
 docker compose build --no-cache php
-```
 
-### Entrar a un contenedor
-
-```bash
+# Acceso a contenedores
 docker compose exec php sh
 docker compose exec db sh
-```
-
-### Cliente MySQL desde el contenedor
-
-```bash
 docker compose exec db mysql -uroot
 ```
 
+---
+
 ## Configuración de base de datos
 
-### Conexión PHP (dentro de Docker)
+`public/config/conexion.php` lee las variables de entorno `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Usa PDO con `utf8mb4` y `ERRMODE_EXCEPTION`.
 
-`public/config/conexion.php` lee las variables de entorno `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` con fallbacks alineados con `docker-compose.yml`. Usa PDO con `utf8mb4` y `ERRMODE_EXCEPTION`.
+> El host de MySQL desde PHP-FPM es el nombre del servicio Docker `db`, no `127.0.0.1`.
 
-> El host de MySQL desde PHP-FPM es el nombre del servicio `db`, no `127.0.0.1`.
-
-### Conexión externa (fuera de Docker)
-
+Conexión externa (fuera de Docker):
 ```bash
 mysql -h 127.0.0.1 -P 3307 -uroot
 ```
 
-### phpMyAdmin
+phpMyAdmin disponible en `http://localhost:8082`. Credenciales: `root` sin contraseña (solo desarrollo).
 
-Disponible en `http://localhost:8082`. Credenciales: `root` sin contraseña (entorno de desarrollo).
+> En producción: crea un usuario MySQL dedicado con permisos mínimos y cambia todas las credenciales.
 
-### Buenas prácticas
-
-- No subas contraseñas reales a repositorios públicos.
-- En producción, crea un usuario MySQL dedicado con permisos mínimos.
-- Cambia todas las credenciales antes de cualquier despliegue real.
+---
 
 ## Documentación ampliada
 

@@ -721,10 +721,278 @@ Devuelve estadísticas de las tablas de la base de datos activa.
 
 ---
 
+## Actividad Reciente
+
+Base: `/api/actividad_reciente.php`  
+Requiere sesión activa. Solo soporta `GET`.
+
+### `GET /api/actividad_reciente.php`
+Devuelve los últimos 10 eventos de auditoría con tiempo relativo.  
+Admins ven todos; usuarios solo ven los propios.
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "tipo":    "success",
+      "texto":   "admin creó un contacto (#5)",
+      "tiempo":  "Hace 3 min",
+      "usuario": "admin"
+    }
+  ]
+}
+```
+
+> `tipo` puede ser `success` (crear), `info` (editar) o `danger` (eliminar).  
+> `tiempo` es relativo al momento de la petición (calculado en PHP con `tiempoRelativo()`).
+
+---
+
+## Estadísticas CRM
+
+Base: `/api/estadisticas.php`  
+Requiere sesión activa. Solo soporta `GET`.
+
+### `GET /api/estadisticas.php`
+Devuelve métricas agregadas del CRM.
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": {
+    "leads_por_estado": [
+      { "estado": "nuevo", "total": 12 },
+      { "estado": "convertido", "total": 5 }
+    ],
+    "oportunidades_por_etapa": [
+      { "etapa": "prospecto", "total": 3, "valor": 45000.00 }
+    ],
+    "valor_total_pipeline": 145000.00,
+    "total_contactos": 38,
+    "total_leads": 21
+  }
+}
+```
+
+---
+
+## Dominios
+
+Base: `/api/dominios.php`  
+Requiere sesión activa. Los endpoints mutantes requieren `X-CSRF-Token`.
+
+### Campos del recurso
+
+| Campo | Tipo | Restricciones |
+|-------|------|---------------|
+| `id_dominio` | int | PK, auto |
+| `dominio` | string | **Obligatorio**, max 253, formato FQDN |
+| `tipo` | enum | `principal` \| `subdominio` \| `addon` \| `parked` |
+| `estado` | enum | `activo` \| `pendiente` \| `suspendido` |
+| `ip` | string\|null | IPv4 o IPv6 |
+| `ssl` | tinyint | 0 / 1 |
+| `notas` | string\|null | max 500 |
+| `created_at` | datetime | Auto |
+
+### `GET /api/dominios.php`
+Lista dominios filtrados y paginados.
+
+**Query params**
+
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `buscar` | string | LIKE en dominio e IP |
+| `tipo` | enum | Filtro exacto por tipo |
+| `estado` | enum | Filtro exacto por estado |
+| `orden` | `dominio` \| `tipo` \| `estado` \| `created_at` | Defecto: `created_at` |
+| `dir` | `asc` \| `desc` | Defecto: `desc` |
+| `pagina` | int | Defecto: 1 |
+| `limite` | int | Defecto: 20 |
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": [ { "id_dominio": 1, "dominio": "ejemplo.com", "tipo": "principal", "ssl": 1, "..." : "..." } ],
+  "meta": { "total": 15, "pagina": 1, "limite": 20, "paginas": 1 }
+}
+```
+
+### `POST /api/dominios.php`
+```json
+{ "dominio": "ejemplo.com", "tipo": "principal", "estado": "activo", "ip": "192.168.1.1", "ssl": 1, "notas": null }
+```
+
+### `PUT /api/dominios.php?id=<id>`
+Body idéntico al POST.
+
+### `DELETE /api/dominios.php?id=<id>`
+`{ "ok": true, "data": { "deleted": <id> } }`
+
+---
+
+## Cuentas de Correo
+
+Base: `/api/cuentas_correo.php`  
+Requiere sesión activa. Los endpoints mutantes requieren `X-CSRF-Token`.
+
+### Campos del recurso
+
+| Campo | Tipo | Restricciones |
+|-------|------|---------------|
+| `id_cuenta` | int | PK, auto |
+| `email` | string | **Obligatorio**, único, formato RFC email |
+| `dominio` | string | Extraído automáticamente del email |
+| `cuota` | int | MB, 0 = sin límite |
+| `estado` | enum | `activo` \| `suspendido` |
+| `notas` | string\|null | max 500 |
+| `created_at` | datetime | Auto |
+
+### `GET /api/cuentas_correo.php`
+
+**Query params**
+
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `buscar` | string | LIKE en email y dominio |
+| `estado` | enum | `activo` \| `suspendido` |
+| `orden` | `email` \| `dominio` \| `cuota` \| `created_at` | Defecto: `created_at` |
+| `dir` | `asc` \| `desc` | Defecto: `desc` |
+| `pagina` | int | Defecto: 1 |
+| `limite` | int | Defecto: 20 |
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": [ { "id_cuenta": 1, "email": "usuario@ejemplo.com", "dominio": "ejemplo.com", "cuota": 500, "estado": "activo" } ],
+  "meta": { "total": 3, "pagina": 1, "limite": 20, "paginas": 1 }
+}
+```
+
+> `cuota = 0` → sin límite. El cliente muestra "Sin límite" en morado.  
+> `cuota >= 1024` → el cliente muestra `(cuota/1024).toFixed(1) + " GB"`.
+
+### `POST /api/cuentas_correo.php`
+```json
+{ "email": "usuario@ejemplo.com", "cuota": 500, "estado": "activo", "notas": null }
+```
+
+### `PUT /api/cuentas_correo.php?id=<id>`
+Body idéntico al POST.
+
+### `DELETE /api/cuentas_correo.php?id=<id>`
+`{ "ok": true, "data": { "deleted": <id> } }`
+
+---
+
+## Configuración de Cuenta
+
+Base: `/api/configuracion.php`  
+Requiere sesión activa. Actúa sobre el usuario autenticado (no requiere `?id`). Solo soporta `PUT`.
+
+### `PUT /api/configuracion.php`
+Actualiza nombre y/o email del usuario en sesión.
+
+**Request body**
+```json
+{ "nombre": "NuevoNombre", "email": "nuevo@correo.com" }
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Actualizado → `{ "ok": true, "data": { "nombre": "NuevoNombre", "email": "..." } }` |
+| `400` | Nombre vacío / formato email inválido / nombre o email duplicado |
+
+> Actualiza también `$_SESSION['nombre']` para que el header refleje el cambio sin recargar.
+
+---
+
+### `PUT /api/configuracion.php?accion=password`
+Cambia la contraseña del usuario autenticado.
+
+**Request body**
+```json
+{ "actual": "contraseña_actual", "nueva": "nueva1234", "confirmar": "nueva1234" }
+```
+
+**Validaciones:**
+- `actual` debe coincidir con el hash almacenado (`password_verify`)
+- `nueva` ≥ 8 caracteres, ≤ 72, debe contener letras y números
+- `nueva === confirmar`
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Cambiada → `{ "ok": true, "data": null }` |
+| `400` | Contraseña actual incorrecta / validación fallida |
+
+---
+
+## Copias de Seguridad
+
+Base: `/api/backups.php`  
+Requiere sesión activa con rol `administrador`.
+
+### `GET /api/backups.php`
+Lista los backups disponibles ordenados por fecha descendente.
+
+**Respuesta `200`**
+```json
+{
+  "ok": true,
+  "data": {
+    "total": 2,
+    "total_bytes": 42500,
+    "ultimo": "2026-04-20 15:10:10",
+    "backups": [
+      { "nombre": "backup_2026-04-20_151010.sql", "bytes": 21250, "fecha": "2026-04-20 15:10:10" }
+    ]
+  }
+}
+```
+
+### `POST /api/backups.php`
+Genera un nuevo backup SQL completo con `mysqldump`.
+
+**Respuesta `200`**
+```json
+{ "ok": true, "data": { "nombre": "backup_2026-04-20_151010.sql", "bytes": 21250 } }
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Backup creado |
+| `500` | Error ejecutando `mysqldump` |
+
+### `GET /api/backups.php?descargar=<nombre>`
+Descarga el archivo SQL indicado con `Content-Disposition: attachment`.
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Archivo enviado |
+| `400` | Nombre de archivo inválido (path traversal bloqueado) |
+| `404` | Backup no encontrado |
+
+### `DELETE /api/backups.php?nombre=<nombre>`
+Elimina el backup indicado.
+
+| Código | Condición |
+|--------|-----------|
+| `200` | `{ "ok": true, "data": { "deleted": "<nombre>" } }` |
+| `400` | Nombre inválido |
+| `404` | No existe |
+
+---
+
 ## Convenciones generales
 
 - Todos los endpoints leen el body como `application/json`.
 - Las fechas se devuelven en formato MySQL (`YYYY-MM-DD HH:MM:SS`); el cliente las formatea con `toLocaleDateString('es-ES')`.
 - Los campos opcionales devuelven `null` (no se omiten).
 - El parámetro `t=<timestamp>` en GETs es anti-cache y siempre se ignora.
+- Los endpoints con paginación devuelven un objeto `meta` con `{ total, pagina, limite, paginas }`.
+- `fetchSeguro()` inyecta `X-CSRF-Token` automáticamente en POST/PUT/DELETE/PATCH.
 - Los endpoints mutantes validan el token CSRF vía header `X-CSRF-Token` (gestionado automáticamente por `fetchSeguro()` en el cliente).
