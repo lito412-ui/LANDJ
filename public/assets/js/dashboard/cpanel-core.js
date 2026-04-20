@@ -113,6 +113,7 @@ function initSidebarNavigation() {
             if (sectionId === 'leads')         Leads.init();
             if (sectionId === 'users'        && typeof Usuarios   !== 'undefined') Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
+            if (sectionId === 'domains')      Dominios.init();
             if (sectionId === 'logs'         && typeof Auditoria  !== 'undefined') Auditoria.init();
             if (sectionId === 'databases'    && typeof Databases  !== 'undefined') Databases.init();
             if (sectionId === 'backups'      && typeof Backups    !== 'undefined') Backups.init();

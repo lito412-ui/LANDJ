@@ -1142,6 +1142,34 @@ html, body {
     margin-top: 2px;
 }
 
+/* ─── Dominios ───────────────────────────────────────────────────────────────*/
+
+.dom-ssl-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.dom-ssl-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 10px 0;
+}
+
+.dom-ssl-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
+.dom-ssl-label {
+    font-size: 0.9rem;
+    color: #475569;
+}
+
 /* ─── Estadísticas CRM ───────────────────────────────────────────────────────*/
 
 .stats-crm-grid {
