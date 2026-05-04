@@ -28,17 +28,48 @@ const Configuracion = (() => {
             opt.addEventListener('click', () => _aplicarTema(opt.dataset.tema));
         });
 
+        document.getElementById('cfg-ir-password-btn')?.addEventListener('click', () => {
+            document.getElementById('cfg-pass-actual')?.focus();
+            document.getElementById('config-pass-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
         _cargarDatos();
         _sincronizarTema();
     }
 
     function _cargarDatos() {
         if (!perfilData) return;
+
         const nombre = document.getElementById('cfg-nombre');
         const email  = document.getElementById('cfg-email');
         if (nombre) nombre.value = perfilData.nombre ?? '';
         if (email)  email.value  = perfilData.email  ?? '';
+
+        _poblarResumen(perfilData);
         _sincronizarTema();
+    }
+
+    function _poblarResumen(data) {
+        const avatar = document.getElementById('cfg-avatar');
+        if (avatar) avatar.textContent = (data.nombre || '?').slice(0, 2).toUpperCase();
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+        set('cfg-resumen-nombre', data.nombre);
+        set('cfg-resumen-email',  data.email || 'Sin correo registrado');
+        set('cfg-resumen-correo', data.email || 'Sin correo registrado');
+        set('cfg-resumen-rol',    data.rol);
+
+        const fecha = data.created_at
+            ? new Date(data.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+            : '—';
+        set('cfg-resumen-fecha', fecha);
+
+        const badge = document.getElementById('cfg-resumen-badge');
+        if (badge) {
+            const esAdmin = data.rol === 'administrador';
+            badge.textContent = esAdmin ? 'Admin' : 'Usuario';
+            badge.className   = 'config-resumen-badge' + (esAdmin ? '' : ' rol-usuario');
+        }
     }
 
     function _sincronizarTema() {
@@ -51,11 +82,15 @@ const Configuracion = (() => {
     function _aplicarTema(tema) {
         document.documentElement.dataset.theme = tema;
         localStorage.setItem('theme', tema);
-        const btn = document.getElementById('theme-toggle-btn');
-        if (btn) {
-            btn.querySelector('i').className = tema === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            btn.title = tema === 'dark' ? 'Tema claro' : 'Tema oscuro';
-        }
+        const oscuro   = tema === 'dark';
+        const icoClass = oscuro ? 'fas fa-sun' : 'fas fa-moon';
+        const titulo   = oscuro ? 'Tema claro' : 'Tema oscuro';
+        [document.getElementById('theme-toggle-btn'), document.getElementById('dropdown-theme-toggle')]
+            .forEach(btn => {
+                if (!btn) return;
+                btn.querySelector('i').className = icoClass;
+                btn.title = titulo;
+            });
         _sincronizarTema();
     }
 
@@ -93,6 +128,11 @@ const Configuracion = (() => {
             const userName = document.getElementById('user-name');
             if (headerUsername) headerUsername.textContent = d.data.nombre;
             if (userName)       userName.textContent       = d.data.nombre;
+
+            if (perfilData) {
+                _poblarResumen(perfilData);
+                if (typeof _poblarDropdownHeader === 'function') _poblarDropdownHeader(perfilData);
+            }
 
             mostrarToast('Perfil actualizado', 'success');
         } catch (err) {
@@ -174,5 +214,10 @@ const Configuracion = (() => {
         label.style.color      = n.color;
     }
 
-    return { init };
+    function cargar(data) {
+        _poblarResumen(data);
+        _sincronizarTema();
+    }
+
+    return { init, cargar };
 })();

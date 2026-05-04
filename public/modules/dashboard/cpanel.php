@@ -44,20 +44,21 @@ csrfGenerar();
 
 </div>
 
-<script src="/assets/js/dashboard/cpanel-configuracion.js"></script>
-<script src="/assets/js/dashboard/cpanel-core.js"></script>
-<script src="/assets/js/dashboard/cpanel-actividades.js"></script>
-<script src="/assets/js/dashboard/cpanel-contactos.js"></script>
-<script src="/assets/js/dashboard/cpanel-leads.js"></script>
-<script src="/assets/js/dashboard/cpanel-oportunidades.js"></script>
-<script src="/assets/js/dashboard/cpanel-estadisticas.js"></script>
-<script src="/assets/js/dashboard/cpanel-email.js"></script>
-<script src="/assets/js/dashboard/cpanel-dominios.js"></script>
+<?php $jsDir = __DIR__ . '/../../assets/js/dashboard/'; ?>
+<script src="/assets/js/dashboard/cpanel-configuracion.js?v=<?= filemtime($jsDir . 'cpanel-configuracion.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-core.js?v=<?= filemtime($jsDir . 'cpanel-core.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-actividades.js?v=<?= filemtime($jsDir . 'cpanel-actividades.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-contactos.js?v=<?= filemtime($jsDir . 'cpanel-contactos.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-leads.js?v=<?= filemtime($jsDir . 'cpanel-leads.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-oportunidades.js?v=<?= filemtime($jsDir . 'cpanel-oportunidades.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-estadisticas.js?v=<?= filemtime($jsDir . 'cpanel-estadisticas.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-email.js?v=<?= filemtime($jsDir . 'cpanel-email.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-dominios.js?v=<?= filemtime($jsDir . 'cpanel-dominios.js') ?>"></script>
 <?php if ($_SESSION['rol'] === 'administrador'): ?>
-<script src="/assets/js/dashboard/cpanel-usuarios.js"></script>
-<script src="/assets/js/dashboard/cpanel-auditoria.js"></script>
-<script src="/assets/js/dashboard/cpanel-databases.js"></script>
-<script src="/assets/js/dashboard/cpanel-backups.js"></script>
+<script src="/assets/js/dashboard/cpanel-usuarios.js?v=<?= filemtime($jsDir . 'cpanel-usuarios.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-auditoria.js?v=<?= filemtime($jsDir . 'cpanel-auditoria.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-databases.js?v=<?= filemtime($jsDir . 'cpanel-databases.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-backups.js?v=<?= filemtime($jsDir . 'cpanel-backups.js') ?>"></script>
 <?php endif; ?>
 </body>
 </html>

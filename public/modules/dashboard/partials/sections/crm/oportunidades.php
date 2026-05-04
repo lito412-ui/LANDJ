@@ -1,7 +1,7 @@
 <section id="oportunidades" class="content-section">
     <div class="section-header">
         <div>
-            <h2 class="section-title">Pipeline</h2>
+            <h2 class="section-title">Oportunidades</h2>
             <p class="section-subtitle">Gestiona tus oportunidades de negocio por etapa</p>
         </div>
         <button class="btn-primary" id="opor-nuevo-btn">

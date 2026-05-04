@@ -1,9 +1,12 @@
 // ─── Módulo Oportunidades ─────────────────────────────────────────────────────
 
 const Oportunidades = (() => {
-    let editId      = null;
-    let detalleId   = null;
-    let buscarTimer = null;
+    let editId          = null;
+    let detalleId       = null;
+    let buscarTimer     = null;
+    let _dragId         = null;
+    let _dragSrcEtapa   = null;
+    let _dragInit       = false;
 
     const ETAPAS = {
         prospecto:       { label: 'Prospecto',   cls: 'etapa-prospecto'   },
@@ -102,7 +105,56 @@ const Oportunidades = (() => {
             cargar();
         });
 
+        _initDragDrop();
         cargar();
+    }
+
+    function _initDragDrop() {
+        if (_dragInit) return;
+        _dragInit = true;
+
+        ETAPAS_ORDER.forEach(etapa => {
+            const zone = document.getElementById('cards-' + etapa);
+            if (!zone) return;
+
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                zone.classList.add('drop-target');
+            });
+
+            zone.addEventListener('dragleave', e => {
+                if (!zone.contains(e.relatedTarget)) {
+                    zone.classList.remove('drop-target');
+                }
+            });
+
+            zone.addEventListener('drop', async e => {
+                e.preventDefault();
+                zone.classList.remove('drop-target');
+                document.querySelectorAll('.pipeline-card.dragging')
+                    .forEach(c => c.classList.remove('dragging'));
+
+                if (!_dragId || etapa === _dragSrcEtapa) return;
+                await _moverEtapaDirecto(_dragId, etapa);
+                _dragId = null;
+                _dragSrcEtapa = null;
+            });
+        });
+    }
+
+    async function _moverEtapaDirecto(id, etapa) {
+        try {
+            const r = await fetchSeguro(`/api/oportunidades.php?id=${id}&action=etapa`, {
+                method:  'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ etapa }),
+            });
+            const d = await r.json();
+            if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+            mostrarToast(`Movida a "${ETAPAS[etapa]?.label ?? etapa}"`, 'success');
+            cargar();
+        } catch (e) { manejarApiError(e, 'Error al mover la oportunidad'); }
     }
 
     async function cargar() {
@@ -131,7 +183,8 @@ const Oportunidades = (() => {
                 return;
             }
             cont.innerHTML = items.map(o => `
-                <div class="pipeline-card" data-oid="${o.id_oportunidad}">
+                <div class="pipeline-card" data-oid="${o.id_oportunidad}" draggable="true">
+                    <div class="pipeline-card-drag-handle"><i class="fas fa-grip-vertical"></i></div>
                     <div class="pipeline-card-titulo">${esc(o.titulo)}</div>
                     ${o.valor !== null ? `<div class="pipeline-card-valor">${formatValor(o.valor)}</div>` : ''}
                     <div class="pipeline-card-meta">
@@ -141,8 +194,23 @@ const Oportunidades = (() => {
                     </div>
                 </div>`).join('');
 
-            cont.querySelectorAll('[data-oid]').forEach(card =>
-                card.addEventListener('click', () => abrirDetalle(parseInt(card.dataset.oid))));
+            cont.querySelectorAll('[data-oid]').forEach(card => {
+                card.addEventListener('click', () => abrirDetalle(parseInt(card.dataset.oid)));
+
+                card.addEventListener('dragstart', e => {
+                    _dragId       = parseInt(card.dataset.oid);
+                    _dragSrcEtapa = etapa;
+                    card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(_dragId));
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                    document.querySelectorAll('.pipeline-cards.drop-target')
+                        .forEach(z => z.classList.remove('drop-target'));
+                });
+            });
         });
     }
 

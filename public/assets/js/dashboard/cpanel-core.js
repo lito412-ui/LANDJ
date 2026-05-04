@@ -40,11 +40,32 @@ async function checkAuth() {
         if (headerUsername) headerUsername.textContent = data.nombre;
         if (userName) userName.textContent = data.nombre;
 
+        _poblarDropdownHeader(data);
         aplicarPermisosUI(data.rol);
         cargarActividadReciente();
+
+        if (typeof Configuracion !== 'undefined') Configuracion.cargar(data);
     } catch (error) {
         console.error('Error validando sesion:', error.message);
         window.location.href = '/modules/site/login.html';
+    }
+}
+
+function _poblarDropdownHeader(data) {
+    const avatar = document.getElementById('dropdown-avatar');
+    if (avatar) avatar.textContent = data.nombre.slice(0, 2).toUpperCase();
+
+    const nombre = document.getElementById('dropdown-nombre');
+    if (nombre) nombre.textContent = data.nombre;
+
+    const email = document.getElementById('dropdown-email');
+    if (email) email.textContent = data.email || '';
+
+    const rolBadge = document.getElementById('dropdown-rol-badge');
+    if (rolBadge) {
+        const esAdmin = data.rol === 'administrador';
+        rolBadge.textContent = esAdmin ? 'Admin' : 'Usuario';
+        rolBadge.className   = 'dropdown-rol-badge' + (esAdmin ? '' : ' rol-usuario');
     }
 }
 
@@ -137,25 +158,30 @@ function initUserMenu() {
 
 function initThemeToggle() {
     const btn         = document.getElementById('theme-toggle-btn');
+    const btnDropdown = document.getElementById('dropdown-theme-toggle');
     const STORAGE_KEY = 'theme';
     const temaGuardado = localStorage.getItem(STORAGE_KEY) ?? 'light';
 
-    _aplicarTema(temaGuardado, btn);
+    _aplicarTema(temaGuardado, btn, btnDropdown);
 
-    btn?.addEventListener('click', () => {
+    const toggleTema = () => {
         const oscuro = document.documentElement.dataset.theme === 'dark';
         const nuevo  = oscuro ? 'light' : 'dark';
-        _aplicarTema(nuevo, btn);
+        _aplicarTema(nuevo, btn, btnDropdown);
         localStorage.setItem(STORAGE_KEY, nuevo);
-    });
+    };
+
+    btn?.addEventListener('click', toggleTema);
+    btnDropdown?.addEventListener('click', (e) => { e.stopPropagation(); toggleTema(); });
 }
 
-function _aplicarTema(tema, btn) {
+function _aplicarTema(tema, btn, btnDropdown) {
     document.documentElement.dataset.theme = tema;
-    if (!btn) return;
     const oscuro = tema === 'dark';
-    btn.querySelector('i').className = oscuro ? 'fas fa-sun' : 'fas fa-moon';
-    btn.title = oscuro ? 'Tema claro' : 'Tema oscuro';
+    const icoClass = oscuro ? 'fas fa-sun' : 'fas fa-moon';
+    const titulo   = oscuro ? 'Tema claro' : 'Tema oscuro';
+    if (btn) { btn.querySelector('i').className = icoClass; btn.title = titulo; }
+    if (btnDropdown) { btnDropdown.querySelector('i').className = icoClass; btnDropdown.title = titulo; }
 }
 
 // ─── Utilidades globales ──────────────────────────────────────────────────────

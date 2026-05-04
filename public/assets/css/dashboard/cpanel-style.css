@@ -177,6 +177,131 @@ html, body {
     margin: 4px 0;
 }
 
+/* ── Dropdown expanded: user info header ─────────────────────────────────── */
+.user-dropdown {
+    min-width: 240px;
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.dropdown-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+.dropdown-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dropdown-nombre {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-email {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-rol-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    line-height: 1.6;
+    background: #ede9fe;
+    color: #6d28d9;
+    align-self: flex-start;
+}
+
+.dropdown-rol-badge.rol-usuario {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+/* Section label (non-clickable group header) */
+.dropdown-section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+/* Sub-items indented under section label */
+.dropdown-sub-item {
+    padding-left: 32px !important;
+    font-size: 0.85rem !important;
+}
+
+/* Inline theme-toggle row */
+.dropdown-theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 8px 32px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.dropdown-theme-row > span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.dropdown-theme-toggle:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
 /* Theme toggle button */
 .theme-toggle-btn {
     display: flex;
@@ -497,6 +622,13 @@ html, body {
     font-weight: 600;
     color: #1e293b;
     margin: 0;
+}
+
+.card-subtitle {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 2px;
+    display: block;
 }
 
 /* Quick Actions */
@@ -2028,16 +2160,49 @@ body.detalle-open { overflow: hidden; }
 .pipeline-card {
     background: white;
     border-radius: 8px;
-    padding: 12px;
+    padding: 12px 12px 12px 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.07);
     border: 1px solid #e2e8f0;
-    cursor: pointer;
-    transition: box-shadow 0.2s, transform 0.15s;
+    cursor: grab;
+    transition: box-shadow 0.2s, transform 0.15s, opacity 0.15s;
+    position: relative;
 }
+
+.pipeline-card:active { cursor: grabbing; }
 
 .pipeline-card:hover {
     box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     transform: translateY(-1px);
+}
+
+/* Drag handle icon */
+.pipeline-card-drag-handle {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    transform: translateY(-50%);
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+}
+
+.pipeline-card:hover .pipeline-card-drag-handle { opacity: 1; }
+
+/* Dragging state */
+.pipeline-card.dragging {
+    opacity: 0.3;
+    transform: scale(0.97);
+    box-shadow: none;
+}
+
+/* Drop zone target */
+.pipeline-cards.drop-target {
+    background: rgba(102, 126, 234, 0.07);
+    border-radius: 10px;
+    outline: 2px dashed #667eea;
+    outline-offset: -3px;
 }
 
 .pipeline-card-titulo {
@@ -2410,19 +2575,108 @@ body.detalle-open { overflow: hidden; }
 
 /* ─── Configuración ──────────────────────────────────────────────────────────*/
 
-.config-grid {
+/* Layout principal: aside identidad + main ajustes */
+.config-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .config-layout { grid-template-columns: 1fr; }
+}
+
+/* Aside: tarjeta de identidad */
+.config-aside {
+    position: sticky;
+    top: 1rem;
+}
+
+.config-identity-card {
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.config-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 1.75rem 1.5rem 1.25rem;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.config-identity-nombre {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.config-identity-email {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    word-break: break-all;
+}
+
+.config-identity-meta {
+    padding: 0.75rem 0 0.25rem;
+}
+
+.config-identity-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.config-identity-campo:last-child {
+    border-bottom: none;
+}
+
+.config-identity-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.config-identity-valor {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+/* Main: columna de ajustes */
+.config-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.config-main > .content-card { margin-bottom: 0; }
+
+/* Fila de formularios (datos + contraseña) en 2 columnas */
+.config-forms-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
 }
 
-@media (max-width: 860px) {
-    .config-grid { grid-template-columns: 1fr; }
+@media (max-width: 720px) {
+    .config-forms-row { grid-template-columns: 1fr; }
 }
 
-.config-card-full { grid-column: 1 / -1; }
-
-.config-grid > .content-card { margin-bottom: 0; }
+.config-forms-row > .content-card { margin-bottom: 0; }
 
 .config-form {
     display: flex;
@@ -2486,11 +2740,155 @@ body.detalle-open { overflow: hidden; }
     white-space: nowrap;
 }
 
+/* ── Resumen de la cuenta ──────────────────────────────────────────────────── */
+.config-resumen {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.config-resumen-identidad {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.config-resumen-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.config-resumen-id {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.config-resumen-nombre {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.config-resumen-email {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.config-resumen-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    background: #ede9fe;
+    color: #6d28d9;
+    align-self: flex-start;
+}
+
+.config-resumen-badge.rol-usuario {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.config-resumen-sep {
+    width: 1px;
+    background: #e2e8f0;
+    align-self: stretch;
+    flex-shrink: 0;
+}
+
+.config-resumen-meta {
+    flex: 1;
+    min-width: 220px;
+}
+
+/* ── Seguridad ─────────────────────────────────────────────────────────────── */
+.config-seguridad {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.config-seg-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.config-seg-item:last-child {
+    border-bottom: none;
+}
+
+.config-seg-icono {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.config-seg-icono--warn {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.config-seg-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-seg-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.config-seg-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.config-seg-btn {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+/* ── Selector de tema ──────────────────────────────────────────────────────── */
 /* Selector de tema */
 .config-apariencia {
     display: flex;
+    justify-content: center;
     gap: 1.5rem;
-    padding: 0.5rem 0;
+    padding: 1rem 0 0.5rem;
     flex-wrap: wrap;
 }
 
@@ -2594,6 +2992,16 @@ html[data-theme="dark"] .dropdown-item:hover  { background: #334155; color: #f1f
 html[data-theme="dark"] .dropdown-item.logout { color: #fca5a5; }
 html[data-theme="dark"] .dropdown-divider     { background: #334155; }
 
+/* Dropdown expanded: user info header */
+html[data-theme="dark"] .dropdown-nombre            { color: #f1f5f9; }
+html[data-theme="dark"] .dropdown-email             { color: #64748b; }
+html[data-theme="dark"] .dropdown-rol-badge         { background: #2e1065; color: #c4b5fd; }
+html[data-theme="dark"] .dropdown-rol-badge.rol-usuario { background: #0c2140; color: #7dd3fc; }
+html[data-theme="dark"] .dropdown-section-label     { color: #475569; }
+html[data-theme="dark"] .dropdown-theme-row         { color: #94a3b8; }
+html[data-theme="dark"] .dropdown-theme-toggle      { background: #263347; border-color: #334155; color: #94a3b8; }
+html[data-theme="dark"] .dropdown-theme-toggle:hover { background: #334155; color: #f1f5f9; }
+
 /* Rol badges */
 html[data-theme="dark"] .rol-badge--admin   { background: #2e1065; color: #c4b5fd; }
 html[data-theme="dark"] .rol-badge--usuario { background: #0c2140; color: #7dd3fc; }
@@ -2678,6 +3086,16 @@ html[data-theme="dark"] .crm-filtro-label      { color: #94a3b8; }
 html[data-theme="dark"] .btn-filtros-toggle    { background: #0f172a; border-color: #334155; color: #94a3b8; }
 html[data-theme="dark"] .btn-filtros-toggle:hover { border-color: #818cf8; color: #818cf8; }
 html[data-theme="dark"] .btn-filtros-toggle.active{ border-color: #818cf8; background: #1a1f3a; color: #818cf8; }
+
+/* Sección Mi Perfil */
+html[data-theme="dark"] .perfil-card          { background: #1e293b; border-color: #334155; box-shadow: none; }
+html[data-theme="dark"] .perfil-nombre        { color: #f1f5f9; }
+html[data-theme="dark"] .perfil-rol-badge     { background: #2e1065; color: #c4b5fd; border-color: #7c3aed55; }
+html[data-theme="dark"] .perfil-detalles      { background: #1e293b; border-color: #334155; box-shadow: none; }
+html[data-theme="dark"] .perfil-campo         { border-bottom-color: #263347; }
+html[data-theme="dark"] .perfil-campo-label   { color: #94a3b8; }
+html[data-theme="dark"] .perfil-campo-label i { color: #475569; }
+html[data-theme="dark"] .perfil-campo-valor   { color: #f1f5f9; }
 
 /* Badges de rol de usuario */
 html[data-theme="dark"] .badge-administrador { background: #2e1065; color: #c4b5fd; border-color: #7c3aed55; }
@@ -2792,8 +3210,10 @@ html[data-theme="dark"] .backup-stat > i   { color: #818cf8; }
 html[data-theme="dark"] .pipeline-col        { background: #1e293b; border-color: #334155; }
 html[data-theme="dark"] .pipeline-col-header { border-bottom-color: #334155; }
 html[data-theme="dark"] .pipeline-col-title  { color: #94a3b8; }
-html[data-theme="dark"] .pipeline-card        { background: #263347; border-color: #334155; box-shadow: none; }
-html[data-theme="dark"] .pipeline-card:hover  { box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+html[data-theme="dark"] .pipeline-card              { background: #263347; border-color: #334155; box-shadow: none; }
+html[data-theme="dark"] .pipeline-card:hover        { box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+html[data-theme="dark"] .pipeline-card-drag-handle  { color: #334155; }
+html[data-theme="dark"] .pipeline-cards.drop-target { background: rgba(129,140,248,0.08); outline-color: #818cf8; }
 html[data-theme="dark"] .pipeline-card-titulo { color: #f1f5f9; }
 html[data-theme="dark"] .pipeline-card-valor  { color: #4ade80; }
 html[data-theme="dark"] .pipeline-empty       { color: #475569; }
@@ -2852,3 +3272,26 @@ html[data-theme="dark"] .config-tema-opcion span  { color: #94a3b8; }
 html[data-theme="dark"] .config-tema-opcion.active span { color: #818cf8; }
 html[data-theme="dark"] .config-tema-preview      { border-color: #334155; }
 html[data-theme="dark"] .config-tema-opcion.active .config-tema-preview { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,0.2); }
+
+/* Resumen / identidad — dark */
+html[data-theme="dark"] .config-resumen-nombre    { color: #f1f5f9; }
+html[data-theme="dark"] .config-resumen-email     { color: #64748b; }
+html[data-theme="dark"] .config-resumen-badge     { background: #2e1065; color: #c4b5fd; }
+html[data-theme="dark"] .config-resumen-badge.rol-usuario { background: #0c2140; color: #7dd3fc; }
+html[data-theme="dark"] .config-resumen-sep       { background: #334155; }
+html[data-theme="dark"] .config-identity          { border-bottom-color: #334155; }
+html[data-theme="dark"] .config-identity-nombre   { color: #f1f5f9; }
+html[data-theme="dark"] .config-identity-email    { color: #475569; }
+html[data-theme="dark"] .config-identity-campo    { border-bottom-color: #1e293b; }
+html[data-theme="dark"] .config-identity-label    { color: #475569; }
+html[data-theme="dark"] .config-identity-valor    { color: #94a3b8; }
+
+/* Seguridad — dark */
+html[data-theme="dark"] .config-seg-item          { border-bottom-color: #263347; }
+html[data-theme="dark"] .config-seg-icono         { background: #1e3a5f; color: #60a5fa; }
+html[data-theme="dark"] .config-seg-icono--warn   { background: #2d1f00; color: #fbbf24; }
+html[data-theme="dark"] .config-seg-titulo        { color: #f1f5f9; }
+html[data-theme="dark"] .config-seg-desc          { color: #64748b; }
+
+/* card-subtitle — dark */
+html[data-theme="dark"] .card-subtitle            { color: #475569; }

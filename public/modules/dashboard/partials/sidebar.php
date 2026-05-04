@@ -37,7 +37,7 @@
                 <li class="nav-item">
                     <a href="#oportunidades" class="nav-link" data-section="oportunidades">
                         <i class="fas fa-handshake"></i>
-                        <span>Pipeline</span>
+                        <span>Oportunidades</span>
                     </a>
                 </li>
             </ul>
