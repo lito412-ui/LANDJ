@@ -6,7 +6,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - Avance estimado: `100%`
 - Pendiente del MVP: ninguno. Fase 03 completa.
 
-**Completado**: infraestructura Docker + migraciones, auth con CSRF/CSP, esquema BD completo (8 tablas), seed vía migraciones, monitorización real, perfil de usuario, panel modularizado (13 módulos JS). CRUD de contactos, leads, usuarios, oportunidades, actividades. Conversión lead→contacto atómica. Pipeline kanban. Búsqueda/filtros avanzados en todos los módulos. Paginación server-side. Auditoría con diff expandible. Bases de datos con estadísticas MySQL. Backups SQL. Dominios y cuentas de correo (hosting). Estadísticas CRM. Actividad reciente. Acciones rápidas. Tema claro/oscuro WCAG AA. Configuración de cuenta.
+**Completado**: infraestructura Docker + migraciones, auth con CSRF/CSP, esquema BD completo (8 tablas), seed vía migraciones, monitorización real, perfil de usuario, panel modularizado (13 módulos JS). CRUD de contactos, leads, usuarios, oportunidades, actividades. Conversión lead→contacto atómica. Pipeline kanban con drag & drop HTML5. Búsqueda/filtros avanzados en todos los módulos. Paginación server-side. Auditoría con diff expandible. Bases de datos con estadísticas MySQL. Backups SQL. Dominios y cuentas de correo (hosting). Estadísticas CRM. Actividad reciente. Acciones rápidas. Tema claro/oscuro WCAG AA. Configuración de cuenta (layout aside/main). Dropdown de usuario expandido. CSS refactorizado en 6 módulos independientes.
 
 ---
 
@@ -38,6 +38,9 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] `head.php` (con meta csrf-token), `header.php`, `sidebar.php`
 - [x] Secciones PHP organizadas por dominio bajo `sections/`
 - [x] 13 módulos JS IIFE con `_initialized` guard: `cpanel-core.js`, `cpanel-actividades.js`, `cpanel-contactos.js`, `cpanel-leads.js`, `cpanel-oportunidades.js`, `cpanel-estadisticas.js`, `cpanel-email.js`, `cpanel-dominios.js`, `cpanel-configuracion.js`, `cpanel-usuarios.js`, `cpanel-auditoria.js`, `cpanel-databases.js`, `cpanel-backups.js`
+- [x] Cache-busting con `filemtime` en todos los `<script>` de `cpanel.php`
+- [x] CSS refactorizado en 6 módulos independientes con cache-busting `filemtime` en `head.php`: `cpanel-base`, `cpanel-crm`, `cpanel-pipeline`, `cpanel-admin`, `cpanel-sistema`, `cpanel-dark`
+- [x] Dropdown de usuario expandido: avatar de iniciales, nombre, email, badge de rol; sub-links a Datos de la cuenta y Cambiar contraseña; toggle de apariencia inline sincronizado con el header
 
 ### Dashboard y sistema
 - [x] `api/monitorizacion.php` con métricas reales (CPU, RAM, Disco), actualización cada 3 s
@@ -49,7 +52,9 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 ### Configuración de cuenta (`#configuracion`)
 - [x] `api/configuracion.php`: `PUT` actualiza nombre/email; `PUT?accion=password` cambia contraseña con verificación
 - [x] `cpanel-configuracion.js`: pre-rellena formulario con `perfilData`, medidor de fortaleza de contraseña, selector visual de tema
-- [x] Actualiza header (nombre) tras guardar sin recargar página
+- [x] Layout aside/main: tarjeta de identidad sticky (avatar, nombre, email, badge de rol, metadatos), formularios Datos y Contraseña en paralelo, Apariencia y Seguridad en paralelo
+- [x] `cargar(data)` público: pre-popula la tarjeta de resumen al autenticarse sin esperar a que el usuario abra la sección
+- [x] Actualiza header (nombre) y tarjeta de identidad tras guardar sin recargar página
 
 ### Tema claro/oscuro
 - [x] `initThemeToggle()` + `_aplicarTema()` en `cpanel-core.js`: toggle en cabecera, persiste en `localStorage`
@@ -80,6 +85,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Kanban board con 5 columnas: prospecto/propuesta/negociación/ganada/perdida
 - [x] Cards con título, valor (€ `Intl.NumberFormat`), contacto/lead asociado, fecha cierre
 - [x] Cambio de etapa con modal `info` (azul), sin recargar toda la vista
+- [x] Drag & drop HTML5 entre columnas: `dragstart`/`dragend` en cards, `dragover`/`dragleave`/`drop` en columnas; `_moverEtapaDirecto` actualiza vía API sin confirm
 - [x] Búsqueda debounced + filtro por etapa + filtros avanzados (valor, fecha)
 - [x] Auditoría en crear/editar/eliminar/mover etapa
 
@@ -127,4 +133,4 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 ---
 
 ## Criterio de "Hecho"
-- El usuario puede: autenticarse, gestionar contactos/leads/oportunidades/actividades, administrar dominios y cuentas de correo, configurar su cuenta y tema, ver estadísticas y actividad reciente, con permisos correctos y feedback claro en ambos modos de color.
+- El usuario puede: autenticarse, gestionar contactos/leads/oportunidades (con drag & drop en el kanban)/actividades, administrar dominios y cuentas de correo, configurar su cuenta y tema desde el layout aside/main o desde el dropdown del header, ver estadísticas y actividad reciente, con permisos correctos y feedback claro en ambos modos de color.

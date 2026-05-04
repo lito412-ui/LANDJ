@@ -3,8 +3,8 @@
 Objetivo: dejar el CRM instalable, ejecutable y documentado para entrega.
 
 ## Estado actual
-- Avance estimado: `80%`
-- Ya implementado: entorno Docker funcional, documentación completa (README, arquitectura, contratos API, validaciones, seguridad, seguimiento de fases), todos los módulos documentados incluyendo hosting (dominios, correo), backups, estadísticas, configuración y tema oscuro.
+- Avance estimado: `90%`
+- Ya implementado: entorno Docker funcional, documentación completa (README, arquitectura, contratos API, validaciones, seguridad, seguimiento de fases), todos los módulos documentados incluyendo hosting (dominios, correo), backups, estadísticas, configuración (layout aside/main), dropdown de usuario expandido, drag & drop en pipeline, CSS modular en 6 ficheros con cache-busting, tema oscuro WCAG AA.
 - Pendiente: prueba end-to-end, revisión de seguridad final y tag de versión.
 
 ## Checklist de tareas
@@ -17,6 +17,7 @@ Objetivo: dejar el CRM instalable, ejecutable y documentado para entrega.
 - [x] Documentar seguridad CSRF/XSS → [`SEGURIDAD_CSRF_XSS.md`](SEGURIDAD_CSRF_XSS.md)
 - [x] Incluir guía de roles/permisos (qué puede hacer cada rol)
 - [x] Actualizar documentación con todos los cambios: hosting (dominios/correo), backups, estadísticas, actividad reciente, configuración, tema oscuro WCAG AA, 13 módulos JS
+- [x] Actualizar documentación con mejoras UX: dropdown expandido, configuración aside/main, drag & drop pipeline, CSS modular 6 ficheros, cache-busting JS/CSS
 - [ ] Ejecutar smoke test end-to-end con un caso realista (login → crear contacto → crear lead → gestionar usuarios → dominio → backup)
 - [ ] Revisar logs y manejo de errores (sin exponer secretos en producción)
 - [ ] Revisar seguridad final (roles, validaciones, sanitización, headers)

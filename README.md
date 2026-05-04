@@ -7,19 +7,20 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 ### Autenticación y sesión
 - **Login** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro).
-- **Configuración de cuenta** (`#configuracion`): edición de nombre/email, cambio de contraseña con verificación, selector de tema claro/oscuro.
+- **Configuración de cuenta** (`#configuracion`): layout aside/main — tarjeta de identidad con avatar, badge de rol y metadatos (sticky); formularios de datos y contraseña en paralelo; selector de tema visual; tarjeta de Seguridad con botón de cierre de sesión. El resumen se pre-carga al autenticarse.
 
 ### Dashboard principal
 - **Monitorización**: métricas en tiempo real de CPU, RAM y disco actualizadas cada 3 s.
 - **Actividad reciente**: los 10 últimos eventos de auditoría, con tiempo relativo y usuario.
 - **Acciones rápidas**: botones para crear backup, nueva cuenta de correo, FTP y SSL.
 - **Estadísticas CRM**: distribución de leads por estado, oportunidades por etapa y valor potencial.
-- **Tema claro/oscuro**: toggle en la cabecera, persistido en `localStorage`, con contraste WCAG AA en ambos modos.
+- **Menú de usuario**: dropdown expandido con avatar de iniciales, nombre, email y badge de rol; accesos directos a Datos de la cuenta y Cambiar contraseña; toggle de apariencia inline sincronizado con el header.
+- **Tema claro/oscuro**: toggle en la cabecera y en el dropdown de usuario, persistido en `localStorage`, con contraste WCAG AA en ambos modos.
 
 ### CRM
 - **Contactos**: CRUD completo, búsqueda debounced (400 ms), filtros avanzados (empresa, fechas, orden), paginación server-side, detalle lateral con actividades.
 - **Leads**: CRUD completo, búsqueda, filtros (estado, origen, fechas), paginación, panel de detalle con actividades, conversión de lead a contacto (transacción atómica).
-- **Pipeline de Oportunidades**: kanban board con 5 etapas, cambio de etapa con modal de confirmación, filtros avanzados (valor, fecha cierre, orden), detalle lateral con actividades.
+- **Pipeline de Oportunidades**: kanban board con 5 etapas, drag & drop HTML5 entre columnas (mueve directo vía API sin modal), cambio de etapa con confirmación desde el panel de detalle, filtros avanzados (valor, fecha cierre, orden), detalle lateral con actividades.
 - **Actividades**: CRUD de notas, llamadas, reuniones, tareas y emails ligados a contactos, leads y oportunidades. Widget compartido `ActividadesWidget`.
 
 ### cPanel — Hosting
@@ -70,7 +71,13 @@ LANDJ/
 ├── public/
 │   ├── assets/
 │   │   ├── css/site/                   # index-style.css, style.css
-│   │   ├── css/dashboard/              # cpanel-style.css (tema claro + oscuro)
+│   │   ├── css/dashboard/              # CSS en 6 módulos independientes con filemtime cache-busting:
+│   │   │   ├── cpanel-base.css         #   Layout, header, sidebar, cards, dashboard, user menu
+│   │   │   ├── cpanel-crm.css          #   CRM: toolbar, tablas, contactos, leads, toasts, modales, perfil
+│   │   │   ├── cpanel-pipeline.css     #   Pipeline kanban + drag & drop + paginación
+│   │   │   ├── cpanel-admin.css        #   Auditoría y Bases de Datos
+│   │   │   ├── cpanel-sistema.css      #   Configuración (aside/main, identity, seguridad, apariencia)
+│   │   │   └── cpanel-dark.css         #   Todos los overrides [data-theme="dark"] (WCAG AA)
 │   │   ├── js/site/                    # index-script.js
 │   │   └── js/dashboard/
 │   │       ├── cpanel-core.js          # Shared: fetchSeguro, toast, modal, paginación, temas, navegación

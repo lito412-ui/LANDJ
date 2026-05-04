@@ -1,0 +1,390 @@
+/* ============================================================
+ * L&J CPanel — Sistema — Configuracion (layout, identity, seguridad, apariencia)
+ * ============================================================ */
+
+/* ─── Configuración ──────────────────────────────────────────────────────────*/
+
+/* Layout principal: aside identidad + main ajustes */
+.config-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .config-layout { grid-template-columns: 1fr; }
+}
+
+/* Aside: tarjeta de identidad */
+.config-aside {
+    position: sticky;
+    top: 1rem;
+}
+
+.config-identity-card {
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.config-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 1.75rem 1.5rem 1.25rem;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.config-identity-nombre {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.config-identity-email {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    word-break: break-all;
+}
+
+.config-identity-meta {
+    padding: 0.75rem 0 0.25rem;
+}
+
+.config-identity-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.config-identity-campo:last-child {
+    border-bottom: none;
+}
+
+.config-identity-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.config-identity-valor {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+/* Main: columna de ajustes */
+.config-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.config-main > .content-card { margin-bottom: 0; }
+
+/* Fila de formularios (datos + contraseña) en 2 columnas */
+.config-forms-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+}
+
+@media (max-width: 720px) {
+    .config-forms-row { grid-template-columns: 1fr; }
+}
+
+.config-forms-row > .content-card { margin-bottom: 0; }
+
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.form-actions { display: flex; justify-content: flex-end; padding-top: 0.25rem; }
+
+.config-pass-wrap {
+    position: relative;
+}
+
+.config-pass-wrap .form-input {
+    width: 100%;
+    padding-right: 44px;
+    box-sizing: border-box;
+}
+
+.config-pass-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 4px;
+    line-height: 1;
+    z-index: 1;
+}
+.config-pass-toggle:hover { color: #667eea; }
+
+.config-pass-strength {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.config-pass-bar {
+    flex: 1;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.config-pass-bar > div {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s, background 0.3s;
+    width: 0;
+}
+
+#cfg-pass-strength-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ── Resumen de la cuenta ──────────────────────────────────────────────────── */
+.config-resumen {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.config-resumen-identidad {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.config-resumen-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.config-resumen-id {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.config-resumen-nombre {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+.config-resumen-email {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.config-resumen-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    background: #ede9fe;
+    color: #6d28d9;
+    align-self: flex-start;
+}
+
+.config-resumen-badge.rol-usuario {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.config-resumen-sep {
+    width: 1px;
+    background: #e2e8f0;
+    align-self: stretch;
+    flex-shrink: 0;
+}
+
+.config-resumen-meta {
+    flex: 1;
+    min-width: 220px;
+}
+
+/* ── Seguridad ─────────────────────────────────────────────────────────────── */
+.config-seguridad {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.config-seg-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.config-seg-item:last-child {
+    border-bottom: none;
+}
+
+.config-seg-icono {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.config-seg-icono--warn {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.config-seg-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-seg-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.config-seg-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.config-seg-btn {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+/* ── Selector de tema ──────────────────────────────────────────────────────── */
+/* Selector de tema */
+.config-apariencia {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 0 0.5rem;
+    flex-wrap: wrap;
+}
+
+.config-tema-opcion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.config-tema-opcion span {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.config-tema-opcion.active span { color: #667eea; font-weight: 700; }
+
+.config-tema-preview {
+    width: 160px;
+    height: 100px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 22px 1fr;
+    grid-template-columns: 44px 1fr;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.config-tema-opcion.active .config-tema-preview {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+}
+
+.config-tema-preview .ctp-header {
+    grid-column: 1 / -1;
+}
+
+.config-tema-preview--light .ctp-header  { background: #f8fafc; }
+.config-tema-preview--light .ctp-sidebar { background: #1e293b; }
+.config-tema-preview--light .ctp-content {
+    background: #f1f5f9;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.config-tema-preview--light .ctp-content > div {
+    height: 8px;
+    border-radius: 3px;
+    background: #e2e8f0;
+}
+
+.config-tema-preview--dark .ctp-header  { background: #0f172a; }
+.config-tema-preview--dark .ctp-sidebar { background: #0f172a; border-right: 1px solid #1e293b; }
+.config-tema-preview--dark .ctp-content {
+    background: #0f172a;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.config-tema-preview--dark .ctp-content > div {
+    height: 8px;
+    border-radius: 3px;
+    background: #1e293b;
+}
+

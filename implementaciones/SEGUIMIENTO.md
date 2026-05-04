@@ -5,12 +5,12 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 ## Resumen de avance (global)
 - Peso total del proyecto: `100%`
 - Fórmula: `avance_global = suma(avance_fase * peso_fase)`
-- **Avance estimado actual: `89%`**
+- **Avance estimado actual: `90%`**
   - Fase 01: 100% × 15% = 15
   - Fase 02: 100% × 20% = 20
   - Fase 03: 100% × 40% = 40
   - Fase 04:   0% × 15% =  0
-  - Fase 05:  80% × 10% =  8 (↑ desde 60%)
+  - Fase 05:  90% × 10% =  9 (↑ desde 80%)
 
 ## Pesos por fase
 - Fase 01 - Análisis y Planificación: `15%`
@@ -69,7 +69,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] CRUD completo de contactos (API REST + módulo JS + validaciones JS+PHP + detalle lateral)
 - [x] CRUD completo de leads (búsqueda, filtros, badges estado, conversión lead→contacto atómica)
 - [x] CRUD completo de gestión de usuarios — admin-only (badges rol, autoprotección, protección último admin)
-- [x] Pipeline kanban de oportunidades: 5 etapas, cambio de etapa con confirm, filtros avanzados
+- [x] Pipeline kanban de oportunidades: 5 etapas, drag & drop HTML5 entre columnas, cambio de etapa con confirm desde detalle, filtros avanzados
 - [x] CRUD de actividades/notas ligadas a contactos, leads y oportunidades (`ActividadesWidget` compartido)
 - [x] Búsqueda y filtros avanzados en todos los módulos (panel colapsable, badge activos, ordenación asc/desc)
 - [x] Paginación server-side con `renderPaginacion` compartido en todos los listados CRM
@@ -89,13 +89,17 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Sección Bases de Datos: estadísticas MySQL en tiempo real con `SHOW TABLE STATUS`, botón phpMyAdmin
 - [x] Sección Copias de Seguridad: creación, descarga y eliminación de backups `.sql` (`cpanel-backups.js`)
 - [x] Sección Estadísticas: métricas CRM (leads por estado, oportunidades por etapa, valor potencial)
-- [x] Configuración de cuenta: editar nombre/email, cambiar contraseña con verificación, selector de tema
+- [x] Configuración de cuenta: layout aside/main — identidad sticky (avatar, rol, metadatos), formularios en paralelo, apariencia y seguridad lado a lado; resumen pre-cargado al autenticarse (`Configuracion.cargar(data)`)
+- [x] Dropdown de usuario expandido: avatar iniciales, nombre, email, badge de rol, sub-links a configuración, toggle de apariencia inline
 
 ### UX y UI (completado)
-- [x] Tema claro/oscuro: toggle en cabecera, `localStorage`, WCAG AA en ambos modos
+- [x] Tema claro/oscuro: toggle en cabecera y en dropdown de usuario (sincronizados), `localStorage`, WCAG AA
   - Contrast fixes: `.nav-section-title`, `.crm-empty`, `.chart-label`, `.quick-action-btn span`
   - Status badges con clases CSS semánticas (sin `style=""` inline) para compatibilidad dark mode
-  - Overrides por sección: pipeline cards, backup stats, db summary, badges usuario/auditoría
+  - Overrides por sección: pipeline cards, backup stats, db summary, badges usuario/auditoría, configuración
+- [x] CSS refactorizado en 6 módulos con cache-busting `filemtime` independiente:
+  `cpanel-base`, `cpanel-crm`, `cpanel-pipeline`, `cpanel-admin`, `cpanel-sistema`, `cpanel-dark`
+- [x] Cache-busting `filemtime` añadido a todos los scripts JS en `cpanel.php`
 - [x] Actividad reciente en dashboard: últimos 10 eventos de auditoría con tiempo relativo
 - [x] Acciones rápidas del dashboard: backup, nueva cuenta de correo
 - [x] Navegación programática `navegarA(sectionId)` + `initQuickActions()`
@@ -114,11 +118,12 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 
 ---
 
-## Fase 05 - Despliegue y Documentación (Peso: 10% | Avance: 80%)
+## Fase 05 - Despliegue y Documentación (Peso: 10% | Avance: 90%)
 - [x] Preparar entorno (Docker, healthcheck, variables corregidas)
 - [x] Documentar instalación/ejecución (README del proyecto)
 - [x] Documentar arquitectura (modelo de datos + flujos)
 - [x] Actualizar documentación con todos los cambios (Fase 03 completa + módulos hosting + UX dark mode)
+- [x] Actualizar documentación con mejoras UX: dropdown expandido, configuración rediseñada, drag & drop, CSS modular
 - [ ] Ejecutar prueba final end-to-end con un caso realista
 - [ ] Tag/versión para entrega
 
@@ -130,7 +135,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [ ] Importación/exportación CSV para contactos, leads y oportunidades (impacto: alto | esfuerzo: bajo)
 - [ ] Notificaciones y recordatorios de tareas (impacto: alto | esfuerzo: medio)
 - [ ] Búsqueda global unificada (impacto: alto | esfuerzo: medio)
-- [ ] Kanban drag-and-drop real para pipeline (impacto: medio-alto | esfuerzo: medio)
+- [x] Kanban drag-and-drop real para pipeline (impacto: medio-alto | esfuerzo: medio) — **implementado**
 
 ### Mejoras técnicas (prioridad media)
 - [ ] Tests automatizados mínimos (smoke + integración) (impacto: alto | esfuerzo: medio)

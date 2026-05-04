@@ -89,19 +89,19 @@ Esquema completo: [`database/init.sql`](../database/init.sql)
 
 ### Módulos JavaScript (13 ficheros)
 
-Todos en `public/assets/js/dashboard/`. Patrón IIFE con `_initialized` guard.
+Todos en `public/assets/js/dashboard/`. Patrón IIFE con `_initialized` guard. Cache-busting con `filemtime` en `cpanel.php`.
 
 | Módulo | Scope | Descripción |
 |--------|-------|-------------|
-| `cpanel-core.js` | Global | `fetchSeguro`, `mostrarToast`, `mostrarConfirm`, `renderPaginacion`, `manejarApiError`, `navegarA`, `initThemeToggle`, `cargarActividadReciente` |
+| `cpanel-core.js` | Global | `fetchSeguro`, `mostrarToast`, `mostrarConfirm`, `renderPaginacion`, `manejarApiError`, `navegarA`, `initThemeToggle`, `cargarActividadReciente`; `_poblarDropdownHeader` rellena identidad en el menú de usuario al autenticarse |
 | `cpanel-actividades.js` | CRM | Widget compartido de actividades (notas/llamadas/reuniones/tareas/email) |
 | `cpanel-contactos.js` | CRM | CRUD contactos + detalle lateral |
 | `cpanel-leads.js` | CRM | CRUD leads + conversión a contacto |
-| `cpanel-oportunidades.js` | CRM | Pipeline kanban 5 etapas |
+| `cpanel-oportunidades.js` | CRM | Pipeline kanban 5 etapas + drag & drop HTML5 entre columnas (`_initDragDrop`, `_moverEtapaDirecto`) |
 | `cpanel-estadisticas.js` | Dashboard | Métricas y gráficos CRM |
 | `cpanel-email.js` | Hosting | CRUD cuentas de correo |
 | `cpanel-dominios.js` | Hosting | CRUD dominios |
-| `cpanel-configuracion.js` | Sistema | Perfil, contraseña, tema |
+| `cpanel-configuracion.js` | Sistema | Perfil, contraseña, tema; expone `cargar(data)` para pre-cargar resumen de identidad al autenticarse |
 | `cpanel-usuarios.js` | Admin | Gestión de usuarios (admin-only) |
 | `cpanel-auditoria.js` | Admin | Log de auditoría con diff (admin-only) |
 | `cpanel-databases.js` | Admin | Estadísticas MySQL (admin-only) |
@@ -206,6 +206,21 @@ docker compose down -v   # Reset completo de BD
 docker compose exec php sh
 docker compose exec db mysql -uroot
 ```
+
+---
+
+### CSS — Módulos (6 ficheros)
+
+Todos en `public/assets/css/dashboard/`. Separados por dominio; cargados con `<link>` individuales (HTTP/2) con cache-busting `filemtime` en `head.php`.
+
+| Módulo | Contenido |
+|--------|-----------|
+| `cpanel-base.css` | Layout, header, sidebar, cards, dashboard, menú de usuario/dropdown |
+| `cpanel-crm.css` | CRM: toolbar, tablas, contactos, leads, backups, dominios, estadísticas, detalle lateral, toasts, modales, perfil, filtros |
+| `cpanel-pipeline.css` | Pipeline kanban + drag & drop + paginación |
+| `cpanel-admin.css` | Auditoría + bases de datos |
+| `cpanel-sistema.css` | Configuración: layout aside/main, tarjeta de identidad, formularios, apariencia, seguridad |
+| `cpanel-dark.css` | Todos los overrides `[data-theme="dark"]` (WCAG AA) |
 
 ---
 
