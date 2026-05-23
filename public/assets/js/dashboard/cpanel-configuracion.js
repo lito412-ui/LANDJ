@@ -33,7 +33,13 @@ const Configuracion = (() => {
             document.getElementById('config-pass-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
+        // Notificaciones
+        document.getElementById('cfg-notif-guardar')?.addEventListener('click', _guardarNotif);
+        document.getElementById('cfg-notif-test')?.addEventListener('click', _probarNotif);
+        document.getElementById('cfg-notif-browser')?.addEventListener('change', _solicitarPermisoBrowser);
+
         _cargarDatos();
+        _cargarPreferencias();
         _sincronizarTema();
     }
 
@@ -217,6 +223,123 @@ const Configuracion = (() => {
     function cargar(data) {
         _poblarResumen(data);
         _sincronizarTema();
+    }
+
+    // ─── Preferencias de notificaciones ──────────────────────────────────────
+
+    async function _cargarPreferencias() {
+        try {
+            const r = await fetchSeguro('/api/preferencias.php?t=' + Date.now());
+            const d = await r.json();
+            if (!d.ok) return;
+            _aplicarPreferenciasAlForm(d.data);
+        } catch (_) { /* silencio */ }
+    }
+
+    function _aplicarPreferenciasAlForm(p) {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!parseInt(val); };
+        set('cfg-notif-activas',  p.activas);
+        set('cfg-notif-sonido',   p.sonido);
+        set('cfg-notif-browser',  p.browser_push);
+
+        const ant = document.getElementById('cfg-notif-antelacion');
+        if (ant) ant.value = String(p.antelacion_minutos);
+        const fre = document.getElementById('cfg-notif-frecuencia');
+        if (fre) fre.value = String(p.frecuencia_segundos);
+
+        _refrescarEstadoBrowserPermiso();
+    }
+
+    function _refrescarEstadoBrowserPermiso() {
+        const span = document.getElementById('cfg-notif-browser-estado');
+        if (!span) return;
+        if (!('Notification' in window)) {
+            span.textContent = '(no soportado en este navegador)';
+            span.style.color = 'var(--color-danger, #ef4444)';
+            return;
+        }
+        const perm = Notification.permission;
+        if (perm === 'granted') {
+            span.textContent = '(permiso concedido)';
+            span.style.color = 'var(--color-success, #10b981)';
+        } else if (perm === 'denied') {
+            span.textContent = '(permiso bloqueado en el navegador)';
+            span.style.color = 'var(--color-danger, #ef4444)';
+        } else {
+            span.textContent = '(pendiente de autorizar)';
+            span.style.color = 'var(--color-warning, #f59e0b)';
+        }
+    }
+
+    async function _solicitarPermisoBrowser(e) {
+        if (!e.target.checked) return;
+        if (typeof Notificaciones !== 'undefined') {
+            const res = await Notificaciones.pedirPermisoBrowser();
+            _refrescarEstadoBrowserPermiso();
+            if (res !== 'granted') {
+                e.target.checked = false;
+                mostrarToast('Permiso del navegador denegado', 'error');
+            }
+        }
+    }
+
+    async function _guardarNotif() {
+        const payload = {
+            activas:             document.getElementById('cfg-notif-activas')?.checked ? 1 : 0,
+            sonido:              document.getElementById('cfg-notif-sonido')?.checked ? 1 : 0,
+            browser_push:        document.getElementById('cfg-notif-browser')?.checked ? 1 : 0,
+            antelacion_minutos:  parseInt(document.getElementById('cfg-notif-antelacion')?.value || 30),
+            frecuencia_segundos: parseInt(document.getElementById('cfg-notif-frecuencia')?.value || 60),
+        };
+
+        const btn = document.getElementById('cfg-notif-guardar');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+
+        try {
+            const r = await fetchSeguro('/api/preferencias.php', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+            mostrarToast('Preferencias guardadas', 'success');
+            // Recargar polling con la nueva frecuencia
+            if (typeof Notificaciones !== 'undefined') Notificaciones.cargar();
+        } catch (err) {
+            manejarApiError(err, err.message || 'Error al guardar preferencias');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar preferencias'; }
+        }
+    }
+
+    function _probarNotif() {
+        const sonido      = document.getElementById('cfg-notif-sonido')?.checked;
+        const browserPush = document.getElementById('cfg-notif-browser')?.checked;
+
+        mostrarToast('Esto es un ejemplo de notificación', 'info');
+
+        if (sonido) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.4);
+            } catch (_) { /* sin audio */ }
+        }
+
+        if (browserPush && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+                new Notification('L&J CRM — prueba', {
+                    body: 'Las notificaciones del navegador funcionan correctamente.',
+                });
+            } catch (_) { /* sandbox */ }
+        }
     }
 
     return { init, cargar };

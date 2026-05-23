@@ -4,37 +4,49 @@
 
 /* ─── Configuración ──────────────────────────────────────────────────────────*/
 
-/* Layout principal: aside identidad + main ajustes */
-.config-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
+/* Layout vertical: cards apiladas */
+.config-vertical {
+    display: flex;
+    flex-direction: column;
     gap: 1.25rem;
-    align-items: start;
+    max-width: 760px;
 }
 
-@media (max-width: 900px) {
-    .config-layout { grid-template-columns: 1fr; }
-}
+.config-vertical > .content-card { margin-bottom: 0; }
 
-/* Aside: tarjeta de identidad */
-.config-aside {
-    position: sticky;
-    top: 1rem;
-}
-
-.config-identity-card {
-    margin-bottom: 0;
+/* Card de identidad horizontal */
+.config-identity-card-h {
     overflow: hidden;
 }
 
-.config-identity {
+.config-identity-h {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.config-identity-h-info {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 1.75rem 1.5rem 1.25rem;
-    text-align: center;
-    border-bottom: 1px solid #e2e8f0;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.config-identity-h-meta {
+    display: flex;
+    gap: 2rem;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+    padding-left: 1.5rem;
+    border-left: 1px solid #e2e8f0;
+}
+
+@media (max-width: 640px) {
+    .config-identity-h { flex-direction: column; align-items: flex-start; }
+    .config-identity-h-meta { border-left: none; border-top: 1px solid #e2e8f0; padding-left: 0; padding-top: 1rem; }
 }
 
 .config-identity-nombre {
@@ -50,20 +62,10 @@
     word-break: break-all;
 }
 
-.config-identity-meta {
-    padding: 0.75rem 0 0.25rem;
-}
-
 .config-identity-campo {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 0.6rem 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.config-identity-campo:last-child {
-    border-bottom: none;
 }
 
 .config-identity-label {
@@ -83,29 +85,6 @@
     font-weight: 500;
     word-break: break-all;
 }
-
-/* Main: columna de ajustes */
-.config-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    min-width: 0;
-}
-
-.config-main > .content-card { margin-bottom: 0; }
-
-/* Fila de formularios (datos + contraseña) en 2 columnas */
-.config-forms-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-}
-
-@media (max-width: 720px) {
-    .config-forms-row { grid-template-columns: 1fr; }
-}
-
-.config-forms-row > .content-card { margin-bottom: 0; }
 
 .config-form {
     display: flex;
@@ -386,5 +365,150 @@
     height: 8px;
     border-radius: 3px;
     background: #1e293b;
+}
+
+
+/* ─── Notificaciones — sección Configuración ─────────────────────────── */
+.config-notif {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.25rem 1.5rem 1.25rem;
+}
+
+.config-notif-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0;
+    gap: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.config-notif-row:first-child {
+    padding-top: 0.75rem;
+}
+
+.config-notif-row:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0.75rem;
+}
+
+.config-notif-icono {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.config-notif-icono--purple {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.config-notif-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.config-notif-titulo {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.config-notif-desc {
+    font-size: 0.78rem;
+    color: #64748b;
+    line-height: 1.35;
+}
+
+.config-notif-estado {
+    font-weight: 600;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+.config-notif-select {
+    min-width: 170px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+}
+
+.config-notif-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.config-notif-actions .btn-primary,
+.config-notif-actions .btn-secondary {
+    padding: 9px 16px;
+    font-size: 0.85rem;
+}
+
+.config-notif-actions .btn-primary i,
+.config-notif-actions .btn-secondary i {
+    margin-right: 6px;
+}
+
+/* Toggle switch reutilizable */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #cbd5e1;
+    border-radius: 24px;
+    transition: background-color 0.25s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.25s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: #2563eb;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 

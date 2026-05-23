@@ -610,6 +610,48 @@ body.detalle-open { overflow: hidden; }
     gap: 8px;
 }
 
+.act-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 8px;
+}
+
+.act-form-mini-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.act-form-mini-label i {
+    color: #2563eb;
+    margin-right: 2px;
+}
+
+.det-act-recordatorio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.det-act-recordatorio i {
+    font-size: 0.72rem;
+}
+
+.det-act-item.completada {
+    opacity: 0.55;
+}
+
+.det-act-item.completada .det-act-desc {
+    text-decoration: line-through;
+}
+
 .detalle-actividades {
     display: flex;
     flex-direction: column;

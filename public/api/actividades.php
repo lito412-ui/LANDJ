@@ -45,6 +45,15 @@ function validarActividad(array $b): array {
     if ($fecha !== null && !preg_match('/^\d{4}-\d{2}-\d{2}/', $fecha))
         $errors[] = 'Formato de fecha inválido';
 
+    // Recordatorio: formato datetime-local del input HTML (YYYY-MM-DDTHH:MM)
+    $recordatorioAt = nullOrStr($b['recordatorio_at'] ?? '');
+    if ($recordatorioAt !== null) {
+        $recordatorioAt = str_replace('T', ' ', $recordatorioAt);
+        if (strlen($recordatorioAt) === 16) $recordatorioAt .= ':00';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/', $recordatorioAt))
+            $errors[] = 'Formato de recordatorio inválido';
+    }
+
     $contactoId    = isset($b['contacto_id'])    && $b['contacto_id']    !== '' ? (int)$b['contacto_id']    : null;
     $leadId        = isset($b['lead_id'])         && $b['lead_id']        !== '' ? (int)$b['lead_id']        : null;
     $oportunidadId = isset($b['oportunidad_id'])  && $b['oportunidad_id'] !== '' ? (int)$b['oportunidad_id'] : null;
@@ -53,13 +62,14 @@ function validarActividad(array $b): array {
         $errors[] = 'La actividad debe estar vinculada a un contacto, lead u oportunidad';
 
     return [
-        'errors'         => $errors,
-        'tipo'           => $tipo,
-        'descripcion'    => $descripcion,
-        'fecha'          => $fecha,
-        'contacto_id'    => $contactoId,
-        'lead_id'        => $leadId,
-        'oportunidad_id' => $oportunidadId,
+        'errors'          => $errors,
+        'tipo'            => $tipo,
+        'descripcion'     => $descripcion,
+        'fecha'           => $fecha,
+        'recordatorio_at' => $recordatorioAt,
+        'contacto_id'     => $contactoId,
+        'lead_id'         => $leadId,
+        'oportunidad_id'  => $oportunidadId,
     ];
 }
 
@@ -104,11 +114,11 @@ try {
 
             $s = $pdo->prepare("
                 INSERT INTO actividades
-                    (tipo, descripcion, fecha, contacto_id, lead_id, oportunidad_id, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (tipo, descripcion, fecha, recordatorio_at, contacto_id, lead_id, oportunidad_id, creado_por)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $s->execute([
-                $v['tipo'], $v['descripcion'], $v['fecha'],
+                $v['tipo'], $v['descripcion'], $v['fecha'], $v['recordatorio_at'],
                 $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $userId
             ]);
             $newId = (int) $pdo->lastInsertId();
@@ -133,10 +143,11 @@ try {
 
             $pdo->prepare("
                 UPDATE actividades
-                SET tipo=?, descripcion=?, fecha=?, contacto_id=?, lead_id=?, oportunidad_id=?
+                SET tipo=?, descripcion=?, fecha=?, recordatorio_at=?, recordatorio_descartado=0,
+                    contacto_id=?, lead_id=?, oportunidad_id=?
                 WHERE id_actividad=?
             ")->execute([
-                $v['tipo'], $v['descripcion'], $v['fecha'],
+                $v['tipo'], $v['descripcion'], $v['fecha'], $v['recordatorio_at'],
                 $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $id
             ]);
 

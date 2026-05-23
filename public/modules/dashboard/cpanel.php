@@ -46,6 +46,7 @@ csrfGenerar();
 
 <?php $jsDir = __DIR__ . '/../../assets/js/dashboard/'; ?>
 <script src="/assets/js/dashboard/cpanel-configuracion.js?v=<?= filemtime($jsDir . 'cpanel-configuracion.js') ?>"></script>
+<script src="/assets/js/dashboard/cpanel-notificaciones.js?v=<?= filemtime($jsDir . 'cpanel-notificaciones.js') ?>"></script>
 <script src="/assets/js/dashboard/cpanel-core.js?v=<?= filemtime($jsDir . 'cpanel-core.js') ?>"></script>
 <script src="/assets/js/dashboard/cpanel-actividades.js?v=<?= filemtime($jsDir . 'cpanel-actividades.js') ?>"></script>
 <script src="/assets/js/dashboard/cpanel-contactos.js?v=<?= filemtime($jsDir . 'cpanel-contactos.js') ?>"></script>

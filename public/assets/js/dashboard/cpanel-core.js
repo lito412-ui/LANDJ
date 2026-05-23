@@ -45,6 +45,7 @@ async function checkAuth() {
         cargarActividadReciente();
 
         if (typeof Configuracion !== 'undefined') Configuracion.cargar(data);
+        if (typeof Notificaciones !== 'undefined') Notificaciones.init();
     } catch (error) {
         console.error('Error validando sesion:', error.message);
         window.location.href = '/modules/site/login.html';

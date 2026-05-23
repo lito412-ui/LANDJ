@@ -206,7 +206,16 @@
                             <option value="email">Email</option>
                         </select>
                         <textarea id="ldet-act-desc" class="form-textarea" rows="2" placeholder="Descripción de la actividad..." maxlength="500"></textarea>
-                        <input type="date" id="ldet-act-fecha" class="form-input form-input-sm">
+                        <div class="act-form-grid">
+                            <label class="act-form-mini-label">
+                                <span>Fecha</span>
+                                <input type="date" id="ldet-act-fecha" class="form-input form-input-sm">
+                            </label>
+                            <label class="act-form-mini-label">
+                                <span><i class="fas fa-bell"></i> Recordatorio</span>
+                                <input type="datetime-local" id="ldet-act-recordatorio" class="form-input form-input-sm">
+                            </label>
+                        </div>
                         <div class="act-form-actions">
                             <button id="ldet-act-guardar" class="btn-primary btn-sm">Guardar</button>
                             <button id="ldet-act-cancelar" class="btn-secondary btn-sm">Cancelar</button>

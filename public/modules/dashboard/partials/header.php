@@ -5,6 +5,31 @@
             <span class="welcome-text">Bienvenido, <span id="user-name">Usuario</span></span>
         </div>
         <div class="header-right">
+            <div class="notif-menu">
+                <button class="notif-btn" id="notif-btn" title="Notificaciones" aria-haspopup="true">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+                </button>
+                <div class="notif-dropdown" id="notif-dropdown">
+                    <div class="notif-header">
+                        <span class="notif-titulo"><i class="fas fa-bell"></i> Notificaciones</span>
+                        <button class="notif-config-btn" id="notif-config-btn" title="Configurar">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                    <ul class="notif-lista" id="notif-lista">
+                        <li class="notif-vacio">
+                            <i class="fas fa-bell-slash"></i>
+                            <span>Sin notificaciones</span>
+                        </li>
+                    </ul>
+                    <div class="notif-footer">
+                        <button class="notif-marcar-todas" id="notif-marcar-todas">
+                            <i class="fas fa-check-double"></i> Marcar todas como leídas
+                        </button>
+                    </div>
+                </div>
+            </div>
             <button class="theme-toggle-btn" id="theme-toggle-btn" title="Cambiar tema">
                 <i class="fas fa-moon"></i>
             </button>
@@ -29,16 +54,9 @@
                         <i class="fas fa-user"></i>
                         Mi Perfil
                     </a>
-                    <span class="dropdown-section-label">
-                        <i class="fas fa-cog"></i> Configuración
-                    </span>
-                    <a href="#configuracion" class="dropdown-item dropdown-sub-item nav-link" data-section="configuracion">
-                        <i class="fas fa-id-card"></i>
-                        Datos de la cuenta
-                    </a>
-                    <a href="#configuracion" class="dropdown-item dropdown-sub-item nav-link" data-section="configuracion">
-                        <i class="fas fa-lock"></i>
-                        Cambiar contraseña
+                    <a href="#configuracion" class="dropdown-item nav-link" data-section="configuracion">
+                        <i class="fas fa-cog"></i>
+                        Configuración
                     </a>
                     <div class="dropdown-divider"></div>
                     <a href="/auth/logout.php" class="dropdown-item logout">

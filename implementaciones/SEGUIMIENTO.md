@@ -133,7 +133,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 
 ### Mejoras de alto impacto (prioridad alta)
 - [ ] Importación/exportación CSV para contactos, leads y oportunidades (impacto: alto | esfuerzo: bajo)
-- [ ] Notificaciones y recordatorios de tareas (impacto: alto | esfuerzo: medio)
+- [x] Notificaciones y recordatorios de tareas (impacto: alto | esfuerzo: medio) — **implementado**
 - [ ] Búsqueda global unificada (impacto: alto | esfuerzo: medio)
 - [x] Kanban drag-and-drop real para pipeline (impacto: medio-alto | esfuerzo: medio) — **implementado**
 

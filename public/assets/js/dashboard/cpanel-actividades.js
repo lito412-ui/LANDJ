@@ -5,14 +5,15 @@ const ActividadesWidget = (() => {
     const TIPOS  = { nota: 'Nota', llamada: 'Llamada', reunion: 'Reunión', tarea: 'Tarea', email: 'Email' };
 
     function init({ prefix, entityType, entityId }) {
-        const listaEl    = document.getElementById(`${prefix}-act-lista`);
-        const formEl     = document.getElementById(`${prefix}-act-form`);
-        const nuevoBtn   = document.getElementById(`${prefix}-act-nuevo-btn`);
-        const guardarBtn = document.getElementById(`${prefix}-act-guardar`);
-        const cancelarBtn= document.getElementById(`${prefix}-act-cancelar`);
-        const tipoSel    = document.getElementById(`${prefix}-act-tipo`);
-        const descEl     = document.getElementById(`${prefix}-act-desc`);
-        const fechaEl    = document.getElementById(`${prefix}-act-fecha`);
+        const listaEl       = document.getElementById(`${prefix}-act-lista`);
+        const formEl        = document.getElementById(`${prefix}-act-form`);
+        const nuevoBtn      = document.getElementById(`${prefix}-act-nuevo-btn`);
+        const guardarBtn    = document.getElementById(`${prefix}-act-guardar`);
+        const cancelarBtn   = document.getElementById(`${prefix}-act-cancelar`);
+        const tipoSel       = document.getElementById(`${prefix}-act-tipo`);
+        const descEl        = document.getElementById(`${prefix}-act-desc`);
+        const fechaEl       = document.getElementById(`${prefix}-act-fecha`);
+        const recordatorioEl= document.getElementById(`${prefix}-act-recordatorio`);
         if (!listaEl) return;
 
         let editActId = null;
@@ -22,6 +23,9 @@ const ActividadesWidget = (() => {
             if (tipoSel) tipoSel.value = act?.tipo ?? 'nota';
             if (descEl)  descEl.value  = act?.descripcion ?? '';
             if (fechaEl) fechaEl.value = act?.fecha ? act.fecha.slice(0, 10) : '';
+            if (recordatorioEl) recordatorioEl.value = act?.recordatorio_at
+                ? act.recordatorio_at.replace(' ', 'T').slice(0, 16)
+                : '';
             if (formEl)  formEl.style.display = '';
             descEl?.focus();
         }
@@ -30,6 +34,7 @@ const ActividadesWidget = (() => {
             if (formEl) formEl.style.display = 'none';
             if (descEl) descEl.value = '';
             if (fechaEl) fechaEl.value = '';
+            if (recordatorioEl) recordatorioEl.value = '';
             editActId = null;
         }
 
@@ -38,9 +43,10 @@ const ActividadesWidget = (() => {
             if (!desc) { mostrarToast('La descripción es obligatoria', 'error'); descEl?.focus(); return; }
             if (guardarBtn) guardarBtn.disabled = true;
             const payload = {
-                tipo:        tipoSel?.value ?? 'nota',
-                descripcion: desc,
-                fecha:       fechaEl?.value || null,
+                tipo:            tipoSel?.value ?? 'nota',
+                descripcion:     desc,
+                fecha:           fechaEl?.value || null,
+                recordatorio_at: recordatorioEl?.value || null,
                 [`${entityType}_id`]: entityId,
             };
             const url    = editActId ? `/api/actividades.php?id=${editActId}` : '/api/actividades.php';
@@ -81,20 +87,25 @@ const ActividadesWidget = (() => {
                     listaEl.innerHTML = '<li class="det-act-vacio">Sin actividades registradas</li>';
                     return;
                 }
-                listaEl.innerHTML = d.data.map(a => `
-                    <li class="det-act-item" data-act-id="${a.id_actividad}">
+                listaEl.innerHTML = d.data.map(a => {
+                    const recordChip = a.recordatorio_at
+                        ? `<span class="det-act-recordatorio" title="Recordatorio: ${esc(formatFechaHora(a.recordatorio_at))}"><i class="fas fa-bell"></i> ${esc(formatFechaHora(a.recordatorio_at))}</span>`
+                        : '';
+                    return `
+                    <li class="det-act-item ${a.completada == 1 ? 'completada' : ''}" data-act-id="${a.id_actividad}">
                         <span class="det-act-icono det-act-${esc(a.tipo)}">
                             <i class="fas ${ICONOS[a.tipo] || 'fa-circle'}"></i>
                         </span>
                         <div class="det-act-info">
                             <span class="det-act-desc">${esc(a.descripcion)}</span>
-                            <span class="det-act-fecha">${TIPOS[a.tipo] ?? a.tipo} · ${formatFecha(a.fecha || a.created_at)}</span>
+                            <span class="det-act-fecha">${TIPOS[a.tipo] ?? a.tipo} · ${formatFecha(a.fecha || a.created_at)}${recordChip ? ' · ' + recordChip : ''}</span>
                         </div>
                         <div class="det-act-actions">
                             <button class="btn-icon-xs act-edit-btn" data-id="${a.id_actividad}" title="Editar"><i class="fas fa-edit"></i></button>
                             <button class="btn-icon-xs danger act-del-btn" data-id="${a.id_actividad}" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </div>
-                    </li>`).join('');
+                    </li>`;
+                }).join('');
 
                 const actData = d.data;
                 listaEl.querySelectorAll('.act-edit-btn').forEach(btn => {
@@ -129,6 +140,13 @@ const ActividadesWidget = (() => {
     function formatFecha(ts) {
         if (!ts) return '—';
         return new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function formatFechaHora(ts) {
+        if (!ts) return '—';
+        return new Date(ts.replace(' ', 'T')).toLocaleString('es-ES', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
     }
 
     return { init };
