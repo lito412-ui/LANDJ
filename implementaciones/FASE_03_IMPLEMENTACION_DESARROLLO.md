@@ -6,7 +6,7 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - Avance estimado: `100%`
 - Pendiente del MVP: ninguno. Fase 03 completa.
 
-**Completado**: infraestructura Docker + migraciones, auth con CSRF/CSP, esquema BD completo (8 tablas), seed vía migraciones, monitorización real, perfil de usuario, panel modularizado (13 módulos JS). CRUD de contactos, leads, usuarios, oportunidades, actividades. Conversión lead→contacto atómica. Pipeline kanban con drag & drop HTML5. Búsqueda/filtros avanzados en todos los módulos. Paginación server-side. Auditoría con diff expandible. Bases de datos con estadísticas MySQL. Backups SQL. Dominios y cuentas de correo (hosting). Estadísticas CRM. Actividad reciente. Acciones rápidas. Tema claro/oscuro WCAG AA. Configuración de cuenta (layout aside/main). Dropdown de usuario expandido. CSS refactorizado en 6 módulos independientes.
+**Completado**: infraestructura Docker + migraciones, auth con CSRF/CSP, esquema BD completo (8 tablas + cols 2FA), seed vía migraciones, monitorización real, perfil de usuario, panel modularizado (13 módulos JS). CRUD de contactos, leads, usuarios, oportunidades, actividades. Conversión lead→contacto atómica. Pipeline kanban con drag & drop HTML5. Búsqueda/filtros avanzados en todos los módulos. Paginación server-side. Auditoría con diff expandible. Bases de datos con estadísticas MySQL. Backups SQL. Dominios y cuentas de correo (hosting). Estadísticas CRM. Actividad reciente. Acciones rápidas. Tema claro/oscuro WCAG AA. Configuración de cuenta rediseñada (cards verticales, toggle 2FA, iconos notif). Dropdown de usuario expandido. CSS refactorizado en 6 módulos independientes. Verificación en dos pasos (2FA) con OTP por email (PHPMailer). Servicio de email integrado en Docker vía Composer.
 
 ---
 
@@ -32,6 +32,13 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Autenticación: hash Argon2id, login, logout, sesión PHP
 - [x] RBAC: control de acceso en rutas y endpoints protegidos
 - [x] `api/get_user.php` devuelve `id_usuario`, `nombre`, `rol`, `email`, `created_at`
+- [x] Verificación en dos pasos (2FA): migración `008_2fa.sql` añade 4 columnas a `usuarios` (enabled, code, expires_at, attempts)
+- [x] `auth/login.php` bifurcado: flujo directo (sin 2FA) o generación OTP + email + redirect a verify-2fa
+- [x] `auth/verify-2fa.php`: página OTP con countdown 600 s, reenvío vía `?accion=reenviar`, bloqueo tras 3 intentos, `session_regenerate_id` en éxito
+- [x] `config/mailer.php`: `enviarEmail()` vía PHPMailer SMTP; `plantilla2FA()` genera HTML del email con el código
+- [x] `composer.json` con `phpmailer/phpmailer ^6.9`; `vendor/` generado por `composer install` al arrancar el contenedor `php`
+- [x] `docker-compose.yml` php service: comando `composer install --no-dev --no-interaction --quiet && php-fpm`; variables SMTP_HOST/PORT/USER/PASS/MAIL_FROM en environment
+- [x] `public/test-mail.php`: herramienta de diagnóstico SMTP (configuración activa, OpenSSL, conversación SMTP, envío de prueba); protegida por `$_SESSION['user_id']`
 
 ### Panel de control y estructura
 - [x] `cpanel.php` con includes PHP por sección (partials)
@@ -50,9 +57,9 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 - [x] Vista de perfil (`#perfil`) con avatar de iniciales, nombre, email, rol y fecha
 
 ### Configuración de cuenta (`#configuracion`)
-- [x] `api/configuracion.php`: `PUT` actualiza nombre/email; `PUT?accion=password` cambia contraseña con verificación
-- [x] `cpanel-configuracion.js`: pre-rellena formulario con `perfilData`, medidor de fortaleza de contraseña, selector visual de tema
-- [x] Layout aside/main: tarjeta de identidad sticky (avatar, nombre, email, badge de rol, metadatos), formularios Datos y Contraseña en paralelo, Apariencia y Seguridad en paralelo
+- [x] `api/configuracion.php`: `PUT` actualiza nombre/email; `PUT?accion=password` cambia contraseña con verificación; `GET?accion=2fa-status` devuelve `{enabled, has_email}`; `PUT?accion=2fa` activa/desactiva 2FA
+- [x] `cpanel-configuracion.js`: pre-rellena formulario con `perfilData`, medidor de fortaleza de contraseña, selector visual de tema; `_cargar2FA()` y `_toggle2FA()` para el toggle de verificación en dos pasos
+- [x] Layout rediseñado a cards verticales (`.config-vertical`, max-width 760px): identidad horizontal (avatar, nombre, email, rol, metadatos), formularios Datos y Contraseña, Apariencia, Seguridad (con toggle 2FA), Avisos y Recordatorios (con iconos `.config-notif-icono`)
 - [x] `cargar(data)` público: pre-popula la tarjeta de resumen al autenticarse sin esperar a que el usuario abra la sección
 - [x] Actualiza header (nombre) y tarjeta de identidad tras guardar sin recargar página
 
@@ -133,4 +140,4 @@ Objetivo: construir el CRM de forma incremental hasta el MVP funcionando end-to-
 ---
 
 ## Criterio de "Hecho"
-- El usuario puede: autenticarse, gestionar contactos/leads/oportunidades (con drag & drop en el kanban)/actividades, administrar dominios y cuentas de correo, configurar su cuenta y tema desde el layout aside/main o desde el dropdown del header, ver estadísticas y actividad reciente, con permisos correctos y feedback claro en ambos modos de color.
+- El usuario puede: autenticarse (con 2FA opcional por email), gestionar contactos/leads/oportunidades (con drag & drop en el kanban)/actividades, administrar dominios y cuentas de correo, configurar su cuenta y tema desde el layout de cards verticales o desde el dropdown del header, activar/desactivar verificación en dos pasos desde la tarjeta de Seguridad, ver estadísticas y actividad reciente, con permisos correctos y feedback claro en ambos modos de color.

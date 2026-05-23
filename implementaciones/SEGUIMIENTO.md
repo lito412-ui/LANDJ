@@ -89,8 +89,10 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [x] Sección Bases de Datos: estadísticas MySQL en tiempo real con `SHOW TABLE STATUS`, botón phpMyAdmin
 - [x] Sección Copias de Seguridad: creación, descarga y eliminación de backups `.sql` (`cpanel-backups.js`)
 - [x] Sección Estadísticas: métricas CRM (leads por estado, oportunidades por etapa, valor potencial)
-- [x] Configuración de cuenta: layout aside/main — identidad sticky (avatar, rol, metadatos), formularios en paralelo, apariencia y seguridad lado a lado; resumen pre-cargado al autenticarse (`Configuracion.cargar(data)`)
+- [x] Configuración de cuenta: rediseñada a cards verticales (`.config-vertical`) — identidad horizontal, formularios Datos/Contraseña, Apariencia, Seguridad (con toggle 2FA), Avisos y Recordatorios con iconos; resumen pre-cargado al autenticarse (`Configuracion.cargar(data)`)
 - [x] Dropdown de usuario expandido: avatar iniciales, nombre, email, badge de rol, sub-links a configuración, toggle de apariencia inline
+- [x] Verificación en dos pasos (2FA): migración `008_2fa.sql`, login bifurcado, `verify-2fa.php` con countdown/reenvío/bloqueo, API `GET/PUT ?accion=2fa`, toggle en UI de Configuración
+- [x] Servicio de email (PHPMailer ^6.9): `config/mailer.php`, plantilla HTML 2FA, `composer install` en startup del contenedor `php`, variables SMTP en docker-compose y `.env`
 
 ### UX y UI (completado)
 - [x] Tema claro/oscuro: toggle en cabecera y en dropdown de usuario (sincronizados), `localStorage`, WCAG AA
@@ -139,7 +141,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 
 ### Mejoras técnicas (prioridad media)
 - [ ] Tests automatizados mínimos (smoke + integración) (impacto: alto | esfuerzo: medio)
-- [~] Hardening de seguridad (rate limit, bloqueo por intentos, CSRF ✓, CSP ✓) (impacto: alto | esfuerzo: medio)
+- [~] Hardening de seguridad (rate limit pendiente, bloqueo por intentos 2FA ✓, 2FA OTP ✓, CSRF ✓, CSP ✓) (impacto: alto | esfuerzo: medio)
 - [ ] API REST versionada para integraciones futuras (impacto: medio-alto | esfuerzo: medio-alto)
 - [ ] Logging estructurado para incidencias (impacto: medio | esfuerzo: medio)
 
@@ -150,6 +152,7 @@ Usa este archivo como tablero. Marca cada tarea como `[x]` cuando esté completa
 - [ ] Plantillas de email y seguimiento de envíos (impacto: medio | esfuerzo: alto)
 
 ### Siguiente iteración recomendada
-- [ ] Endurecer login (rate limit, intentos fallidos, mensajes no reveladores)
+- [ ] Configurar proveedor de email funcional (Resend API o SMTP con credenciales válidas) para completar el flujo 2FA end-to-end
+- [ ] Rate limit en login (intentos fallidos por IP/usuario)
 - [ ] Pruebas manuales de flujos críticos (Fase 04)
 - [ ] Tag de versión para entrega final

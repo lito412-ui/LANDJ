@@ -51,17 +51,20 @@ Este directorio centraliza planificación, seguimiento y operación del proyecto
 1. El usuario abre `public/modules/site/login.html`.
 2. El formulario envía credenciales por POST a `public/auth/login.php`.
 3. `login.php` valida contra la tabla `usuarios` con `password_verify` (Argon2id).
-4. Si es correcto, crea `$_SESSION['user_id']`, `$_SESSION['nombre']`, `$_SESSION['rol']` y redirige al panel.
-5. `public/modules/dashboard/cpanel.php` genera CSRF token, comprueba sesión e incluye los partials.
-6. `public/api/get_user.php` devuelve sesión activa en JSON.
-7. `public/auth/logout.php` destruye la sesión y redirige al login.
+4a. **Sin 2FA**: crea `$_SESSION['user_id']`, `$_SESSION['nombre']`, `$_SESSION['rol']` con `session_regenerate_id` y redirige al panel.
+4b. **Con 2FA activo**: genera OTP de 6 dígitos, lo almacena en BD con expiración 10 min, envía email (PHPMailer), guarda `$_SESSION['2fa_pending']` y redirige a `public/auth/verify-2fa.php`.
+5. `verify-2fa.php` muestra pantalla OTP con countdown de 10 min y opción de reenvío. Valida el código con `hash_equals`. Máx 3 intentos antes de bloqueo (redirige a login con `?error=2fa_bloqueado`). En caso de éxito, `session_regenerate_id` y redirige al panel.
+6. `public/modules/dashboard/cpanel.php` genera CSRF token, comprueba sesión e incluye los partials.
+7. `public/api/get_user.php` devuelve sesión activa en JSON.
+8. `public/auth/logout.php` destruye la sesión y redirige al login.
 
 ---
 
 ### Modelo de datos (8 tablas)
 
 ```text
-usuarios             ← cuentas con rol (usuario/administrador) y hash Argon2id
+usuarios             ← cuentas con rol (usuario/administrador), hash Argon2id y columnas 2FA
+                       (two_factor_enabled, two_factor_code, two_factor_expires_at, two_factor_attempts)
 contactos            → FK usuarios (creado_por)
 leads                → FK usuarios, FK contactos (si convertido)
 oportunidades        → FK contactos, FK leads, FK usuarios (asignado_a, creado_por)
@@ -101,7 +104,7 @@ Todos en `public/assets/js/dashboard/`. Patrón IIFE con `_initialized` guard. C
 | `cpanel-estadisticas.js` | Dashboard | Métricas y gráficos CRM |
 | `cpanel-email.js` | Hosting | CRUD cuentas de correo |
 | `cpanel-dominios.js` | Hosting | CRUD dominios |
-| `cpanel-configuracion.js` | Sistema | Perfil, contraseña, tema; expone `cargar(data)` para pre-cargar resumen de identidad al autenticarse |
+| `cpanel-configuracion.js` | Sistema | Perfil, contraseña, tema, toggle 2FA; expone `cargar(data)` para pre-cargar resumen de identidad al autenticarse |
 | `cpanel-usuarios.js` | Admin | Gestión de usuarios (admin-only) |
 | `cpanel-auditoria.js` | Admin | Log de auditoría con diff (admin-only) |
 | `cpanel-databases.js` | Admin | Estadísticas MySQL (admin-only) |
@@ -123,7 +126,7 @@ Todos en `public/assets/js/dashboard/`. Patrón IIFE con `_initialized` guard. C
 | `/api/actividades.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD actividades |
 | `/api/dominios.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD dominios |
 | `/api/cuentas_correo.php` | GET/POST/PUT/DELETE | Sesión + CSRF | CRUD cuentas correo |
-| `/api/configuracion.php` | PUT | Sesión + CSRF | Perfil propio + contraseña |
+| `/api/configuracion.php` | GET/PUT | Sesión + CSRF | Perfil propio + contraseña + estado y toggle 2FA |
 | `/api/usuarios.php` | GET/POST/PUT/DELETE | Sesión + CSRF + Admin | CRUD usuarios |
 | `/api/auditoria.php` | GET | Sesión + Admin | Log de auditoría |
 | `/api/databases.php` | GET | Sesión + Admin | Estadísticas tablas |

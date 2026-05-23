@@ -15,21 +15,18 @@ Los endpoints mutantes (POST, PUT, DELETE, PATCH) requieren el header `X-CSRF-To
 
 ## Autenticación
 
-### `POST /api/login.php`
-Inicia sesión. No requiere sesión previa ni token CSRF.
+### `POST /auth/login.php`
+Inicia sesión. No requiere sesión previa ni token CSRF. Es un formulario PHP (responde con redirect, no JSON).
 
-**Request body**
-```json
-{ "usuario": "admin", "password": "secreto123" }
+**Request body** (form POST)
+```
+usuario=admin&password=secreto123
 ```
 
-**Respuestas**
-
-| Código | Condición | Body |
-|--------|-----------|------|
-| `200` | Credenciales correctas | `{ "ok": true, "data": { "nombre": "Admin", "rol": "administrador" } }` |
-| `401` | Credenciales incorrectas | `{ "ok": false, "error": "Credenciales incorrectas" }` |
-| `400` | Campos vacíos | `{ "ok": false, "error": "Usuario y contraseña son obligatorios" }` |
+**Comportamiento:**
+- Credenciales correctas, **sin 2FA**: `session_regenerate_id(true)`, crea sesión completa, redirige a cpanel.
+- Credenciales correctas, **con 2FA activo**: genera OTP 6 dígitos, almacena en BD (expiración 10 min), envía email, establece `$_SESSION['2fa_pending']`, redirige a `/auth/verify-2fa.php`.
+- Credenciales incorrectas: redirige a `/modules/site/login.html?error=credenciales`.
 
 ---
 
@@ -928,6 +925,70 @@ Cambia la contraseña del usuario autenticado.
 |--------|-----------|
 | `200` | Cambiada → `{ "ok": true, "data": null }` |
 | `400` | Contraseña actual incorrecta / validación fallida |
+
+---
+
+### `GET /api/configuracion.php?accion=2fa-status`
+Devuelve el estado actual de la verificación en dos pasos del usuario autenticado.
+
+**Respuesta `200`**
+```json
+{ "ok": true, "data": { "enabled": true, "has_email": true } }
+```
+
+> `has_email` indica si el usuario tiene email configurado (requisito para activar 2FA). Si es `false`, el toggle se deshabilita con mensaje explicativo.
+
+---
+
+### `PUT /api/configuracion.php?accion=2fa`
+Activa o desactiva la verificación en dos pasos del usuario autenticado. Requiere `X-CSRF-Token`.
+
+**Request body**
+```json
+{ "enabled": true }
+```
+
+| Código | Condición |
+|--------|-----------|
+| `200` | Estado actualizado → `{ "ok": true, "data": { "enabled": true } }` |
+| `400` | Sin email configurado (no se puede activar 2FA sin email) |
+
+---
+
+## Verificación en dos pasos
+
+### `GET /auth/verify-2fa.php`
+Renderiza la página de verificación OTP. Requiere `$_SESSION['2fa_pending']` activo (se establece en el login cuando el usuario tiene 2FA activado).
+
+Redirige a login si no hay sesión pendiente.
+
+**Query params**
+
+| Param | Valor | Descripción |
+|-------|-------|-------------|
+| `accion` | `reenviar` | Genera nuevo OTP, lo guarda en BD y lo envía por email; redirige de vuelta al formulario |
+
+---
+
+### `POST /auth/verify-2fa.php`
+Valida el código OTP introducido por el usuario.
+
+**Form data**
+```
+codigo=123456
+```
+
+**Lógica:**
+- Valida con `hash_equals` (constante-time, evita timing attacks)
+- Comprueba expiración (10 min desde generación)
+- Acumula intentos fallidos (`two_factor_attempts`); al 3º fallo borra el OTP y redirige a login con `?error=2fa_bloqueado`
+- En éxito: `session_regenerate_id(true)`, crea sesión completa, redirige al panel
+
+| Código | Condición |
+|--------|-----------|
+| Redirect 302 → cpanel | Código correcto y no expirado |
+| Redirect 302 → verify-2fa | Código incorrecto (< 3 intentos) |
+| Redirect 302 → login?error=2fa_bloqueado | 3 intentos fallidos o código expirado |
 
 ---
 

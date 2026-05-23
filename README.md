@@ -5,9 +5,10 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 ## Qué incluye este proyecto
 
 ### Autenticación y sesión
-- **Login** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`.
+- **Login** (`public/modules/site/login.html` → `public/auth/login.php`): sesión PHP, hash Argon2id, tabla `usuarios`. Si el usuario tiene 2FA activo, el login genera un OTP de 6 dígitos (válido 10 min) y redirige a la pantalla de verificación.
+- **Verificación en dos pasos (2FA)** (`public/auth/verify-2fa.php`): página de verificación OTP con countdown de 10 minutos, reenvío de código, bloqueo tras 3 intentos fallidos y redirección automática al panel en caso de éxito.
 - **Perfil de usuario**: vista `#perfil` con datos reales (nombre, email, rol, fecha de registro).
-- **Configuración de cuenta** (`#configuracion`): layout aside/main — tarjeta de identidad con avatar, badge de rol y metadatos (sticky); formularios de datos y contraseña en paralelo; selector de tema visual; tarjeta de Seguridad con botón de cierre de sesión. El resumen se pre-carga al autenticarse.
+- **Configuración de cuenta** (`#configuracion`): layout de cards verticales (`.config-vertical`, max-width 760px) — identidad horizontal (avatar, nombre, email, rol, metadatos), formularios de datos y contraseña, selector de apariencia, tarjeta de Seguridad con toggle de 2FA y botón de cierre de sesión, y tarjetas de Avisos y Recordatorios con iconos. El resumen se pre-carga al autenticarse.
 
 ### Dashboard principal
 - **Monitorización**: métricas en tiempo real de CPU, RAM y disco actualizadas cada 3 s.
@@ -37,6 +38,7 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 - CSRF Synchronizer Token + Custom Request Header (`X-CSRF-Token`) en todos los endpoints mutantes.
 - Content Security Policy (`script-src 'self'`), `X-Frame-Options`, `Referrer-Policy`, `X-Content-Type-Options`.
 - Event delegation con atributos `data-*` — sin handlers inline (CSP compliant).
+- **Verificación en dos pasos (2FA)**: OTP de 6 dígitos por email, expiración en 10 min, bloqueo tras 3 intentos y `session_regenerate_id` al autenticar.
 - `manejarApiError` compartido en `core.js`; todos los endpoints devuelven `{ ok, data/error }` con código HTTP correcto.
 
 ---
@@ -47,6 +49,7 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 |------|------------|
 | Frontend | HTML, CSS, JavaScript vanilla |
 | Backend | PHP 8.3-FPM, PDO + MySQL |
+| Email | PHPMailer 6.9 (Composer), SMTP |
 | Servidor | Nginx Alpine |
 | Datos | MySQL 8.4 |
 | Entorno | Docker Compose |
@@ -57,6 +60,8 @@ Panel de control CRM (landing, login y panel), backend PHP con MySQL, servido co
 
 ```text
 LANDJ/
+├── composer.json                       # PHPMailer ^6.9 (instalado al arrancar el contenedor php)
+├── vendor/                             # Dependencias PHP (generado por Composer, no en VCS)
 ├── database/
 │   ├── init.sql                        # Esquema: 8 tablas con FKs
 │   ├── migrate.php                     # Runner de migraciones idempotente
@@ -65,12 +70,13 @@ LANDJ/
 │       ├── 003_seed_usuarios.php       # Seed: 1 admin + 3 usuarios (Argon2id)
 │       ├── 004_seed_crm.sql            # Seed: contactos, leads, oportunidades, actividades
 │       ├── 005_dominios.sql            # Tabla dominios
-│       └── 006_cuentas_correo.sql      # Tabla cuentas_correo
+│       ├── 006_cuentas_correo.sql      # Tabla cuentas_correo
+│       └── 008_2fa.sql                 # Columnas 2FA en usuarios (enabled, code, expires_at, attempts)
 ├── docker/
 │   └── nginx/conf.d/default.conf
 ├── public/
 │   ├── assets/
-│   │   ├── css/site/                   # index-style.css, style.css
+│   │   ├── css/site/                   # index-style.css, style.css, verify-2fa.css
 │   │   ├── css/dashboard/              # CSS en 6 módulos independientes con filemtime cache-busting:
 │   │   │   ├── cpanel-base.css         #   Layout, header, sidebar, cards, dashboard, user menu
 │   │   │   ├── cpanel-crm.css          #   CRM: toolbar, tablas, contactos, leads, toasts, modales, perfil
@@ -120,16 +126,18 @@ LANDJ/
 │   │   ├── actividades.php             # CRUD por entidad
 │   │   ├── dominios.php                # CRUD + filtros + paginación
 │   │   ├── cuentas_correo.php          # CRUD + filtros + paginación
-│   │   ├── configuracion.php           # PUT perfil / PUT password (usuario propio)
+│   │   ├── configuracion.php           # PUT perfil / PUT password / GET+PUT 2FA (usuario propio)
 │   │   ├── usuarios.php                # CRUD (admin-only)
 │   │   ├── auditoria.php               # GET paginado (admin-only)
 │   │   ├── databases.php               # GET estadísticas (admin-only)
 │   │   └── backups.php                 # CRUD backups (admin-only)
-│   ├── auth/                           # login.php, logout.php
-│   └── config/                         # Bloqueado por Nginx
-│       ├── conexion.php                # PDO: lee variables de entorno
-│       ├── seguridad.php               # Cabeceras HTTP + CSRF
-│       └── auditoria.php               # registrarAuditoria() tolerante a fallos
+│   ├── auth/                           # login.php, logout.php, verify-2fa.php
+│   ├── config/                         # Bloqueado por Nginx
+│   │   ├── conexion.php                # PDO: lee variables de entorno
+│   │   ├── seguridad.php               # Cabeceras HTTP + CSRF
+│   │   ├── auditoria.php               # registrarAuditoria() tolerante a fallos
+│   │   └── mailer.php                  # enviarEmail() vía PHPMailer SMTP + plantilla2FA()
+│   └── test-mail.php                   # Diagnóstico SMTP (solo desarrollo; requiere sesión)
 ├── docker-compose.yml
 └── README.md
 ```
@@ -140,7 +148,7 @@ LANDJ/
 
 | Tabla | Descripción | Relaciones principales |
 |-------|-------------|------------------------|
-| `usuarios` | Cuentas con rol (`usuario`/`administrador`) y hash Argon2id | — |
+| `usuarios` | Cuentas con rol (`usuario`/`administrador`), hash Argon2id y columnas 2FA (`two_factor_enabled`, `two_factor_code`, `two_factor_expires_at`, `two_factor_attempts`) | — |
 | `contactos` | Clientes/contactos del CRM | → `usuarios` |
 | `leads` | Prospectos con estado y origen | → `usuarios`, → `contactos` |
 | `oportunidades` | Negociaciones por etapas | → `contactos`, `leads`, `usuarios` |
@@ -256,6 +264,28 @@ mysql -h 127.0.0.1 -P 3307 -uroot
 phpMyAdmin disponible en `http://localhost:8082`. Credenciales: `root` sin contraseña (solo desarrollo).
 
 > En producción: crea un usuario MySQL dedicado con permisos mínimos y cambia todas las credenciales.
+
+---
+
+## Configuración de email (SMTP)
+
+El envío de códigos 2FA usa **PHPMailer** (instalado vía Composer al arrancar el contenedor `php`). Las credenciales se pasan como variables de entorno:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu@gmail.com
+SMTP_PASS=xxxxxxxxxxxxxxxxxxxx   # Google App Password (16 chars, sin espacios)
+MAIL_FROM=tu@gmail.com
+```
+
+> Requiere 2-Step Verification activada en Google y una App Password generada en `myaccount.google.com/apppasswords`.  
+> Alternativa recomendada: [Resend](https://resend.com) (API REST, sin SMTP).
+
+Para diagnosticar la conexión SMTP en desarrollo, accede (con sesión activa) a:
+```
+http://localhost:91/test-mail.php
+```
 
 ---
 
