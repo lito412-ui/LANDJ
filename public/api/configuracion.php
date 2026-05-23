@@ -26,9 +26,44 @@ function err(string $msg, int $code = 400): void {
 function body(): array { return json_decode(file_get_contents('php://input'), true) ?? []; }
 
 try {
+    // ─── GET: estado 2FA ──────────────────────────────────────────────────────
+    if ($method === 'GET' && $accion === '2fa-status') {
+        $s = $pdo->prepare("SELECT two_factor_enabled, email FROM usuarios WHERE id_usuario = ?");
+        $s->execute([$meId]);
+        $row = $s->fetch();
+        ok([
+            'enabled'   => (bool) ($row['two_factor_enabled'] ?? false),
+            'has_email' => !empty($row['email']),
+        ]);
+        exit;
+    }
+
     if ($method !== 'PUT') { err('Método no permitido', 405); exit; }
 
     $b = body();
+
+    // ─── Toggle 2FA ───────────────────────────────────────────────────────────
+    if ($accion === '2fa') {
+        $b       = body();
+        $activar = !empty($b['enabled']);
+
+        // Requiere email para activar
+        if ($activar) {
+            $s = $pdo->prepare("SELECT email FROM usuarios WHERE id_usuario = ?");
+            $s->execute([$meId]);
+            $row = $s->fetch();
+            if (empty($row['email'])) {
+                err('Necesitas un correo electrónico registrado para activar el 2FA'); exit;
+            }
+        }
+
+        $pdo->prepare("UPDATE usuarios SET two_factor_enabled = ? WHERE id_usuario = ?")
+            ->execute([$activar ? 1 : 0, $meId]);
+
+        registrarAuditoria($pdo, 'usuarios', $meId, 'editar', null, ['two_factor_enabled' => $activar]);
+        ok(['enabled' => $activar]);
+        exit;
+    }
 
     // ─── Cambiar contraseña ───────────────────────────────────────────────
     if ($accion === 'password') {

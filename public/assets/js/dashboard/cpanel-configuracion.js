@@ -38,8 +38,11 @@ const Configuracion = (() => {
         document.getElementById('cfg-notif-test')?.addEventListener('click', _probarNotif);
         document.getElementById('cfg-notif-browser')?.addEventListener('change', _solicitarPermisoBrowser);
 
+        document.getElementById('cfg-2fa-toggle')?.addEventListener('change', _toggle2FA);
+
         _cargarDatos();
         _cargarPreferencias();
+        _cargar2FA();
         _sincronizarTema();
     }
 
@@ -310,6 +313,57 @@ const Configuracion = (() => {
             manejarApiError(err, err.message || 'Error al guardar preferencias');
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar preferencias'; }
+        }
+    }
+
+    // ─── 2FA ─────────────────────────────────────────────────────────────────
+
+    async function _cargar2FA() {
+        try {
+            const r = await fetchSeguro('/api/configuracion.php?accion=2fa-status');
+            const d = await r.json();
+            if (!d.ok) return;
+
+            const toggle = document.getElementById('cfg-2fa-toggle');
+            const wrap   = document.getElementById('cfg-2fa-toggle-wrap');
+            const desc   = document.getElementById('cfg-2fa-desc');
+            if (!toggle || !wrap) return;
+
+            toggle.checked = !!d.data.enabled;
+
+            if (!d.data.has_email) {
+                toggle.disabled = true;
+                wrap.title = 'Necesitas registrar un correo electrónico para activar el 2FA';
+                wrap.style.opacity = '0.4';
+                wrap.style.cursor  = 'not-allowed';
+                if (desc) desc.textContent = 'Registra un correo electrónico en "Datos de la cuenta" para activar esta función.';
+            }
+        } catch (_) { /* silencio */ }
+    }
+
+    async function _toggle2FA(e) {
+        const activar  = e.target.checked;
+        const toggle   = e.target;
+        toggle.disabled = true;
+
+        try {
+            const r = await fetchSeguro('/api/configuracion.php?accion=2fa', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: activar }),
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+
+            mostrarToast(
+                activar ? 'Verificación en dos pasos activada' : 'Verificación en dos pasos desactivada',
+                activar ? 'success' : 'info'
+            );
+        } catch (err) {
+            toggle.checked = !activar; // revertir
+            manejarApiError(err, err.message || 'Error al cambiar el 2FA');
+        } finally {
+            toggle.disabled = false;
         }
     }
 

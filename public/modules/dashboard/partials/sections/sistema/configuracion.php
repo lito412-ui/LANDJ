@@ -174,6 +174,21 @@
                         <i class="fas fa-lock"></i> Cambiar contraseña
                     </button>
                 </div>
+                <div class="config-seg-item">
+                    <div class="config-seg-icono config-seg-icono--green">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="config-seg-texto">
+                        <div class="config-seg-titulo">Verificación en dos pasos</div>
+                        <div class="config-seg-desc" id="cfg-2fa-desc">
+                            Protege tu cuenta con un código enviado a tu correo al iniciar sesión.
+                        </div>
+                    </div>
+                    <label class="toggle-switch" id="cfg-2fa-toggle-wrap" title="">
+                        <input type="checkbox" id="cfg-2fa-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
 
