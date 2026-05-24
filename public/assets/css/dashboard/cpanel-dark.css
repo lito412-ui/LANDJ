@@ -171,19 +171,28 @@ html[data-theme="dark"] .pag-sep          { color: #475569; }
 /* Panel detalle */
 html[data-theme="dark"] .detalle-overlay          { background: rgba(0,0,0,0.6); }
 html[data-theme="dark"] .detalle-panel            { background: #1e293b; box-shadow: -4px 0 24px rgba(0,0,0,0.5); }
-html[data-theme="dark"] .detalle-header           { border-bottom-color: #334155; }
+html[data-theme="dark"] .detalle-header           { background: #1e293b; border-bottom-color: #334155; }
 html[data-theme="dark"] .detalle-avatar           { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; }
 html[data-theme="dark"] .detalle-header-info h3   { color: #f1f5f9; }
 html[data-theme="dark"] .detalle-empresa          { color: #94a3b8; }
 html[data-theme="dark"] .detalle-campo            { border-bottom-color: #334155; }
-html[data-theme="dark"] .detalle-label            { color: #94a3b8; } /* era #64748b → 2.7:1 ❌ */
+html[data-theme="dark"] .detalle-label            { color: #94a3b8; }
 html[data-theme="dark"] .detalle-valor            { color: #f1f5f9; }
+html[data-theme="dark"] .detalle-notas            { background: #0f172a; }
 html[data-theme="dark"] .detalle-notas p          { color: #cbd5e1; }
 html[data-theme="dark"] .detalle-seccion-titulo   { color: #94a3b8; border-bottom-color: #334155; }
 html[data-theme="dark"] .det-act-item             { border-bottom-color: #263347; }
+html[data-theme="dark"] .det-act-icono            { background: #334155; color: #94a3b8; }
+html[data-theme="dark"] .det-act-nota             { background: #422006; color: #fbbf24; }
+html[data-theme="dark"] .det-act-llamada          { background: #052e16; color: #4ade80; }
+html[data-theme="dark"] .det-act-reunion          { background: #0c1a3a; color: #60a5fa; }
+html[data-theme="dark"] .det-act-tarea            { background: #3b0a2a; color: #f472b6; }
+html[data-theme="dark"] .det-act-email            { background: #2e1065; color: #c4b5fd; }
 html[data-theme="dark"] .det-act-desc             { color: #cbd5e1; }
-html[data-theme="dark"] .det-act-meta             { color: #94a3b8; } /* era #64748b → 2.7:1 ❌ */
+html[data-theme="dark"] .det-act-meta             { color: #94a3b8; }
 html[data-theme="dark"] .det-act-vacio            { color: #94a3b8; }
+html[data-theme="dark"] .btn-icon-xs:hover        { background: #334155; color: #cbd5e1; }
+html[data-theme="dark"] .btn-icon-xs.danger:hover { background: #450a0a; color: #f87171; }
 html[data-theme="dark"] .act-form-inline          { background: #263347; border-color: #334155; }
 
 /* Modal de confirmación */
