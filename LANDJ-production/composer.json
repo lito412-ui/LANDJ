@@ -1,0 +1,9 @@
+{
+    "name": "landj/crm",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "config": {
+        "vendor-dir": "vendor"
+    }
+}
