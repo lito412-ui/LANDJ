@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>L&amp;J CRM — Mantenimiento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; overflow:hidden; color:#e8edff; background:#0b1020; font-family:Inter,system-ui,sans-serif; }
+    body::before, body::after { content:""; position:fixed; width:520px; height:520px; border-radius:50%; filter:blur(90px); opacity:.32; pointer-events:none; }
+    body::before { background:#667eea; top:-240px; left:-150px; }
+    body::after { background:#764ba2; right:-180px; bottom:-260px; }
+    main { position:relative; width:min(680px,calc(100% - 40px)); padding:54px 46px; text-align:center; border:1px solid rgba(255,255,255,.12); border-radius:28px; background:linear-gradient(145deg,rgba(30,41,85,.88),rgba(15,23,42,.88)); box-shadow:0 30px 90px rgba(0,0,0,.42); }
+    .brand { display:inline-flex; align-items:center; gap:11px; font-weight:800; letter-spacing:-.05em; font-size:1.55rem; }
+    .mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,#667eea,#8b5cf6); box-shadow:0 8px 24px rgba(102,126,234,.45); }
+    .status { display:inline-flex; gap:8px; align-items:center; margin:38px 0 16px; padding:8px 13px; border-radius:999px; color:#c7d2fe; background:rgba(99,102,241,.14); font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#a5b4fc; box-shadow:0 0 0 5px rgba(165,180,252,.13); }
+    h1 { margin:0; font-size:clamp(2rem,6vw,3.7rem); line-height:1.06; letter-spacing:-.06em; }
+    p { max-width:500px; margin:21px auto 0; color:#b7c1dd; font-size:1.03rem; line-height:1.75; }
+    .divider { width:68px; height:4px; margin:31px auto 20px; border-radius:5px; background:linear-gradient(90deg,#667eea,#a78bfa); }
+    .small { color:#8290b8; font-size:.83rem; }
+    @media (max-width:520px) { main { padding:42px 24px; border-radius:22px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><span class="mark">LJ</span><span>L&amp;J CRM</span></div>
+    <div class="status"><span class="dot"></span>Mantenimiento programado</div>
+    <h1>Estamos mejorando<br>tu experiencia.</h1>
+    <p>Estamos realizando tareas de mantenimiento para seguir ofreciéndote un servicio más rápido y fiable. Volveremos a estar disponibles en breve.</p>
+    <div class="divider"></div>
+    <p class="small">Gracias por tu paciencia.</p>
+  </main>
+</body>
+</html>

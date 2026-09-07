@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'proveedores');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -90,8 +91,9 @@ function validarProveedor(array $b): array {
 }
 
 // ─── Exportar / importar CSV ────────────────────────────────────────────────
-function exportarProveedores(PDO $pdo): void {
-    $s = $pdo->query("SELECT nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, created_at FROM proveedores ORDER BY nombre");
+function exportarProveedores(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("SELECT nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, created_at FROM proveedores WHERE id_grupo = ? ORDER BY nombre");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $p) {
         $filas[] = [$p['nombre'], $p['nif'], $p['email'], $p['telefono'], $p['direccion'],
@@ -102,7 +104,7 @@ function exportarProveedores(PDO $pdo): void {
     ], $filas);
 }
 
-function importarProveedores(PDO $pdo, int $userId): void {
+function importarProveedores(PDO $pdo, int $userId, int $grupoId): void {
     try {
         $filas = csvLeerSubida('archivo');
     } catch (RuntimeException $e) {
@@ -112,13 +114,13 @@ function importarProveedores(PDO $pdo, int $userId): void {
     if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
 
     $creados = 0; $actualizados = 0; $errores = [];
-    $sBuscarNif = $pdo->prepare("SELECT id_proveedor FROM proveedores WHERE nif = ? LIMIT 1");
+    $sBuscarNif = $pdo->prepare("SELECT id_proveedor FROM proveedores WHERE nif = ? AND id_grupo = ? LIMIT 1");
     $sIns = $pdo->prepare("
-        INSERT INTO proveedores (nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, creado_por)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO proveedores (nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, creado_por, id_grupo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $sUpd = $pdo->prepare("
-        UPDATE proveedores SET nombre=?, email=?, telefono=?, direccion=?, contacto_referencia=?, notas=?, activo=? WHERE id_proveedor=?
+        UPDATE proveedores SET nombre=?, email=?, telefono=?, direccion=?, contacto_referencia=?, notas=?, activo=? WHERE id_proveedor=? AND id_grupo=?
     ");
 
     foreach ($filas as $idx => $fila) {
@@ -130,15 +132,15 @@ function importarProveedores(PDO $pdo, int $userId): void {
         try {
             $existenteId = null;
             if ($v['nif'] !== null) {
-                $sBuscarNif->execute([$v['nif']]);
+                $sBuscarNif->execute([$v['nif'], $grupoId]);
                 $existenteId = $sBuscarNif->fetchColumn() ?: null;
             }
             if ($existenteId) {
-                $sUpd->execute([$v['nombre'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $existenteId]);
+                $sUpd->execute([$v['nombre'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $existenteId, $grupoId]);
                 registrarAuditoria($pdo, 'proveedores', (int) $existenteId, 'editar', null, $v);
                 $actualizados++;
             } else {
-                $sIns->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $userId]);
+                $sIns->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $userId, $grupoId]);
                 $nuevoId = (int) $pdo->lastInsertId();
                 registrarAuditoria($pdo, 'proveedores', $nuevoId, 'crear', null, $v);
                 $creados++;
@@ -157,17 +159,17 @@ try {
         // ─── Listar / buscar / detalle ────────────────────────────────────
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarProveedores($pdo);
+                exportarProveedores($pdo, $grupoId);
                 break;
             }
             if ($id) {
-                $s = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? LIMIT 1");
-                $s->execute([$id]);
+                $s = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? AND id_grupo = ? LIMIT 1");
+                $s->execute([$id, $grupoId]);
                 $row = $s->fetch();
                 $row ? ok($row) : err('Proveedor no encontrado', 404);
             } else {
-                $where  = [];
-                $params = [];
+                $where  = ['id_grupo = ?'];
+                $params = [$grupoId];
 
                 $buscar = clean($_GET['buscar'] ?? '');
                 if ($buscar !== '') {
@@ -207,19 +209,19 @@ try {
         // ─── Crear ───────────────────────────────────────────────────────
         case 'POST':
             if (($_GET['action'] ?? '') === 'importar') {
-                importarProveedores($pdo, $userId);
+                importarProveedores($pdo, $userId, $grupoId);
                 break;
             }
             $v = validarProveedor(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
             $s = $pdo->prepare("
-                INSERT INTO proveedores (nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO proveedores (nombre, nif, email, telefono, direccion, contacto_referencia, notas, activo, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $userId]);
+            $s->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
-            $s2 = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ?");
-            $s2->execute([$newId]);
+            $s2 = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? AND id_grupo = ?");
+            $s2->execute([$newId, $grupoId]);
             $nuevo = $s2->fetch();
             registrarAuditoria($pdo, 'proveedores', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
@@ -230,18 +232,18 @@ try {
             if (!$id) { err('ID requerido'); break; }
             $v = validarProveedor(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Proveedor no encontrado', 404); break; }
             $s = $pdo->prepare("
                 UPDATE proveedores
                    SET nombre=?, nif=?, email=?, telefono=?, direccion=?, contacto_referencia=?, notas=?, activo=?
-                 WHERE id_proveedor=?
+                 WHERE id_proveedor=? AND id_grupo=?
             ");
-            $s->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $id]);
-            $s2 = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ?");
-            $s2->execute([$id]);
+            $s->execute([$v['nombre'], $v['nif'], $v['email'], $v['telefono'], $v['direccion'], $v['contactoReferencia'], $v['notas'], $v['activo'], $id, $grupoId]);
+            $s2 = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? AND id_grupo = ?");
+            $s2->execute([$id, $grupoId]);
             $despues = $s2->fetch() ?: null;
             registrarAuditoria($pdo, 'proveedores', $id, 'editar', $antes, $despues);
             ok($despues);
@@ -250,12 +252,12 @@ try {
         // ─── Eliminar ────────────────────────────────────────────────────
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM proveedores WHERE id_proveedor = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Proveedor no encontrado', 404); break; }
-            $s = $pdo->prepare("DELETE FROM proveedores WHERE id_proveedor = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM proveedores WHERE id_proveedor = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'proveedores', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

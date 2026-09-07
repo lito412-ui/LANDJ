@@ -12,7 +12,34 @@ if (session_status() === PHP_SESSION_NONE) {
  */
 function obtenerIdGrupoActual(): int
 {
-    return (int) ($_SESSION['id_grupo'] ?? 1);
+    $grupoId = (int) ($_SESSION['id_grupo'] ?? 0);
+    if ($grupoId <= 0) {
+        throw new RuntimeException('No hay un grupo activo en la sesión.');
+    }
+    return $grupoId;
+}
+
+/**
+ * Añade una restricción de tenant a una consulta por clave primaria.
+ * Debe usarse en cualquier lectura o modificación de un recurso del CRM.
+ */
+function recursoPerteneceAlGrupo(PDO $pdo, string $tabla, string $clave, int $id, int $grupoId): bool
+{
+    $tablas = [
+        'contactos' => 'id_contacto', 'leads' => 'id_lead',
+        'oportunidades' => 'id_oportunidad', 'actividades' => 'id_actividad',
+        'presupuestos' => 'id_presupuesto', 'facturas' => 'id_factura',
+        'facturas_recurrentes' => 'id_recurrente',
+        'productos' => 'id_producto', 'proveedores' => 'id_proveedor',
+        'avisos' => 'id_aviso', 'usuarios' => 'id_usuario',
+    ];
+    if (!isset($tablas[$tabla]) || $tablas[$tabla] !== $clave) {
+        throw new InvalidArgumentException('Recurso multiempresa no válido.');
+    }
+    $sql = "SELECT 1 FROM `{$tabla}` WHERE `{$clave}` = ? AND id_grupo = ? LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$id, $grupoId]);
+    return (bool) $stmt->fetchColumn();
 }
 
 /**

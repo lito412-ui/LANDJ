@@ -15,6 +15,7 @@ require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $rol    = $_SESSION['rol'] ?? 'usuario';
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
@@ -61,7 +62,7 @@ function validarAviso(array $b): array {
 }
 
 // ─── Bandeja del usuario actual ─────────────────────────────────────────────
-function cargarBandeja(PDO $pdo, int $userId): void {
+function cargarBandeja(PDO $pdo, int $userId, int $grupoId): void {
     $soloNoLeidos = ($_GET['no_leidos'] ?? '') === '1';
     $clausula = $soloNoLeidos ? 'AND ad.leido_at IS NULL' : '';
 
@@ -71,11 +72,11 @@ function cargarBandeja(PDO $pdo, int $userId): void {
         FROM avisos_destinatarios ad
         INNER JOIN avisos a ON a.id_aviso = ad.id_aviso
         INNER JOIN usuarios u ON u.id_usuario = a.creado_por
-        WHERE ad.usuario_id = ? $clausula
+        WHERE ad.usuario_id = ? AND a.id_grupo = ? $clausula
         ORDER BY a.created_at DESC
         LIMIT 200
     ");
-    $s->execute([$userId]);
+    $s->execute([$userId, $grupoId]);
     $filas = $s->fetchAll();
 
     $sTotal = $pdo->prepare("SELECT COUNT(*) FROM avisos_destinatarios WHERE usuario_id = ? AND leido_at IS NULL");
@@ -86,8 +87,8 @@ function cargarBandeja(PDO $pdo, int $userId): void {
 }
 
 // ─── Historial de enviados (cualquier admin ve todos) ───────────────────────
-function cargarEnviados(PDO $pdo): void {
-    $s = $pdo->query("
+function cargarEnviados(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("
         SELECT a.id_aviso, a.titulo, a.mensaje, a.tipo, a.created_at,
                u.nombre AS remitente_nombre,
                COUNT(ad.usuario_id) AS total_destinatarios,
@@ -95,10 +96,12 @@ function cargarEnviados(PDO $pdo): void {
         FROM avisos a
         INNER JOIN usuarios u ON u.id_usuario = a.creado_por
         LEFT JOIN avisos_destinatarios ad ON ad.id_aviso = a.id_aviso
+        WHERE a.id_grupo = ?
         GROUP BY a.id_aviso
         ORDER BY a.created_at DESC
         LIMIT 200
     ");
+    $s->execute([$grupoId]);
     ok($s->fetchAll());
 }
 
@@ -108,13 +111,13 @@ try {
         case 'GET':
             if (($_GET['vista'] ?? '') === 'enviados') {
                 if ($rol !== 'administrador') { err('Acceso restringido a administradores', 403); break; }
-                cargarEnviados($pdo);
+                cargarEnviados($pdo, $grupoId);
                 break;
             }
             if (($_GET['vista'] ?? '') === 'usuarios') {
                 if ($rol !== 'administrador') { err('Acceso restringido a administradores', 403); break; }
-                $s = $pdo->prepare("SELECT id_usuario, nombre, rol FROM usuarios WHERE id_usuario != ? ORDER BY nombre");
-                $s->execute([$userId]);
+                $s = $pdo->prepare("SELECT id_usuario, nombre, rol FROM usuarios WHERE id_usuario != ? AND id_grupo = ? ORDER BY nombre");
+                $s->execute([$userId, $grupoId]);
                 ok($s->fetchAll());
                 break;
             }
@@ -124,7 +127,7 @@ try {
                 ok(['no_leidos' => (int) $s->fetchColumn()]);
                 break;
             }
-            cargarBandeja($pdo, $userId);
+            cargarBandeja($pdo, $userId, $grupoId);
             break;
 
         // ─── Crear y enviar un aviso (admin) ────────────────────────────────
@@ -143,13 +146,13 @@ try {
 
             // Resolver destinatarios: "todos" = todo el mundo excepto quien lo envia
             if ($v['usuarioIds'] === null) {
-                $sDest = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE id_usuario != ?");
-                $sDest->execute([$userId]);
+                $sDest = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE id_usuario != ? AND id_grupo = ?");
+                $sDest->execute([$userId, $grupoId]);
                 $destinatarios = $sDest->fetchAll(PDO::FETCH_COLUMN);
             } else {
                 $placeholders = implode(',', array_fill(0, count($v['usuarioIds']), '?'));
-                $sDest = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE id_usuario IN ($placeholders) AND id_usuario != ?");
-                $sDest->execute([...$v['usuarioIds'], $userId]);
+                $sDest = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE id_usuario IN ($placeholders) AND id_usuario != ? AND id_grupo = ?");
+                $sDest->execute([...$v['usuarioIds'], $userId, $grupoId]);
                 $destinatarios = $sDest->fetchAll(PDO::FETCH_COLUMN);
             }
 
@@ -157,8 +160,8 @@ try {
 
             $pdo->beginTransaction();
             try {
-                $sIns = $pdo->prepare("INSERT INTO avisos (titulo, mensaje, tipo, creado_por) VALUES (?, ?, ?, ?)");
-                $sIns->execute([$v['titulo'], $v['mensaje'], $v['tipo'], $userId]);
+                $sIns = $pdo->prepare("INSERT INTO avisos (titulo, mensaje, tipo, creado_por, id_grupo) VALUES (?, ?, ?, ?, ?)");
+                $sIns->execute([$v['titulo'], $v['mensaje'], $v['tipo'], $userId, $grupoId]);
                 $avisoId = (int) $pdo->lastInsertId();
 
                 $sDestIns = $pdo->prepare("INSERT INTO avisos_destinatarios (id_aviso, usuario_id) VALUES (?, ?)");
@@ -195,11 +198,11 @@ try {
         case 'DELETE':
             if ($rol !== 'administrador') { err('Solo los administradores pueden eliminar avisos', 403); break; }
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM avisos WHERE id_aviso = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM avisos WHERE id_aviso = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch();
             if (!$antes) { err('Aviso no encontrado', 404); break; }
-            $pdo->prepare("DELETE FROM avisos WHERE id_aviso = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM avisos WHERE id_aviso = ? AND id_grupo = ?")->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'avisos', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

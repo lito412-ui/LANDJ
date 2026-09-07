@@ -36,6 +36,10 @@ if ($id <= 0) {
 }
 
 try {
+    if (!recursoPerteneceAlGrupo($pdo, 'facturas', 'id_factura', $id, obtenerIdGrupoActual())) {
+        facturaEmailErr('Factura no encontrada', 404);
+        exit;
+    }
     $factura = facturaDocumentoCargar($pdo, $id);
     if (!$factura) {
         facturaEmailErr('Factura no encontrada', 404);

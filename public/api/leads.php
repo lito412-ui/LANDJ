@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'leads');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -90,8 +91,9 @@ function validarLead(array $b): array {
 }
 
 // ─── Exportar / importar CSV ────────────────────────────────────────────────
-function exportarLeads(PDO $pdo): void {
-    $s = $pdo->query("SELECT nombre, email, telefono, empresa, origen, estado, notas, created_at FROM leads ORDER BY nombre");
+function exportarLeads(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("SELECT nombre, email, telefono, empresa, origen, estado, notas, created_at FROM leads WHERE id_grupo = ? ORDER BY nombre");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $l) {
         $filas[] = [$l['nombre'], $l['email'], $l['telefono'], $l['empresa'], $l['origen'], $l['estado'], $l['notas'], $l['created_at']];
@@ -100,7 +102,7 @@ function exportarLeads(PDO $pdo): void {
         ['nombre', 'email', 'telefono', 'empresa', 'origen', 'estado', 'notas', 'created_at'], $filas);
 }
 
-function importarLeads(PDO $pdo, int $userId): void {
+function importarLeads(PDO $pdo, int $userId, int $grupoId): void {
     try {
         $filas = csvLeerSubida('archivo');
     } catch (RuntimeException $e) {
@@ -110,13 +112,13 @@ function importarLeads(PDO $pdo, int $userId): void {
     if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
 
     $creados = 0; $actualizados = 0; $errores = [];
-    $sBuscarEmail = $pdo->prepare("SELECT id_lead FROM leads WHERE email = ? LIMIT 1");
+    $sBuscarEmail = $pdo->prepare("SELECT id_lead FROM leads WHERE email = ? AND id_grupo = ? LIMIT 1");
     $sIns = $pdo->prepare(
-        "INSERT INTO leads (nombre, email, telefono, empresa, origen, estado, notas, creado_por)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO leads (nombre, email, telefono, empresa, origen, estado, notas, creado_por, id_grupo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     $sUpd = $pdo->prepare(
-        "UPDATE leads SET nombre=?, telefono=?, empresa=?, origen=?, estado=?, notas=? WHERE id_lead=?"
+        "UPDATE leads SET nombre=?, telefono=?, empresa=?, origen=?, estado=?, notas=? WHERE id_lead=? AND id_grupo=?"
     );
 
     foreach ($filas as $idx => $fila) {
@@ -127,15 +129,15 @@ function importarLeads(PDO $pdo, int $userId): void {
         try {
             $existenteId = null;
             if ($v['email'] !== null) {
-                $sBuscarEmail->execute([$v['email']]);
+                $sBuscarEmail->execute([$v['email'], $grupoId]);
                 $existenteId = $sBuscarEmail->fetchColumn() ?: null;
             }
             if ($existenteId) {
-                $sUpd->execute([$v['nombre'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $existenteId]);
+                $sUpd->execute([$v['nombre'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $existenteId, $grupoId]);
                 registrarAuditoria($pdo, 'leads', (int) $existenteId, 'editar', null, $v);
                 $actualizados++;
             } else {
-                $sIns->execute([$v['nombre'], $v['email'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $userId]);
+                $sIns->execute([$v['nombre'], $v['email'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $userId, $grupoId]);
                 $nuevoId = (int) $pdo->lastInsertId();
                 registrarAuditoria($pdo, 'leads', $nuevoId, 'crear', null, $v);
                 $creados++;
@@ -154,19 +156,19 @@ try {
         // ─── Listar / buscar / detalle ────────────────────────────────────
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarLeads($pdo);
+                exportarLeads($pdo, $grupoId);
                 break;
             }
             if ($id) {
-                $s = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? LIMIT 1");
-                $s->execute([$id]);
+                $s = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ? LIMIT 1");
+                $s->execute([$id, $grupoId]);
                 $row = $s->fetch();
                 $row ? ok($row) : err('Lead no encontrado', 404);
                 break;
             }
 
-            $where  = [];
-            $params = [];
+            $where  = ['id_grupo = ?'];
+            $params = [$grupoId];
 
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
@@ -223,21 +225,21 @@ try {
         // ─── Crear ───────────────────────────────────────────────────────
         case 'POST':
             if (($_GET['action'] ?? '') === 'importar') {
-                importarLeads($pdo, $userId);
+                importarLeads($pdo, $userId, $grupoId);
                 break;
             }
             $v = validarLead(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
             $s = $pdo->prepare(
-                "INSERT INTO leads (nombre, email, telefono, empresa, origen, estado, notas, creado_por)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO leads (nombre, email, telefono, empresa, origen, estado, notas, creado_por, id_grupo)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             $s->execute([$v['nombre'], $v['email'], $v['telefono'], $v['empresa'],
-                         $v['origen'], $v['estado'], $v['notas'], $userId]);
+                         $v['origen'], $v['estado'], $v['notas'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
-            $s2 = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
-            $s2->execute([$newId]);
+            $s2 = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ?");
+            $s2->execute([$newId, $grupoId]);
             $nuevo = $s2->fetch();
             registrarAuditoria($pdo, 'leads', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
@@ -248,16 +250,16 @@ try {
             if (!$id) { err('ID requerido'); break; }
 
             if (isset($_GET['action']) && $_GET['action'] === 'convertir') {
-                $sLead = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
-                $sLead->execute([$id]);
+                $sLead = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ?");
+                $sLead->execute([$id, $grupoId]);
                 $lead = $sLead->fetch() ?: null;
                 if (!$lead) { err('Lead no encontrado', 404); break; }
                 if ($lead['contacto_id'] !== null) { err('Este lead ya fue convertido a contacto'); break; }
 
                 // Verificar email duplicado en contactos
                 if ($lead['email'] !== null) {
-                    $chk = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ?");
-                    $chk->execute([$lead['email']]);
+                    $chk = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? AND id_grupo = ?");
+                    $chk->execute([$lead['email'], $grupoId]);
                     if ($chk->fetch()) { err('Ya existe un contacto con el email ' . $lead['email']); break; }
                 }
 
@@ -265,20 +267,20 @@ try {
                 try {
                     // Crear contacto
                     $ins = $pdo->prepare(
-                        "INSERT INTO contactos (nombre, email, telefono, empresa, notas, creado_por)
-                         VALUES (?, ?, ?, ?, ?, ?)"
+                        "INSERT INTO contactos (nombre, email, telefono, empresa, notas, creado_por, id_grupo)
+                         VALUES (?, ?, ?, ?, ?, ?, ?)"
                     );
                     $ins->execute([
                         $lead['nombre'], $lead['email'], $lead['telefono'],
-                        $lead['empresa'], $lead['notas'], $userId,
+                        $lead['empresa'], $lead['notas'], $userId, $grupoId,
                     ]);
                     $contactoId = (int) $pdo->lastInsertId();
 
                     // Vincular lead → contacto y marcar convertido
                     $upd = $pdo->prepare(
-                        "UPDATE leads SET estado = 'convertido', contacto_id = ? WHERE id_lead = ?"
+                        "UPDATE leads SET estado = 'convertido', contacto_id = ? WHERE id_lead = ? AND id_grupo = ?"
                     );
-                    $upd->execute([$contactoId, $id]);
+                    $upd->execute([$contactoId, $id, $grupoId]);
 
                     $pdo->commit();
 
@@ -306,19 +308,20 @@ try {
             $v = validarLead(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $sAntes = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
+            if (!$antes) { err('Lead no encontrado', 404); break; }
 
             $s = $pdo->prepare(
                 "UPDATE leads
                  SET nombre=?, email=?, telefono=?, empresa=?, origen=?, estado=?, notas=?
-                 WHERE id_lead=?"
+                 WHERE id_lead=? AND id_grupo=?"
             );
             $s->execute([$v['nombre'], $v['email'], $v['telefono'], $v['empresa'],
-                         $v['origen'], $v['estado'], $v['notas'], $id]);
-            $s2 = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
-            $s2->execute([$id]);
+                         $v['origen'], $v['estado'], $v['notas'], $id, $grupoId]);
+            $s2 = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ?");
+            $s2->execute([$id, $grupoId]);
             $despues = $s2->fetch() ?: null;
             registrarAuditoria($pdo, 'leads', $id, 'editar', $antes, $despues);
             ok($despues);
@@ -327,13 +330,13 @@ try {
         // ─── Eliminar ────────────────────────────────────────────────────
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Lead no encontrado', 404); break; }
 
-            $s = $pdo->prepare("DELETE FROM leads WHERE id_lead = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM leads WHERE id_lead = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'leads', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

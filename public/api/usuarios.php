@@ -21,6 +21,7 @@ require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
 
 $meId  = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -79,8 +80,8 @@ try {
         // ─── Listar ──────────────────────────────────────────────────────
         case 'GET':
             if ($id) {
-                $s = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ?");
-                $s->execute([$id]);
+                $s = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+                $s->execute([$id, $grupoId]);
                 $row = $s->fetch();
                 $row ? ok($row) : err('Usuario no encontrado', 404);
                 break;
@@ -90,11 +91,12 @@ try {
                 $like = '%' . $buscar . '%';
                 $s = $pdo->prepare(
                     "SELECT id_usuario, nombre, email, rol, created_at FROM usuarios
-                     WHERE nombre LIKE ? OR email LIKE ? ORDER BY created_at DESC"
+                     WHERE id_grupo = ? AND (nombre LIKE ? OR email LIKE ?) ORDER BY created_at DESC"
                 );
-                $s->execute([$like, $like]);
+                $s->execute([$grupoId, $like, $like]);
             } else {
-                $s = $pdo->query("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios ORDER BY created_at DESC");
+                $s = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_grupo = ? ORDER BY created_at DESC");
+                $s->execute([$grupoId]);
             }
             ok($s->fetchAll());
             break;
@@ -104,24 +106,24 @@ try {
             $v = validarUsuario(body(), true);
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $existe = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE nombre = ?");
-            $existe->execute([$v['nombre']]);
+            $existe = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE nombre = ? AND id_grupo = ?");
+            $existe->execute([$v['nombre'], $grupoId]);
             if ($existe->fetch()) { err('Ya existe un usuario con ese nombre'); break; }
 
             if ($v['email']) {
-                $existeEmail = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE email = ?");
-                $existeEmail->execute([$v['email']]);
+                $existeEmail = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE email = ? AND id_grupo = ?");
+                $existeEmail->execute([$v['email'], $grupoId]);
                 if ($existeEmail->fetch()) { err('Ya existe un usuario con ese email'); break; }
             }
 
             $hash = password_hash($v['pass'], PASSWORD_ARGON2ID);
             $s = $pdo->prepare(
-                "INSERT INTO usuarios (nombre, email, contraseña_hash, rol) VALUES (?, ?, ?, ?)"
+                "INSERT INTO usuarios (nombre, email, contraseña_hash, rol, id_grupo) VALUES (?, ?, ?, ?, ?)"
             );
-            $s->execute([$v['nombre'], $v['email'], $hash, $v['rol']]);
+            $s->execute([$v['nombre'], $v['email'], $hash, $v['rol'], $grupoId]);
             $newId = (int) $pdo->lastInsertId();
-            $s2 = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ?");
-            $s2->execute([$newId]);
+            $s2 = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+            $s2->execute([$newId, $grupoId]);
             $nuevo = $s2->fetch();
             registrarAuditoria($pdo, 'usuarios', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
@@ -138,31 +140,32 @@ try {
                 err('No puedes cambiar tu propio rol'); break;
             }
 
-            $existe = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE nombre = ? AND id_usuario != ?");
-            $existe->execute([$v['nombre'], $id]);
+            $existe = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE nombre = ? AND id_usuario != ? AND id_grupo = ?");
+            $existe->execute([$v['nombre'], $id, $grupoId]);
             if ($existe->fetch()) { err('Ya existe un usuario con ese nombre'); break; }
 
             if ($v['email']) {
-                $existeEmail = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE email = ? AND id_usuario != ?");
-                $existeEmail->execute([$v['email'], $id]);
+                $existeEmail = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE email = ? AND id_usuario != ? AND id_grupo = ?");
+                $existeEmail->execute([$v['email'], $id, $grupoId]);
                 if ($existeEmail->fetch()) { err('Ya existe un usuario con ese email'); break; }
             }
 
-            $sAntes = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
+            if (!$antes) { err('Usuario no encontrado', 404); break; }
 
             if ($v['pass'] !== '') {
                 $hash = password_hash($v['pass'], PASSWORD_ARGON2ID);
-                $s = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, rol=?, contraseña_hash=? WHERE id_usuario=?");
-                $s->execute([$v['nombre'], $v['email'], $v['rol'], $hash, $id]);
+                $s = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, rol=?, contraseña_hash=? WHERE id_usuario=? AND id_grupo=?");
+                $s->execute([$v['nombre'], $v['email'], $v['rol'], $hash, $id, $grupoId]);
             } else {
-                $s = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, rol=? WHERE id_usuario=?");
-                $s->execute([$v['nombre'], $v['email'], $v['rol'], $id]);
+                $s = $pdo->prepare("UPDATE usuarios SET nombre=?, email=?, rol=? WHERE id_usuario=? AND id_grupo=?");
+                $s->execute([$v['nombre'], $v['email'], $v['rol'], $id, $grupoId]);
             }
 
-            $s2 = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ?");
-            $s2->execute([$id]);
+            $s2 = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+            $s2->execute([$id, $grupoId]);
             $despues = $s2->fetch() ?: null;
             registrarAuditoria($pdo, 'usuarios', $id, 'editar', $antes, $despues);
             ok($despues);
@@ -174,18 +177,20 @@ try {
             if ($id === $meId) { err('No puedes eliminar tu propia cuenta'); break; }
 
             // Proteger el último administrador
-            $sAntes = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT id_usuario, nombre, email, rol, created_at FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Usuario no encontrado', 404); break; }
 
             if ($antes['rol'] === 'administrador') {
-                $countAdmin = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE rol = 'administrador'")->fetchColumn();
+                $countAdmin = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE rol = 'administrador' AND id_grupo = ?");
+                $countAdmin->execute([$grupoId]);
+                $countAdmin = $countAdmin->fetchColumn();
                 if ($countAdmin <= 1) { err('No puedes eliminar el único administrador del sistema'); break; }
             }
 
-            $s = $pdo->prepare("DELETE FROM usuarios WHERE id_usuario = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM usuarios WHERE id_usuario = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'usuarios', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

@@ -9,10 +9,12 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 /**
  * Obtiene un valor de la tabla `system_config` (configuración del panel admin).
  */
-function getDbConfig(string $clave): string
+function getDbConfig(string $clave, ?int $grupoId = null): string
 {
     static $cache = [];
-    if (isset($cache[$clave])) return $cache[$clave];
+    $grupoId = $grupoId ?? obtenerIdGrupoActual();
+    $cacheKey = $grupoId . ':' . $clave;
+    if (isset($cache[$cacheKey])) return $cache[$cacheKey];
 
     global $pdo;
     if (!isset($pdo)) {
@@ -23,17 +25,17 @@ function getDbConfig(string $clave): string
 
     if (isset($pdo)) {
         try {
-            $s = $pdo->prepare('SELECT valor FROM system_config WHERE clave = ? AND valor IS NOT NULL AND valor != ""');
-            $s->execute([$clave]);
+            $s = $pdo->prepare('SELECT valor FROM system_config WHERE id_grupo = ? AND clave = ? AND valor IS NOT NULL AND valor != ""');
+            $s->execute([$grupoId, $clave]);
             $row = $s->fetch(PDO::FETCH_ASSOC);
             if ($row && $row['valor'] !== null && $row['valor'] !== '') {
-                $cache[$clave] = (string) $row['valor'];
-                return $cache[$clave];
+                $cache[$cacheKey] = (string) $row['valor'];
+                return $cache[$cacheKey];
             }
         } catch (Throwable $e) {}
     }
 
-    $cache[$clave] = '';
+    $cache[$cacheKey] = '';
     return '';
 }
 
@@ -53,11 +55,11 @@ function esSmtpSistemaConfigurado(): bool
  * Comprueba si el SMTP de NEGOCIO (Base de Datos - panel admin) está configurado.
  * Se usa para Facturas y Presupuestos a clientes.
  */
-function esSmtpNegocioConfigurado(): bool
+function esSmtpNegocioConfigurado(?int $grupoId = null): bool
 {
-    $host = getDbConfig('smtp_host');
-    $user = getDbConfig('smtp_user');
-    $pass = getDbConfig('smtp_pass');
+    $host = getDbConfig('smtp_host', $grupoId);
+    $user = getDbConfig('smtp_user', $grupoId);
+    $pass = getDbConfig('smtp_pass', $grupoId);
     return ($host !== '' && $user !== '' && $pass !== '');
 }
 
@@ -166,36 +168,31 @@ function enviarEmailSistema(string $to, string $subject, string $htmlBody, array
 /**
  * CANAL NEGOCIO (Presupuestos, Facturas, correos a contactos/clientes).
  * Lee de la configuración guardada por el administrador en la Base de Datos (system_config).
- * Si no está configurado en la BD, intenta usar el del .env si existe, o devuelve false.
+ * No usa el .env: cada empresa debe configurar sus propias credenciales.
  */
-function enviarEmailNegocio(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+function enviarEmailNegocio(string $to, string $subject, string $htmlBody, array $attachments = [], ?int $grupoId = null): bool
 {
-    if (esSmtpNegocioConfigurado()) {
-        $host       = getDbConfig('smtp_host');
-        $port       = (int) (getDbConfig('smtp_port') ?: 587);
-        $user       = getDbConfig('smtp_user');
-        $pass       = getDbConfig('smtp_pass');
-        $from       = getDbConfig('smtp_from') ?: $user;
-        $encryption = getDbConfig('smtp_encryption') ?: 'tls';
+    if (esSmtpNegocioConfigurado($grupoId)) {
+        $host       = getDbConfig('smtp_host', $grupoId);
+        $port       = (int) (getDbConfig('smtp_port', $grupoId) ?: 587);
+        $user       = getDbConfig('smtp_user', $grupoId);
+        $pass       = getDbConfig('smtp_pass', $grupoId);
+        $from       = getDbConfig('smtp_from', $grupoId) ?: $user;
+        $encryption = getDbConfig('smtp_encryption', $grupoId) ?: 'tls';
 
         return ejecutarEnvio($host, $port, $user, $pass, $from, 'L&J CRM', $encryption, $to, $subject, $htmlBody, $attachments);
     }
 
-    // Fallback: Si el admin no configuró el de negocio pero el sistema tiene .env
-    if (esSmtpSistemaConfigurado()) {
-        return enviarEmailSistema($to, $subject, $htmlBody, $attachments);
-    }
-
-    error_log('[mailer] No se puede enviar correo de negocio: ningún SMTP configurado (ni en BD ni en .env)');
+    error_log('[mailer] No se puede enviar correo de negocio: el SMTP del grupo no está configurado');
     return false;
 }
 
 /**
  * Alias general para correos salientes del CRM (presupuestos, facturas, etc.).
  */
-function enviarEmail(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+function enviarEmail(string $to, string $subject, string $htmlBody, array $attachments = [], ?int $grupoId = null): bool
 {
-    return enviarEmailNegocio($to, $subject, $htmlBody, $attachments);
+    return enviarEmailNegocio($to, $subject, $htmlBody, $attachments, $grupoId);
 }
 
 /**

@@ -15,6 +15,7 @@ require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -79,15 +80,15 @@ try {
         // ─── Listar ──────────────────────────────────────────────────────────
         case 'GET':
             if ($id) {
-                $s = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? LIMIT 1");
-                $s->execute([$id]);
+                $s = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? AND id_grupo = ? LIMIT 1");
+                $s->execute([$id, $grupoId]);
                 $row = $s->fetch();
                 $row ? ok($row) : err('Actividad no encontrada', 404);
                 break;
             }
 
-            $where  = [];
-            $params = [];
+            $where  = ['id_grupo = ?'];
+            $params = [$grupoId];
 
             if (isset($_GET['contacto_id'])    && (int)$_GET['contacto_id'] > 0)
                 { $where[] = 'contacto_id = ?';    $params[] = (int)$_GET['contacto_id']; }
@@ -111,19 +112,24 @@ try {
         case 'POST':
             $v = validarActividad(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
+            if (($v['contacto_id'] && !recursoPerteneceAlGrupo($pdo, 'contactos', 'id_contacto', $v['contacto_id'], $grupoId)) ||
+                ($v['lead_id'] && !recursoPerteneceAlGrupo($pdo, 'leads', 'id_lead', $v['lead_id'], $grupoId)) ||
+                ($v['oportunidad_id'] && !recursoPerteneceAlGrupo($pdo, 'oportunidades', 'id_oportunidad', $v['oportunidad_id'], $grupoId))) {
+                err('El recurso relacionado no pertenece a tu grupo.', 403); break;
+            }
 
             $s = $pdo->prepare("
                 INSERT INTO actividades
-                    (tipo, descripcion, fecha, recordatorio_at, contacto_id, lead_id, oportunidad_id, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (tipo, descripcion, fecha, recordatorio_at, contacto_id, lead_id, oportunidad_id, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $s->execute([
                 $v['tipo'], $v['descripcion'], $v['fecha'], $v['recordatorio_at'],
-                $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $userId
+                $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $userId, $grupoId
             ]);
             $newId = (int) $pdo->lastInsertId();
-            $s2 = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ?");
-            $s2->execute([$newId]);
+            $s2 = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? AND id_grupo = ?");
+            $s2->execute([$newId, $grupoId]);
             $nuevo = $s2->fetch();
             registrarAuditoria($pdo, 'actividades', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
@@ -133,26 +139,31 @@ try {
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
 
-            $sAntes = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Actividad no encontrada', 404); break; }
 
             $v = validarActividad(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
+            if (($v['contacto_id'] && !recursoPerteneceAlGrupo($pdo, 'contactos', 'id_contacto', $v['contacto_id'], $grupoId)) ||
+                ($v['lead_id'] && !recursoPerteneceAlGrupo($pdo, 'leads', 'id_lead', $v['lead_id'], $grupoId)) ||
+                ($v['oportunidad_id'] && !recursoPerteneceAlGrupo($pdo, 'oportunidades', 'id_oportunidad', $v['oportunidad_id'], $grupoId))) {
+                err('El recurso relacionado no pertenece a tu grupo.', 403); break;
+            }
 
             $pdo->prepare("
                 UPDATE actividades
                 SET tipo=?, descripcion=?, fecha=?, recordatorio_at=?, recordatorio_descartado=0,
                     contacto_id=?, lead_id=?, oportunidad_id=?
-                WHERE id_actividad=?
+                WHERE id_actividad=? AND id_grupo=?
             ")->execute([
                 $v['tipo'], $v['descripcion'], $v['fecha'], $v['recordatorio_at'],
-                $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $id
+                $v['contacto_id'], $v['lead_id'], $v['oportunidad_id'], $id, $grupoId
             ]);
 
-            $s2 = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ?");
-            $s2->execute([$id]);
+            $s2 = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? AND id_grupo = ?");
+            $s2->execute([$id, $grupoId]);
             $despues = $s2->fetch() ?: null;
             registrarAuditoria($pdo, 'actividades', $id, 'editar', $antes, $despues);
             ok($despues);
@@ -161,12 +172,12 @@ try {
         // ─── Eliminar ────────────────────────────────────────────────────────
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM actividades WHERE id_actividad = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Actividad no encontrada', 404); break; }
 
-            $pdo->prepare("DELETE FROM actividades WHERE id_actividad = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM actividades WHERE id_actividad = ? AND id_grupo = ?")->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'actividades', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

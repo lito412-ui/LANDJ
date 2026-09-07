@@ -20,6 +20,11 @@ if ($id <= 0) {
 }
 
 try {
+    if (!recursoPerteneceAlGrupo($pdo, 'facturas', 'id_factura', $id, obtenerIdGrupoActual())) {
+        http_response_code(404);
+        echo 'Factura no encontrada';
+        exit;
+    }
     $factura = facturaDocumentoCargar($pdo, $id);
     if (!$factura) {
         http_response_code(404);

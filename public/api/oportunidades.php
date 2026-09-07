@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'oportunidades');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -184,8 +185,8 @@ try {
                 break;
             }
 
-            $where  = [];
-            $params = [];
+            $where  = ['o.id_grupo = ?'];
+            $params = [$grupoId];
 
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
@@ -250,15 +251,19 @@ try {
             }
             $v = validarOportunidad(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
+            if (($v['contacto_id'] && !recursoPerteneceAlGrupo($pdo, 'contactos', 'id_contacto', $v['contacto_id'], $grupoId)) ||
+                ($v['lead_id'] && !recursoPerteneceAlGrupo($pdo, 'leads', 'id_lead', $v['lead_id'], $grupoId))) {
+                err('El contacto o lead no pertenece a tu grupo.', 403); break;
+            }
 
             $s = $pdo->prepare("
                 INSERT INTO oportunidades
-                    (titulo, descripcion, valor, etapa, contacto_id, lead_id, fecha_cierre_esperada, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (titulo, descripcion, valor, etapa, contacto_id, lead_id, fecha_cierre_esperada, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $s->execute([
                 $v['titulo'], $v['descripcion'], $v['valor'], $v['etapa'],
-                $v['contacto_id'], $v['lead_id'], $v['fecha_cierre_esperada'], $userId
+                $v['contacto_id'], $v['lead_id'], $v['fecha_cierre_esperada'], $userId, $grupoId
             ]);
             $newId = (int) $pdo->lastInsertId();
             $s2 = $pdo->prepare("SELECT o.*, c.nombre AS contacto_nombre, l.nombre AS lead_nombre
@@ -283,13 +288,13 @@ try {
                 if (!in_array($nuevaEtapa, ETAPAS_VALIDAS, true)) {
                     err('Etapa no válida'); break;
                 }
-                $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ?");
-                $sAntes->execute([$id]);
+                $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ? AND id_grupo = ?");
+                $sAntes->execute([$id, $grupoId]);
                 $antes = $sAntes->fetch() ?: null;
                 if (!$antes) { err('Oportunidad no encontrada', 404); break; }
 
-                $pdo->prepare("UPDATE oportunidades SET etapa = ? WHERE id_oportunidad = ?")
-                    ->execute([$nuevaEtapa, $id]);
+                $pdo->prepare("UPDATE oportunidades SET etapa = ? WHERE id_oportunidad = ? AND id_grupo = ?")
+                    ->execute([$nuevaEtapa, $id, $grupoId]);
 
                 $s2 = $pdo->prepare("SELECT o.*, c.nombre AS contacto_nombre, l.nombre AS lead_nombre
                     FROM oportunidades o
@@ -306,9 +311,13 @@ try {
             // Edición completa
             $v = validarOportunidad(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
+            if (($v['contacto_id'] && !recursoPerteneceAlGrupo($pdo, 'contactos', 'id_contacto', $v['contacto_id'], $grupoId)) ||
+                ($v['lead_id'] && !recursoPerteneceAlGrupo($pdo, 'leads', 'id_lead', $v['lead_id'], $grupoId))) {
+                err('El contacto o lead no pertenece a tu grupo.', 403); break;
+            }
 
-            $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Oportunidad no encontrada', 404); break; }
 
@@ -316,10 +325,10 @@ try {
                 UPDATE oportunidades
                 SET titulo=?, descripcion=?, valor=?, etapa=?,
                     contacto_id=?, lead_id=?, fecha_cierre_esperada=?
-                WHERE id_oportunidad=?
+                WHERE id_oportunidad=? AND id_grupo=?
             ")->execute([
                 $v['titulo'], $v['descripcion'], $v['valor'], $v['etapa'],
-                $v['contacto_id'], $v['lead_id'], $v['fecha_cierre_esperada'], $id
+                $v['contacto_id'], $v['lead_id'], $v['fecha_cierre_esperada'], $id, $grupoId
             ]);
 
             $s2 = $pdo->prepare("SELECT o.*, c.nombre AS contacto_nombre, l.nombre AS lead_nombre
@@ -336,12 +345,12 @@ try {
         // ─── Eliminar ────────────────────────────────────────────────────────
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM oportunidades WHERE id_oportunidad = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Oportunidad no encontrada', 404); break; }
 
-            $pdo->prepare("DELETE FROM oportunidades WHERE id_oportunidad = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM oportunidades WHERE id_oportunidad = ? AND id_grupo = ?")->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'oportunidades', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

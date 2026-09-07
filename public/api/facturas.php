@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'facturas');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -161,15 +162,16 @@ function guardarLineas(PDO $pdo, int $facturaId, array $lineas): void {
 // ─── Exportar / importar CSV ────────────────────────────────────────────────
 // Formato: una fila por cada línea de factura. Varias filas con el mismo
 // "numero" forman una única factura al importar.
-function exportarFacturas(PDO $pdo): void {
-    $s = $pdo->query("
+function exportarFacturas(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("
         SELECT f.numero, c.email AS contacto_email, f.estado, f.fecha_emision, f.fecha_vencimiento, f.notas,
                fl.concepto, fl.cantidad, fl.precio_unitario, fl.iva_porcentaje
         FROM facturas f
         INNER JOIN contactos c ON c.id_contacto = f.contacto_id
         INNER JOIN factura_lineas fl ON fl.factura_id = f.id_factura
-        ORDER BY f.numero, fl.orden, fl.id_linea
+        WHERE f.id_grupo = ? ORDER BY f.numero, fl.orden, fl.id_linea
     ");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $l) {
         $filas[] = [$l['numero'], $l['contacto_email'], $l['estado'], $l['fecha_emision'], $l['fecha_vencimiento'],
@@ -181,7 +183,7 @@ function exportarFacturas(PDO $pdo): void {
     ], $filas);
 }
 
-function importarFacturas(PDO $pdo, int $userId): void {
+function importarFacturas(PDO $pdo, int $userId, int $grupoId): void {
     try {
         $filas = csvLeerSubida('archivo');
     } catch (RuntimeException $e) {
@@ -199,8 +201,8 @@ function importarFacturas(PDO $pdo, int $userId): void {
         $grupos[$clave]['cabecera'] ??= $fila;
     }
 
-    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
-    $sExiste   = $pdo->prepare("SELECT id_factura FROM facturas WHERE numero = ? LIMIT 1");
+    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? AND id_grupo = ? LIMIT 1");
+    $sExiste   = $pdo->prepare("SELECT id_factura FROM facturas WHERE numero = ? AND id_grupo = ? LIMIT 1");
 
     $creados = 0; $errores = [];
 
@@ -210,7 +212,7 @@ function importarFacturas(PDO $pdo, int $userId): void {
 
         $numeroReal = trim($cabecera['numero'] ?? '');
         if ($numeroReal !== '') {
-            $sExiste->execute([$numeroReal]);
+            $sExiste->execute([$numeroReal, $grupoId]);
             if ($sExiste->fetchColumn()) {
                 $errores[] = "Fila $primeraFila: ya existe una factura con el número $numeroReal (se omite)";
                 continue;
@@ -219,7 +221,7 @@ function importarFacturas(PDO $pdo, int $userId): void {
 
         $email = trim($cabecera['contacto_email'] ?? '');
         if ($email === '') { $errores[] = "Fila $primeraFila: falta contacto_email"; continue; }
-        $sContacto->execute([$email]);
+        $sContacto->execute([$email, $grupoId]);
         $contactoId = $sContacto->fetchColumn() ?: null;
         if (!$contactoId) { $errores[] = "Fila $primeraFila: no existe ningún contacto con email $email"; continue; }
 
@@ -246,10 +248,10 @@ function importarFacturas(PDO $pdo, int $userId): void {
             $num = $numeroReal !== '' ? $numeroReal : generarNumeroFactura($pdo);
             $s = $pdo->prepare("
                 INSERT INTO facturas
-                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId]);
+            $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
             $nuevoId = (int) $pdo->lastInsertId();
             guardarLineas($pdo, $nuevoId, $v['lineas']);
             registrarAuditoria($pdo, 'facturas', $nuevoId, 'crear', null, $v);
@@ -269,17 +271,18 @@ try {
     switch ($method) {
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarFacturas($pdo);
+                exportarFacturas($pdo, $grupoId);
                 break;
             }
             if ($id) {
+                if (!recursoPerteneceAlGrupo($pdo, 'facturas', 'id_factura', $id, $grupoId)) { err('Factura no encontrada', 404); break; }
                 $factura = cargarFactura($pdo, $id);
                 $factura ? ok($factura) : err('Factura no encontrada', 404);
                 break;
             }
 
-            $where = [];
-            $params = [];
+            $where = ['f.id_grupo = ?'];
+            $params = [$grupoId];
 
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
@@ -329,24 +332,24 @@ try {
 
         case 'POST':
             if (($_GET['action'] ?? '') === 'importar') {
-                importarFacturas($pdo, $userId);
+                importarFacturas($pdo, $userId, $grupoId);
                 break;
             }
             $v = validarFactura(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
             $numero = generarNumeroFactura($pdo);
             $s = $pdo->prepare("
                 INSERT INTO facturas
-                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId]);
+            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
             guardarLineas($pdo, $newId, $v['lineas']);
             $nuevo = cargarFactura($pdo, $newId);
@@ -357,14 +360,15 @@ try {
 
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
+            if (!recursoPerteneceAlGrupo($pdo, 'facturas', 'id_factura', $id, $grupoId)) { err('Factura no encontrada', 404); break; }
             $antes = cargarFactura($pdo, $id);
             if (!$antes) { err('Factura no encontrada', 404); break; }
 
             $v = validarFactura(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
@@ -372,9 +376,9 @@ try {
                 UPDATE facturas
                    SET contacto_id=?, estado=?, fecha_emision=?, fecha_vencimiento=?,
                        base_imponible=?, iva_total=?, total=?, notas=?
-                 WHERE id_factura=?
+                 WHERE id_factura=? AND id_grupo=?
             ");
-            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $id]);
+            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $id, $grupoId]);
             guardarLineas($pdo, $id, $v['lineas']);
             $despues = cargarFactura($pdo, $id);
             registrarAuditoria($pdo, 'facturas', $id, 'editar', $antes, $despues);
@@ -384,10 +388,11 @@ try {
 
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
+            if (!recursoPerteneceAlGrupo($pdo, 'facturas', 'id_factura', $id, $grupoId)) { err('Factura no encontrada', 404); break; }
             $antes = cargarFactura($pdo, $id);
             if (!$antes) { err('Factura no encontrada', 404); break; }
-            $s = $pdo->prepare("DELETE FROM facturas WHERE id_factura = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM facturas WHERE id_factura = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'facturas', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

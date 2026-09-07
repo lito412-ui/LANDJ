@@ -32,4 +32,3 @@ try {
 }
 
 require_once __DIR__ . '/multitenant.php';
-asegurarEsquemaMultitenant($pdo);

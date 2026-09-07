@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'productos');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -64,26 +65,27 @@ function validarProducto(array $b): array {
     return compact('errors', 'codigo', 'nombre', 'descripcion', 'precio', 'iva', 'stock', 'activo', 'proveedorId');
 }
 
-function cargarProducto(PDO $pdo, int $id): ?array {
+function cargarProducto(PDO $pdo, int $id, int $grupoId): ?array {
     $s = $pdo->prepare("
         SELECT p.*, pr.nombre AS proveedor_nombre
         FROM productos p
         LEFT JOIN proveedores pr ON pr.id_proveedor = p.proveedor_id
-        WHERE p.id_producto = ? LIMIT 1
+        WHERE p.id_producto = ? AND p.id_grupo = ? LIMIT 1
     ");
-    $s->execute([$id]);
+    $s->execute([$id, $grupoId]);
     return $s->fetch() ?: null;
 }
 
 // ─── Exportar / importar CSV ────────────────────────────────────────────────
-function exportarProductos(PDO $pdo): void {
-    $s = $pdo->query("
+function exportarProductos(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("
         SELECT p.codigo, p.nombre, p.descripcion, p.precio, p.iva_porcentaje, p.stock, p.activo, p.created_at,
                pr.nombre AS proveedor_nombre
         FROM productos p
         LEFT JOIN proveedores pr ON pr.id_proveedor = p.proveedor_id
-        ORDER BY p.nombre
+        WHERE p.id_grupo = ? ORDER BY p.nombre
     ");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $p) {
         $filas[] = [$p['codigo'], $p['nombre'], $p['descripcion'], $p['precio'], $p['iva_porcentaje'],
@@ -157,17 +159,17 @@ try {
     switch ($method) {
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarProductos($pdo);
+                exportarProductos($pdo, $grupoId);
                 break;
             }
             if ($id) {
-                $producto = cargarProducto($pdo, $id);
+                $producto = cargarProducto($pdo, $id, $grupoId);
                 $producto ? ok($producto) : err('Producto no encontrado', 404);
                 break;
             }
 
-            $where = [];
-            $params = [];
+            $where = ['p.id_grupo = ?'];
+            $params = [$grupoId];
 
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
@@ -222,19 +224,20 @@ try {
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
             $s = $pdo->prepare("
-                INSERT INTO productos (codigo, nombre, descripcion, precio, iva_porcentaje, stock, activo, proveedor_id, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO productos (codigo, nombre, descripcion, precio, iva_porcentaje, stock, activo, proveedor_id, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$v['codigo'], $v['nombre'], $v['descripcion'], $v['precio'], $v['iva'], $v['stock'], $v['activo'], $v['proveedorId'], $userId]);
+            if ($v['proveedorId'] && !recursoPerteneceAlGrupo($pdo, 'proveedores', 'id_proveedor', $v['proveedorId'], $grupoId)) { err('Proveedor no encontrado', 404); break; }
+            $s->execute([$v['codigo'], $v['nombre'], $v['descripcion'], $v['precio'], $v['iva'], $v['stock'], $v['activo'], $v['proveedorId'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
-            $nuevo = cargarProducto($pdo, $newId);
+            $nuevo = cargarProducto($pdo, $newId, $grupoId);
             registrarAuditoria($pdo, 'productos', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
             break;
 
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
-            $antes = cargarProducto($pdo, $id);
+            $antes = cargarProducto($pdo, $id, $grupoId);
             if (!$antes) { err('Producto no encontrado', 404); break; }
 
             $v = validarProducto(body());
@@ -243,19 +246,20 @@ try {
             $s = $pdo->prepare("
                 UPDATE productos
                    SET codigo=?, nombre=?, descripcion=?, precio=?, iva_porcentaje=?, stock=?, activo=?, proveedor_id=?
-                 WHERE id_producto=?
+                 WHERE id_producto=? AND id_grupo=?
             ");
-            $s->execute([$v['codigo'], $v['nombre'], $v['descripcion'], $v['precio'], $v['iva'], $v['stock'], $v['activo'], $v['proveedorId'], $id]);
-            $despues = cargarProducto($pdo, $id);
+            if ($v['proveedorId'] && !recursoPerteneceAlGrupo($pdo, 'proveedores', 'id_proveedor', $v['proveedorId'], $grupoId)) { err('Proveedor no encontrado', 404); break; }
+            $s->execute([$v['codigo'], $v['nombre'], $v['descripcion'], $v['precio'], $v['iva'], $v['stock'], $v['activo'], $v['proveedorId'], $id, $grupoId]);
+            $despues = cargarProducto($pdo, $id, $grupoId);
             registrarAuditoria($pdo, 'productos', $id, 'editar', $antes, $despues);
             ok($despues);
             break;
 
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $antes = cargarProducto($pdo, $id);
+            $antes = cargarProducto($pdo, $id, $grupoId);
             if (!$antes) { err('Producto no encontrado', 404); break; }
-            $pdo->prepare("DELETE FROM productos WHERE id_producto = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM productos WHERE id_producto = ? AND id_grupo = ?")->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'productos', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

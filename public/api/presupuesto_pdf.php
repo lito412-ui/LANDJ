@@ -20,6 +20,11 @@ if ($id <= 0) {
 }
 
 try {
+    if (!recursoPerteneceAlGrupo($pdo, 'presupuestos', 'id_presupuesto', $id, obtenerIdGrupoActual())) {
+        http_response_code(404);
+        echo 'Presupuesto no encontrado';
+        exit;
+    }
     $presupuesto = presupuestoDocumentoCargar($pdo, $id);
     if (!$presupuesto) {
         http_response_code(404);

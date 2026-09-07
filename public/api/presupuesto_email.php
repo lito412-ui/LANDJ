@@ -37,6 +37,11 @@ if ($id <= 0) {
 }
 
 try {
+    $grupoId = obtenerIdGrupoActual();
+    if (!recursoPerteneceAlGrupo($pdo, 'presupuestos', 'id_presupuesto', $id, $grupoId)) {
+        presupuestoEmailErr('Presupuesto no encontrado', 404);
+        exit;
+    }
     $presupuesto = presupuestoDocumentoCargar($pdo, $id);
     if (!$presupuesto) {
         presupuestoEmailErr('Presupuesto no encontrado', 404);
@@ -56,8 +61,8 @@ try {
     // (si ya existe, se reutiliza para no invalidar un enlace ya enviado)
     if (empty($presupuesto['token_confirmacion'])) {
         $token = bin2hex(random_bytes(32));
-        $pdo->prepare("UPDATE presupuestos SET token_confirmacion = ? WHERE id_presupuesto = ?")
-            ->execute([$token, $id]);
+        $pdo->prepare("UPDATE presupuestos SET token_confirmacion = ? WHERE id_presupuesto = ? AND id_grupo = ?")
+            ->execute([$token, $id, $grupoId]);
         $presupuesto['token_confirmacion'] = $token;
     }
 
@@ -100,7 +105,7 @@ try {
 
     // Al enviarse por primera vez, si seguia en borrador pasa automaticamente a "enviado"
     if ($presupuesto['estado'] === 'borrador') {
-        $pdo->prepare("UPDATE presupuestos SET estado = 'enviado' WHERE id_presupuesto = ?")->execute([$id]);
+        $pdo->prepare("UPDATE presupuestos SET estado = 'enviado' WHERE id_presupuesto = ? AND id_grupo = ?")->execute([$id, $grupoId]);
         registrarAuditoria($pdo, 'presupuestos', $id, 'editar', ['estado' => 'borrador'], ['estado' => 'enviado']);
     }
 

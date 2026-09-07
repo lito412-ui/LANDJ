@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'contactos');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -103,11 +104,11 @@ function validarYSanitizar(array $b): array {
 // El email tiene UNIQUE en BD: un duplicado por email exacto nunca se puede
 // forzar (violaria la restriccion), asi que se separa de los duplicados por
 // telefono (señal mas debil, esos si se pueden forzar).
-function buscarPosiblesDuplicados(PDO $pdo, ?string $email, ?string $telefono): array {
+function buscarPosiblesDuplicados(PDO $pdo, int $grupoId, ?string $email, ?string $telefono): array {
     $porEmail = [];
     if ($email !== null) {
-        $s = $pdo->prepare("SELECT id_contacto, nombre, apellidos, email, telefono, empresa FROM contactos WHERE email = ? LIMIT 1");
-        $s->execute([$email]);
+        $s = $pdo->prepare("SELECT id_contacto, nombre, apellidos, email, telefono, empresa FROM contactos WHERE email = ? AND id_grupo = ? LIMIT 1");
+        $s->execute([$email, $grupoId]);
         $porEmail = $s->fetchAll();
     }
 
@@ -117,9 +118,9 @@ function buscarPosiblesDuplicados(PDO $pdo, ?string $email, ?string $telefono): 
         if ($telefonoNormalizado !== '') {
             $s = $pdo->prepare(
                 "SELECT id_contacto, nombre, apellidos, email, telefono, empresa
-                 FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? LIMIT 5"
+                 FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? AND id_grupo = ? LIMIT 5"
             );
-            $s->execute([$telefonoNormalizado]);
+            $s->execute([$telefonoNormalizado, $grupoId]);
             $porTelefono = $s->fetchAll();
         }
     }
@@ -127,8 +128,9 @@ function buscarPosiblesDuplicados(PDO $pdo, ?string $email, ?string $telefono): 
     return ['email' => $porEmail, 'telefono' => $porTelefono];
 }
 
-function exportarContactos(PDO $pdo): void {
-    $s = $pdo->query("SELECT nombre, apellidos, email, telefono, empresa, notas, created_at FROM contactos ORDER BY nombre, apellidos");
+function exportarContactos(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("SELECT nombre, apellidos, email, telefono, empresa, notas, created_at FROM contactos WHERE id_grupo = ? ORDER BY nombre, apellidos");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $c) {
         $filas[] = [$c['nombre'], $c['apellidos'], $c['email'], $c['telefono'], $c['empresa'], $c['notas'], $c['created_at']];
@@ -137,7 +139,7 @@ function exportarContactos(PDO $pdo): void {
         ['nombre', 'apellidos', 'email', 'telefono', 'empresa', 'notas', 'created_at'], $filas);
 }
 
-function importarContactos(PDO $pdo, int $userId): void {
+function importarContactos(PDO $pdo, int $userId, int $grupoId): void {
     try {
         $filas = csvLeerSubida('archivo');
     } catch (RuntimeException $e) {
@@ -147,16 +149,16 @@ function importarContactos(PDO $pdo, int $userId): void {
     if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
 
     $creados = 0; $actualizados = 0; $errores = [];
-    $sBuscarEmail = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
+    $sBuscarEmail = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? AND id_grupo = ? LIMIT 1");
     $sBuscarTelefono = $pdo->prepare(
-        "SELECT id_contacto FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? LIMIT 1"
+        "SELECT id_contacto FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? AND id_grupo = ? LIMIT 1"
     );
     $sIns = $pdo->prepare(
-        "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por, id_grupo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     );
     $sUpd = $pdo->prepare(
-        "UPDATE contactos SET nombre=?, apellidos=?, telefono=?, empresa=?, notas=? WHERE id_contacto=?"
+        "UPDATE contactos SET nombre=?, apellidos=?, telefono=?, empresa=?, notas=? WHERE id_contacto=? AND id_grupo=?"
     );
 
     foreach ($filas as $idx => $fila) {
@@ -167,23 +169,23 @@ function importarContactos(PDO $pdo, int $userId): void {
         try {
             $existenteId = null;
             if ($v['email'] !== null) {
-                $sBuscarEmail->execute([$v['email']]);
+                $sBuscarEmail->execute([$v['email'], $grupoId]);
                 $existenteId = $sBuscarEmail->fetchColumn() ?: null;
             }
             // Sin coincidencia por email: probar por teléfono (mismo criterio que la deteccion manual)
             if (!$existenteId && $v['telefono'] !== null) {
                 $telefonoNormalizado = preg_replace('/[\s\-]/', '', $v['telefono']);
                 if ($telefonoNormalizado !== '') {
-                    $sBuscarTelefono->execute([$telefonoNormalizado]);
+                    $sBuscarTelefono->execute([$telefonoNormalizado, $grupoId]);
                     $existenteId = $sBuscarTelefono->fetchColumn() ?: null;
                 }
             }
             if ($existenteId) {
-                $sUpd->execute([$v['nombre'], $v['apellidos'], $v['telefono'], $v['empresa'], $v['notas'], $existenteId]);
+                $sUpd->execute([$v['nombre'], $v['apellidos'], $v['telefono'], $v['empresa'], $v['notas'], $existenteId, $grupoId]);
                 registrarAuditoria($pdo, 'contactos', (int) $existenteId, 'editar', null, $v);
                 $actualizados++;
             } else {
-                $sIns->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $userId]);
+                $sIns->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $userId, $grupoId]);
                 $nuevoId = (int) $pdo->lastInsertId();
                 registrarAuditoria($pdo, 'contactos', $nuevoId, 'crear', null, $v);
                 $creados++;
@@ -202,17 +204,17 @@ try {
         // ─── Listar / buscar / detalle ────────────────────────────────────
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarContactos($pdo);
+                exportarContactos($pdo, $grupoId);
                 break;
             }
             if ($id) {
-                $s = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? LIMIT 1");
-                $s->execute([$id]);
+                $s = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? AND id_grupo = ? LIMIT 1");
+                $s->execute([$id, $grupoId]);
                 $row = $s->fetch();
                 $row ? ok($row) : err('Contacto no encontrado', 404);
             } else {
-                $where  = [];
-                $params = [];
+                $where  = ['id_grupo = ?'];
+                $params = [$grupoId];
 
                 $buscar = clean($_GET['buscar'] ?? '');
                 if ($buscar !== '') {
@@ -264,13 +266,13 @@ try {
         // ─── Crear ───────────────────────────────────────────────────────
         case 'POST':
             if (($_GET['action'] ?? '') === 'importar') {
-                importarContactos($pdo, $userId);
+                importarContactos($pdo, $userId, $grupoId);
                 break;
             }
             $v = validarYSanitizar(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $duplicados = buscarPosiblesDuplicados($pdo, $v['email'], $v['telefono']);
+            $duplicados = buscarPosiblesDuplicados($pdo, $grupoId, $v['email'], $v['telefono']);
             if ($duplicados['email']) {
                 http_response_code(409);
                 echo json_encode([
@@ -293,13 +295,13 @@ try {
             }
 
             $s = $pdo->prepare(
-                "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por, id_grupo)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $s->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $userId]);
+            $s->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
-            $s2 = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ?");
-            $s2->execute([$newId]);
+            $s2 = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $s2->execute([$newId, $grupoId]);
             $nuevo = $s2->fetch();
             registrarAuditoria($pdo, 'contactos', $newId, 'crear', null, $nuevo ?: null);
             ok($nuevo);
@@ -310,17 +312,18 @@ try {
             if (!$id) { err('ID requerido'); break; }
             $v = validarYSanitizar(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
+            if (!$antes) { err('Contacto no encontrado', 404); break; }
             $s = $pdo->prepare(
                 "UPDATE contactos
                  SET nombre=?, apellidos=?, email=?, telefono=?, empresa=?, notas=?
-                 WHERE id_contacto=?"
+                 WHERE id_contacto=? AND id_grupo=?"
             );
-            $s->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $id]);
-            $s2 = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ?");
-            $s2->execute([$id]);
+            $s->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $id, $grupoId]);
+            $s2 = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $s2->execute([$id, $grupoId]);
             $despues = $s2->fetch() ?: null;
             registrarAuditoria($pdo, 'contactos', $id, 'editar', $antes, $despues);
             ok($despues);
@@ -329,12 +332,12 @@ try {
         // ─── Eliminar ────────────────────────────────────────────────────
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $sAntes = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ?");
-            $sAntes->execute([$id]);
+            $sAntes = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $sAntes->execute([$id, $grupoId]);
             $antes = $sAntes->fetch() ?: null;
             if (!$antes) { err('Contacto no encontrado', 404); break; }
-            $s = $pdo->prepare("DELETE FROM contactos WHERE id_contacto = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'contactos', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

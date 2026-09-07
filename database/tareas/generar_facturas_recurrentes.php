@@ -82,7 +82,8 @@ try {
                             'name' => facturaDocumentoNombre($factura),
                             'encoding' => 'base64',
                             'type' => 'application/pdf',
-                        ]]
+                        ]],
+                        (int) $factura['id_grupo']
                     );
                     if ($ok) $enviadas++;
                     log_linea('    email: ' . ($ok ? 'enviado' : 'no enviado'));

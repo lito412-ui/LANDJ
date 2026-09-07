@@ -91,7 +91,8 @@ try {
                         'name' => facturaDocumentoNombre($factura),
                         'encoding' => 'base64',
                         'type' => 'application/pdf',
-                    ]]
+                    ]],
+                    (int) $factura['id_grupo']
                 );
             } catch (Throwable $e) {
                 log_linea('  [aviso] No se pudo enviar el email de la factura ' . $factura['numero'] . ': ' . $e->getMessage());

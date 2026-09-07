@@ -18,6 +18,7 @@ verificarModuloVisible($pdo, 'presupuestos');
 require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -217,15 +218,16 @@ function convertirEnFactura(PDO $pdo, int $id, int $userId): void {
 }
 
 // ─── Exportar / importar CSV ────────────────────────────────────────────────
-function exportarPresupuestos(PDO $pdo): void {
-    $s = $pdo->query("
+function exportarPresupuestos(PDO $pdo, int $grupoId): void {
+    $s = $pdo->prepare("
         SELECT p.numero, c.email AS contacto_email, p.estado, p.fecha_emision, p.fecha_validez, p.notas,
                pl.concepto, pl.cantidad, pl.precio_unitario, pl.iva_porcentaje
         FROM presupuestos p
         INNER JOIN contactos c ON c.id_contacto = p.contacto_id
         INNER JOIN presupuesto_lineas pl ON pl.presupuesto_id = p.id_presupuesto
-        ORDER BY p.numero, pl.orden, pl.id_linea
+        WHERE p.id_grupo = ? ORDER BY p.numero, pl.orden, pl.id_linea
     ");
+    $s->execute([$grupoId]);
     $filas = [];
     foreach ($s->fetchAll() as $l) {
         $filas[] = [$l['numero'], $l['contacto_email'], $l['estado'], $l['fecha_emision'], $l['fecha_validez'],
@@ -237,7 +239,7 @@ function exportarPresupuestos(PDO $pdo): void {
     ], $filas);
 }
 
-function importarPresupuestos(PDO $pdo, int $userId): void {
+function importarPresupuestos(PDO $pdo, int $userId, int $grupoId): void {
     try {
         $filas = csvLeerSubida('archivo');
     } catch (RuntimeException $e) {
@@ -254,8 +256,8 @@ function importarPresupuestos(PDO $pdo, int $userId): void {
         $grupos[$clave]['cabecera'] ??= $fila;
     }
 
-    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
-    $sExiste   = $pdo->prepare("SELECT id_presupuesto FROM presupuestos WHERE numero = ? LIMIT 1");
+    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? AND id_grupo = ? LIMIT 1");
+    $sExiste   = $pdo->prepare("SELECT id_presupuesto FROM presupuestos WHERE numero = ? AND id_grupo = ? LIMIT 1");
 
     $creados = 0; $errores = [];
 
@@ -265,7 +267,7 @@ function importarPresupuestos(PDO $pdo, int $userId): void {
 
         $numeroReal = trim($cabecera['numero'] ?? '');
         if ($numeroReal !== '') {
-            $sExiste->execute([$numeroReal]);
+            $sExiste->execute([$numeroReal, $grupoId]);
             if ($sExiste->fetchColumn()) {
                 $errores[] = "Fila $primeraFila: ya existe un presupuesto con el número $numeroReal (se omite)";
                 continue;
@@ -274,7 +276,7 @@ function importarPresupuestos(PDO $pdo, int $userId): void {
 
         $email = trim($cabecera['contacto_email'] ?? '');
         if ($email === '') { $errores[] = "Fila $primeraFila: falta contacto_email"; continue; }
-        $sContacto->execute([$email]);
+        $sContacto->execute([$email, $grupoId]);
         $contactoId = $sContacto->fetchColumn() ?: null;
         if (!$contactoId) { $errores[] = "Fila $primeraFila: no existe ningún contacto con email $email"; continue; }
 
@@ -301,10 +303,10 @@ function importarPresupuestos(PDO $pdo, int $userId): void {
             $num = $numeroReal !== '' ? $numeroReal : generarNumeroPresupuesto($pdo);
             $s = $pdo->prepare("
                 INSERT INTO presupuestos
-                    (numero, contacto_id, estado, fecha_emision, fecha_validez, base_imponible, iva_total, total, notas, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_validez, base_imponible, iva_total, total, notas, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId]);
+            $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
             $nuevoId = (int) $pdo->lastInsertId();
             guardarLineasPresupuesto($pdo, $nuevoId, $v['lineas']);
             registrarAuditoria($pdo, 'presupuestos', $nuevoId, 'crear', null, $v);
@@ -324,17 +326,18 @@ try {
     switch ($method) {
         case 'GET':
             if (($_GET['action'] ?? '') === 'exportar') {
-                exportarPresupuestos($pdo);
+                exportarPresupuestos($pdo, $grupoId);
                 break;
             }
             if ($id) {
+                if (!recursoPerteneceAlGrupo($pdo, 'presupuestos', 'id_presupuesto', $id, $grupoId)) { err('Presupuesto no encontrado', 404); break; }
                 $presupuesto = cargarPresupuesto($pdo, $id);
                 $presupuesto ? ok($presupuesto) : err('Presupuesto no encontrado', 404);
                 break;
             }
 
-            $where = [];
-            $params = [];
+            $where = ['p.id_grupo = ?'];
+            $params = [$grupoId];
 
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
@@ -384,7 +387,7 @@ try {
 
         case 'POST':
             if (($_GET['action'] ?? '') === 'importar') {
-                importarPresupuestos($pdo, $userId);
+                importarPresupuestos($pdo, $userId, $grupoId);
                 break;
             }
             if (($_GET['action'] ?? '') === 'convertir') {
@@ -396,18 +399,18 @@ try {
             $v = validarPresupuesto(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
             $numero = generarNumeroPresupuesto($pdo);
             $s = $pdo->prepare("
                 INSERT INTO presupuestos
-                    (numero, contacto_id, estado, fecha_emision, fecha_validez, base_imponible, iva_total, total, notas, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_validez, base_imponible, iva_total, total, notas, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId]);
+            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
             $newId = (int) $pdo->lastInsertId();
             guardarLineasPresupuesto($pdo, $newId, $v['lineas']);
             $nuevo = cargarPresupuesto($pdo, $newId);
@@ -418,6 +421,7 @@ try {
 
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
+            if (!recursoPerteneceAlGrupo($pdo, 'presupuestos', 'id_presupuesto', $id, $grupoId)) { err('Presupuesto no encontrado', 404); break; }
             $antes = cargarPresupuesto($pdo, $id);
             if (!$antes) { err('Presupuesto no encontrado', 404); break; }
             if ($antes['factura_id']) { err('No se puede editar un presupuesto ya convertido en factura'); break; }
@@ -425,8 +429,8 @@ try {
             $v = validarPresupuesto(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
@@ -434,9 +438,9 @@ try {
                 UPDATE presupuestos
                    SET contacto_id=?, estado=?, fecha_emision=?, fecha_validez=?,
                        base_imponible=?, iva_total=?, total=?, notas=?
-                 WHERE id_presupuesto=?
+                 WHERE id_presupuesto=? AND id_grupo=?
             ");
-            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $id]);
+            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaValidez'], $v['base'], $v['iva'], $v['total'], $v['notas'], $id, $grupoId]);
             guardarLineasPresupuesto($pdo, $id, $v['lineas']);
             $despues = cargarPresupuesto($pdo, $id);
             registrarAuditoria($pdo, 'presupuestos', $id, 'editar', $antes, $despues);
@@ -446,10 +450,11 @@ try {
 
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
+            if (!recursoPerteneceAlGrupo($pdo, 'presupuestos', 'id_presupuesto', $id, $grupoId)) { err('Presupuesto no encontrado', 404); break; }
             $antes = cargarPresupuesto($pdo, $id);
             if (!$antes) { err('Presupuesto no encontrado', 404); break; }
-            $s = $pdo->prepare("DELETE FROM presupuestos WHERE id_presupuesto = ?");
-            $s->execute([$id]);
+            $s = $pdo->prepare("DELETE FROM presupuestos WHERE id_presupuesto = ? AND id_grupo = ?");
+            $s->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'presupuestos', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

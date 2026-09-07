@@ -25,6 +25,7 @@ require __DIR__ . '/../config/auditoria.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $accion = $_GET['accion'] ?? '';
+$grupoId = obtenerIdGrupoActual();
 
 function ok($data = null): void { echo json_encode(['ok' => true, 'data' => $data]); }
 function err(string $msg, int $code = 400): void {
@@ -33,44 +34,32 @@ function err(string $msg, int $code = 400): void {
 }
 function body(): array { return json_decode(file_get_contents('php://input'), true) ?? []; }
 
-// Asegurar existencia de la tabla
-try {
-    $pdo->exec("CREATE TABLE IF NOT EXISTS `system_config` (
-      `id` INT AUTO_INCREMENT PRIMARY KEY,
-      `clave` VARCHAR(100) NOT NULL UNIQUE,
-      `valor` TEXT DEFAULT NULL,
-      `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-} catch (Throwable $e) {
-    // Ignorar si ya existe
-}
-
 /**
- * Obtiene un valor de system_config, con fallback a getenv().
+ * Obtiene un valor de system_config perteneciente exclusivamente al grupo actual.
  */
-function getConfig(PDO $pdo, string $clave, string $envFallback = ''): string {
+function getConfig(PDO $pdo, int $grupoId, string $clave): string {
     try {
-        $s = $pdo->prepare('SELECT valor FROM system_config WHERE clave = ?');
-        $s->execute([$clave]);
+        $s = $pdo->prepare('SELECT valor FROM system_config WHERE id_grupo = ? AND clave = ?');
+        $s->execute([$grupoId, $clave]);
         $row = $s->fetch();
         if ($row && $row['valor'] !== null && $row['valor'] !== '') {
             return $row['valor'];
         }
     } catch (Throwable $e) {}
-    return getenv($envFallback) ?: '';
+    return '';
 }
 
 try {
     // ── GET: leer configuración SMTP actual ─────────────────────
     if ($method === 'GET' && $accion === 'smtp') {
-        $activePass = getConfig($pdo, 'smtp_pass', 'SMTP_PASS');
+        $activePass = getConfig($pdo, $grupoId, 'smtp_pass');
         ok([
-            'smtp_host'       => getConfig($pdo, 'smtp_host', 'SMTP_HOST'),
-            'smtp_port'       => getConfig($pdo, 'smtp_port', 'SMTP_PORT') ?: '587',
-            'smtp_user'       => getConfig($pdo, 'smtp_user', 'SMTP_USER'),
+            'smtp_host'       => getConfig($pdo, $grupoId, 'smtp_host'),
+            'smtp_port'       => getConfig($pdo, $grupoId, 'smtp_port') ?: '587',
+            'smtp_user'       => getConfig($pdo, $grupoId, 'smtp_user'),
             'smtp_pass'       => '', // Nunca devolver la contraseña en texto plano
-            'smtp_from'       => getConfig($pdo, 'smtp_from', 'MAIL_FROM'),
-            'smtp_encryption' => getConfig($pdo, 'smtp_encryption', '') ?: 'tls',
+            'smtp_from'       => getConfig($pdo, $grupoId, 'smtp_from'),
+            'smtp_encryption' => getConfig($pdo, $grupoId, 'smtp_encryption') ?: 'tls',
             'has_password'    => ($activePass !== ''),
         ]);
         exit;
@@ -111,12 +100,12 @@ try {
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO system_config (clave, valor) VALUES (?, ?)
+            'INSERT INTO system_config (id_grupo, clave, valor) VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE valor = VALUES(valor)'
         );
 
         foreach ($configs as $clave => $valor) {
-            $stmt->execute([$clave, $valor]);
+            $stmt->execute([$grupoId, $clave, $valor]);
         }
 
         $auditData = $configs;
@@ -136,12 +125,12 @@ try {
             err('Email de destino no válido'); exit;
         }
 
-        $host       = getConfig($pdo, 'smtp_host', 'SMTP_HOST');
-        $port       = (int) (getConfig($pdo, 'smtp_port', 'SMTP_PORT') ?: 587);
-        $user       = getConfig($pdo, 'smtp_user', 'SMTP_USER');
-        $pass       = getConfig($pdo, 'smtp_pass', 'SMTP_PASS');
-        $from       = getConfig($pdo, 'smtp_from', 'MAIL_FROM') ?: $user;
-        $encryption = getConfig($pdo, 'smtp_encryption', '') ?: 'tls';
+        $host       = getConfig($pdo, $grupoId, 'smtp_host');
+        $port       = (int) (getConfig($pdo, $grupoId, 'smtp_port') ?: 587);
+        $user       = getConfig($pdo, $grupoId, 'smtp_user');
+        $pass       = getConfig($pdo, $grupoId, 'smtp_pass');
+        $from       = getConfig($pdo, $grupoId, 'smtp_from') ?: $user;
+        $encryption = getConfig($pdo, $grupoId, 'smtp_encryption') ?: 'tls';
 
         if (!$host || !$user || !$pass) {
             err('Configura y guarda el host, usuario y contraseña SMTP antes de probar'); exit;

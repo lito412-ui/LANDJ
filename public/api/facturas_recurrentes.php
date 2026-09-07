@@ -17,6 +17,7 @@ require __DIR__ . '/../config/modulos_visibilidad.php';
 verificarModuloVisible($pdo, 'recurrentes');
 
 $userId = (int) $_SESSION['user_id'];
+$grupoId = obtenerIdGrupoActual();
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
@@ -108,16 +109,16 @@ function validarRecurrente(array $b): array {
     );
 }
 
-function cargarRecurrente(PDO $pdo, int $id): ?array {
+function cargarRecurrente(PDO $pdo, int $id, int $grupoId): ?array {
     $s = $pdo->prepare("
         SELECT r.*, c.nombre AS contacto_nombre, c.apellidos AS contacto_apellidos,
                c.email AS contacto_email, c.empresa AS contacto_empresa
         FROM facturas_recurrentes r
         INNER JOIN contactos c ON c.id_contacto = r.contacto_id
-        WHERE r.id_recurrente = ?
+        WHERE r.id_recurrente = ? AND r.id_grupo = ?
         LIMIT 1
     ");
-    $s->execute([$id]);
+    $s->execute([$id, $grupoId]);
     $rec = $s->fetch();
     if (!$rec) return null;
 
@@ -152,12 +153,12 @@ try {
     switch ($method) {
         case 'GET':
             if ($id) {
-                $rec = cargarRecurrente($pdo, $id);
+                $rec = cargarRecurrente($pdo, $id, $grupoId);
                 $rec ? ok($rec) : err('Plantilla no encontrada', 404);
                 break;
             }
 
-            $where = []; $params = [];
+            $where = ['r.id_grupo = ?']; $params = [$grupoId];
             $buscar = clean($_GET['buscar'] ?? '');
             if ($buscar !== '') {
                 $like = '%' . $buscar . '%';
@@ -194,7 +195,7 @@ try {
 
         case 'POST':
             if (($_GET['action'] ?? '') === 'generar' && $id) {
-                $rec = cargarRecurrente($pdo, $id);
+                $rec = cargarRecurrente($pdo, $id, $grupoId);
                 if (!$rec) { err('Plantilla no encontrada', 404); break; }
                 if (!$rec['lineas']) { err('La plantilla no tiene líneas'); break; }
                 try {
@@ -210,25 +211,25 @@ try {
             $v = validarRecurrente(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
             $s = $pdo->prepare("
                 INSERT INTO facturas_recurrentes
                     (contacto_id, nombre, periodicidad, dia_generacion, fecha_inicio, fecha_fin,
-                     dias_vencimiento, notas, activa, enviar_email, proxima_generacion, creado_por)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     dias_vencimiento, notas, activa, enviar_email, proxima_generacion, creado_por, id_grupo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $s->execute([
                 $v['contactoId'], $v['nombre'], $v['periodicidad'], $v['diaGeneracion'],
                 $v['fechaInicio'], $v['fechaFin'], $v['diasVencimiento'], $v['notas'],
-                $v['activa'], $v['enviarEmail'], $v['fechaInicio'], $userId,
+                $v['activa'], $v['enviarEmail'], $v['fechaInicio'], $userId, $grupoId,
             ]);
             $newId = (int) $pdo->lastInsertId();
             guardarLineasRecurrente($pdo, $newId, $v['lineas']);
-            $nuevo = cargarRecurrente($pdo, $newId);
+            $nuevo = cargarRecurrente($pdo, $newId, $grupoId);
             registrarAuditoria($pdo, 'facturas_recurrentes', $newId, 'crear', null, $nuevo ?: null);
             $pdo->commit();
             ok($nuevo);
@@ -236,14 +237,14 @@ try {
 
         case 'PUT':
             if (!$id) { err('ID requerido'); break; }
-            $antes = cargarRecurrente($pdo, $id);
+            $antes = cargarRecurrente($pdo, $id, $grupoId);
             if (!$antes) { err('Plantilla no encontrada', 404); break; }
 
             $v = validarRecurrente(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 
-            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ?");
-            $contacto->execute([$v['contactoId']]);
+            $contacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE id_contacto = ? AND id_grupo = ?");
+            $contacto->execute([$v['contactoId'], $grupoId]);
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
@@ -251,15 +252,15 @@ try {
                 UPDATE facturas_recurrentes
                    SET contacto_id=?, nombre=?, periodicidad=?, dia_generacion=?, fecha_inicio=?, fecha_fin=?,
                        dias_vencimiento=?, notas=?, activa=?, enviar_email=?
-                 WHERE id_recurrente=?
+                 WHERE id_recurrente=? AND id_grupo=?
             ");
             $s->execute([
                 $v['contactoId'], $v['nombre'], $v['periodicidad'], $v['diaGeneracion'],
                 $v['fechaInicio'], $v['fechaFin'], $v['diasVencimiento'], $v['notas'],
-                $v['activa'], $v['enviarEmail'], $id,
+                $v['activa'], $v['enviarEmail'], $id, $grupoId,
             ]);
             guardarLineasRecurrente($pdo, $id, $v['lineas']);
-            $despues = cargarRecurrente($pdo, $id);
+            $despues = cargarRecurrente($pdo, $id, $grupoId);
             registrarAuditoria($pdo, 'facturas_recurrentes', $id, 'editar', $antes, $despues);
             $pdo->commit();
             ok($despues);
@@ -267,9 +268,9 @@ try {
 
         case 'DELETE':
             if (!$id) { err('ID requerido'); break; }
-            $antes = cargarRecurrente($pdo, $id);
+            $antes = cargarRecurrente($pdo, $id, $grupoId);
             if (!$antes) { err('Plantilla no encontrada', 404); break; }
-            $pdo->prepare("DELETE FROM facturas_recurrentes WHERE id_recurrente = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM facturas_recurrentes WHERE id_recurrente = ? AND id_grupo = ?")->execute([$id, $grupoId]);
             registrarAuditoria($pdo, 'facturas_recurrentes', $id, 'eliminar', $antes, null);
             ok(['deleted' => $id]);
             break;

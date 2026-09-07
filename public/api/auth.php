@@ -320,7 +320,7 @@ try {
         }
 
         $stmt = $pdo->prepare("
-            SELECT id_usuario, nombre, email, codigo_recuperacion,
+            SELECT id_usuario, nombre, email, rol, id_grupo, codigo_recuperacion,
                    codigo_recuperacion_expira, recuperacion_intentos
             FROM usuarios
             WHERE LOWER(nombre) = LOWER(?) OR LOWER(email) = LOWER(?)
@@ -360,8 +360,17 @@ try {
 
         registrarAuditoria($pdo, 'usuarios', $user['id_usuario'], 'editar', null, ['accion' => 'recuperacion_password']);
 
+        // El código demuestra que la persona controla el correo de la cuenta:
+        // iniciar una sesión nueva evita obligarle a repetir el login.
+        session_regenerate_id(true);
+        $_SESSION['user_id']  = (int) $user['id_usuario'];
+        $_SESSION['nombre']   = $user['nombre'];
+        $_SESSION['rol']      = $user['rol'];
+        $_SESSION['id_grupo'] = (int) $user['id_grupo'];
+
         ok([
-            'message' => '¡Contraseña restablecida correctamente! Ya puedes iniciar sesión con tu nueva clave.'
+            'message'  => '¡Contraseña restablecida correctamente!',
+            'redirect' => '/admin/cpanel.php'
         ]);
     }
 
@@ -369,5 +378,5 @@ try {
 
 } catch (Throwable $e) {
     error_log('[auth_api] ' . $e->getMessage());
-    err('Error interno del servidor: ' . $e->getMessage(), 500);
+    err('Error interno del servidor.', 500);
 }
