@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/assets/css/site/style.css">
-    <link rel="icon" type="image/png" href="/assets/img/logo_proyecto.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <title>L&J - Iniciar Sesión</title>
+    <link rel="icon" type="image/png" href="/assets/img/icono web.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>L&J CRM - Iniciar Sesión</title>
 </head>
 
 <body>
@@ -15,24 +16,33 @@
         <div class="login-card">
             <div class="login-header">
                 <h1 class="logo">L&J</h1>
-                <p class="subtitle">Bienvenido de vuelta</p>
+                <p class="subtitle">Acceso a la plataforma</p>
+            </div>
+
+            <div id="loginAlert" class="auth-alert auth-alert--err" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="loginAlertText"></span>
             </div>
 
             <form class="login-form" action="/auth/login.php" method="POST" id="loginForm">
                 <div class="input-group">
-                    <label for="username" class="input-label">Nombre de Usuario</label>
+                    <label for="username" class="input-label">Usuario o Correo Electrónico</label>
                     <input 
                         type="text" 
                         id="username" 
                         name="username" 
                         class="input-field"
-                        placeholder="Ingresa tu nombre de usuario"
+                        placeholder="Ingresa tu usuario o correo"
                         required
+                        autocomplete="username"
                     >
                 </div>
 
                 <div class="input-group">
-                    <label for="password" class="input-label">Contraseña</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="password" class="input-label" style="margin-bottom: 0;">Contraseña</label>
+                        <a href="/modules/site/recuperar-password.html" class="auth-link" style="font-size: 0.8rem;">¿Olvidaste tu contraseña?</a>
+                    </div>
                     <input 
                         type="password" 
                         id="password" 
@@ -40,20 +50,51 @@
                         class="input-field"
                         placeholder="Ingresa tu contraseña"
                         required
+                        autocomplete="current-password"
                     >
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">
-                        Iniciar Sesión
+                    <button type="submit" class="btn-primary" id="btnSubmit">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                     </button>
                 </div>
 
-                <!--<div class="form-footer">
-                    <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
-                </div>-->
+                <div class="auth-links">
+                    <p class="auth-link-subtle">
+                        ¿No tienes una cuenta? <a href="/modules/site/registro.html" class="auth-link" style="font-weight: 700;">Regístrate</a>
+                    </p>
+                    <p style="margin-top: 6px;">
+                        <a href="/" class="auth-link auth-link-subtle" style="font-size: 0.82rem;"><i class="fas fa-arrow-left"></i> Volver a la página principal</a>
+                    </p>
+                </div>
             </form>
         </div>
     </div>
+
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const err = params.get('error');
+            if (!err) return;
+
+            const mensajes = {
+                'credenciales': 'Nombre de usuario o contraseña incorrectos.',
+                'smtp_sistema_no_configurado': 'El servidor de correo del sistema (.env) no está configurado. Contacta con el administrador.',
+                'smtp_error': 'No se pudo enviar el código de verificación por correo. Revisa la configuración SMTP en el servidor (.env).',
+                'sin_email_2fa': 'Tu cuenta tiene verificación en dos pasos (2FA) pero no tiene un correo configurado. Contacta al administrador.',
+                '2fa_bloqueado': 'Demasiados intentos fallidos de verificación. Tu cuenta ha sido bloqueada temporalmente por seguridad.',
+                'email_no_verificado': 'Debes verificar tu correo electrónico antes de iniciar sesión. Introduce el código enviado a tu email.',
+                'servidor': 'Error interno del servidor al procesar la solicitud. Inténtalo más tarde.'
+            };
+
+            const alertBox = document.getElementById('loginAlert');
+            const alertText = document.getElementById('loginAlertText');
+            if (alertBox && alertText) {
+                alertText.textContent = mensajes[err] || 'Ha ocurrido un error al iniciar sesión (' + err + ').';
+                alertBox.classList.add('show');
+            }
+        })();
+    </script>
 </body>
 </html>

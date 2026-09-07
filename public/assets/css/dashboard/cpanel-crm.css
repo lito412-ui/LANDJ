@@ -333,6 +333,39 @@
     margin: 0;
 }
 
+.ranking-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.ranking-tabla th {
+    text-align: left;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 8px 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ranking-tabla td {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.ranking-tabla tr:last-child td {
+    border-bottom: none;
+}
+
+.ranking-puesto {
+    font-size: 1.1rem;
+    width: 32px;
+    text-align: center;
+}
+
 .btn-link {
     background: none;
     border: none;
@@ -425,6 +458,54 @@
 .factura-vencida   { background: #fef3c7; color: #92400e; }
 .factura-cancelada { background: #fee2e2; color: #b91c1c; }
 
+.presupuesto-borrador  { background: #f1f5f9; color: #475569; }
+.presupuesto-enviado   { background: #dbeafe; color: #1d4ed8; }
+.presupuesto-aceptado  { background: #dcfce7; color: #15803d; }
+.presupuesto-rechazado { background: #fee2e2; color: #b91c1c; }
+.presupuesto-expirado  { background: #fef3c7; color: #92400e; }
+.presupuesto-convertido { background: #ede9fe; color: #6d28d9; }
+
+.presupuesto-convertir-btn {
+    width: 100%;
+    margin-bottom: 20px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.presupuesto-convertido-aviso {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ede9fe;
+    color: #6d28d9;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.presupuesto-link-confirmacion {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+
+.presupuesto-link-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.presupuesto-link-row .form-input {
+    flex: 1;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
 .facturas-lineas-header {
     display: flex;
     align-items: center;
@@ -441,7 +522,7 @@
 
 .factura-linea {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 76px 96px 76px 100px 38px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) 76px 96px 76px 100px 38px;
     gap: 12px;
     align-items: end;
     padding: 12px;
@@ -568,6 +649,7 @@
     .factura-linea {
         grid-template-columns: 1fr 1fr;
     }
+    .factura-linea-producto,
     .factura-linea-concepto,
     .factura-linea-total {
         grid-column: 1 / -1;

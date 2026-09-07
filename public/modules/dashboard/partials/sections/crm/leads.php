@@ -86,6 +86,13 @@
                 <option value="convertido">Convertido</option>
                 <option value="descartado">Descartado</option>
             </select>
+            <button class="btn-secondary btn-sm" id="leads-exportar-btn" title="Exportar a CSV">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+            <button class="btn-secondary btn-sm" id="leads-importar-btn" title="Importar desde CSV">
+                <i class="fas fa-file-import"></i> Importar
+            </button>
+            <input type="file" id="leads-importar-input" accept=".csv" hidden>
             <button class="btn-filtros-toggle" id="ld-filtros-toggle" title="Filtros avanzados">
                 <i class="fas fa-sliders-h"></i> Filtros
                 <span class="filtros-badge" id="ld-filtros-badge" style="display:none">0</span>

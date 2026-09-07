@@ -51,11 +51,59 @@ const Estadisticas = (() => {
                     <h4 class="chart-title">Actividades por tipo</h4>
                     <div id="chart-act-tipo" class="chart-bars chart-bars--horizontal"></div>
                 </div>
+            </div>
+            <div class="charts-row">
+                <div class="chart-card chart-card--wide">
+                    <h4 class="chart-title">Ranking de comerciales</h4>
+                    <div id="ranking-comerciales"></div>
+                </div>
             </div>`;
 
         renderBars('chart-leads-estado',  data.leads_por_estado,       'estado', COLORES_ESTADO);
         renderBars('chart-opor-etapa',    data.oportunidades_por_etapa,'etapa',  COLORES_ETAPA);
         renderBars('chart-act-tipo',      data.actividades_por_tipo,   'tipo',   COLORES_TIPO);
+        renderRanking(data.ranking_comerciales);
+    }
+
+    function renderRanking(lista) {
+        const cont = document.getElementById('ranking-comerciales');
+        if (!cont) return;
+        if (!lista || !lista.length) {
+            cont.innerHTML = '<p class="chart-empty">Todavía no hay oportunidades ganadas ni facturas emitidas</p>';
+            return;
+        }
+        const medallas = ['🥇', '🥈', '🥉'];
+        cont.innerHTML = `
+            <table class="ranking-tabla">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Comercial</th>
+                        <th>Oportunidades ganadas</th>
+                        <th>Valor ganado</th>
+                        <th>Facturas emitidas</th>
+                        <th>Facturado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lista.map((u, i) => `
+                        <tr>
+                            <td class="ranking-puesto">${medallas[i] || (i + 1)}</td>
+                            <td><strong>${esc(u.nombre)}</strong></td>
+                            <td>${u.oportunidades_ganadas}</td>
+                            <td>${formatEur(u.valor_ganado)}</td>
+                            <td>${u.facturas_emitidas}</td>
+                            <td><strong>${formatEur(u.facturado_total)}</strong></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>`;
+    }
+
+    function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = String(str ?? '');
+        return d.innerHTML;
     }
 
     function renderBars(containerId, items, labelKey, colores) {

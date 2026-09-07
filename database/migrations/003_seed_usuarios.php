@@ -1,11 +1,14 @@
 <?php
 /** @var PDO $pdo */
 
+$adminPass = getenv('INITIAL_ADMIN_PASSWORD') ?: 'Admin_LandJ#2026!';
+$userPass  = getenv('INITIAL_USER_PASSWORD')  ?: 'User_LandJ#2026!';
+
 $usuarios = [
-    ['nombre' => 'admin',   'email' => 'alvarogutierrez874@gmail.com', 'password' => 'lolito412/', 'rol' => 'administrador'],
-    ['nombre' => 'Samuel',  'email' => 'samuel@landj.local',           'password' => 'tuchulito96', 'rol' => 'usuario'],
-    ['nombre' => 'lito412', 'email' => 'lito412@landj.local',          'password' => 'lolito412/', 'rol' => 'usuario'],
-    ['nombre' => 'Cuervo',  'email' => 'cuervo@landj.local',           'password' => 'soyunchulo', 'rol' => 'usuario'],
+    ['nombre' => 'admin',   'email' => 'admin@landj.local',   'password' => $adminPass, 'rol' => 'administrador'],
+    ['nombre' => 'Samuel',  'email' => 'samuel@landj.local',  'password' => $userPass,  'rol' => 'usuario'],
+    ['nombre' => 'lito412', 'email' => 'lito412@landj.local', 'password' => $userPass,  'rol' => 'usuario'],
+    ['nombre' => 'Cuervo',  'email' => 'cuervo@landj.local',  'password' => $userPass,  'rol' => 'usuario'],
 ];
 
 $insert = $pdo->prepare(

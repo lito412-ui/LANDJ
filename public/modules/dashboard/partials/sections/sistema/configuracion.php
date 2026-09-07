@@ -299,5 +299,78 @@
             </div>
         </div>
 
+        <!-- SMTP del Sistema — solo visible para administradores -->
+        <?php if (($_SESSION['rol'] ?? '') === 'administrador'): ?>
+        <div class="content-card" id="cfg-smtp-card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-at"></i> Servidor de Correo de la Empresa (SMTP Comercial)</h3>
+                <span class="card-subtitle">Configura el servidor SMTP desde el que se enviarán presupuestos y facturas a tus clientes</span>
+            </div>
+            <div class="card-body">
+                <p class="config-section-desc">
+                    Las credenciales que configures aquí se guardan en la base de datos de esta instalación y se utilizarán para todos los envíos comerciales (facturas, presupuestos y avisos a clientes).<br>
+                    <small style="color: #64748b; display: block; margin-top: 6px;">
+                        <i class="fas fa-shield-alt"></i> <strong>Seguridad:</strong> Los correos internos del sistema (códigos 2FA al iniciar sesión) se gestionan de forma centralizada y segura a través del archivo <code>.env</code> del servidor.
+                    </small>
+                </p>
+                <form id="cfg-smtp-form" class="config-form" novalidate>
+                    <div class="form-group">
+                        <label class="form-label">Servidor SMTP (Host) <span class="form-required">*</span></label>
+                        <input type="text" id="cfg-smtp-host" class="form-input"
+                               placeholder="smtp.gmail.com" autocomplete="off">
+                        <span class="form-hint">Ejemplos: smtp.gmail.com, smtp.office365.com, mail.tudominio.com</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Puerto <span class="form-required">*</span></label>
+                            <input type="number" id="cfg-smtp-port" class="form-input"
+                                   placeholder="587" min="1" max="65535">
+                            <span class="form-hint">TLS: 587 · SSL: 465 · Sin cifrado: 25</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cifrado</label>
+                            <select id="cfg-smtp-encryption" class="form-input crm-select">
+                                <option value="tls">STARTTLS (Recomendado)</option>
+                                <option value="ssl">SSL / SMTPS</option>
+                                <option value="none">Sin cifrado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Usuario / Email SMTP <span class="form-required">*</span></label>
+                        <input type="text" id="cfg-smtp-user" class="form-input"
+                               placeholder="correo@ejemplo.com" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña SMTP</label>
+                        <div class="config-pass-wrap">
+                            <input type="password" id="cfg-smtp-pass" class="form-input"
+                                   placeholder="Déjalo vacío para mantener la contraseña actual" autocomplete="new-password">
+                            <button type="button" class="config-pass-toggle" data-target="cfg-smtp-pass" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <span class="form-hint">Para Gmail utiliza una «Contraseña de Aplicación» de 16 caracteres (sin espacios).</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dirección del Remitente ("De")</label>
+                        <input type="email" id="cfg-smtp-from" class="form-input"
+                               placeholder="noreply@tudominio.com" autocomplete="off">
+                        <span class="form-hint">Email que verán los destinatarios. Si se deja vacío se usará el usuario SMTP.</span>
+                    </div>
+                    <div class="form-actions cfg-smtp-actions">
+                        <button type="submit" class="btn-primary" id="cfg-smtp-guardar">
+                            <i class="fas fa-save"></i> Guardar configuración SMTP
+                        </button>
+                        <button type="button" class="btn-secondary" id="cfg-smtp-test">
+                            <i class="fas fa-paper-plane"></i> Enviar email de prueba
+                        </button>
+                    </div>
+                    <div id="cfg-smtp-msg" style="display:none;" class="form-alert"></div>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div><!-- /.config-vertical -->
 </section>

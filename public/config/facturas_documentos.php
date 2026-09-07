@@ -126,6 +126,40 @@ function facturaDocumentoHtmlEmail(array $factura): string
 HTML;
 }
 
+/**
+ * Email de recordatorio de pago para facturas vencidas
+ * (usado por database/tareas/recordatorios_facturas.php).
+ */
+function facturaDocumentoHtmlRecordatorio(array $factura): string
+{
+    $numero = htmlspecialchars((string) $factura['numero'], ENT_QUOTES, 'UTF-8');
+    $total = htmlspecialchars(facturaDocumentoMoneda($factura['total']), ENT_QUOTES, 'UTF-8');
+    $vencimiento = htmlspecialchars(facturaDocumentoFecha($factura['fecha_vencimiento'] ?? null), ENT_QUOTES, 'UTF-8');
+
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,sans-serif;color:#1f2937;">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e5e7eb;">
+    <h1 style="margin:0 0 8px;font-size:22px;color:#111827;">Recordatorio de pago</h1>
+    <p style="margin:0 0 20px;color:#6b7280;">
+      La factura <strong>{$numero}</strong>, con vencimiento el {$vencimiento}, sigue pendiente de pago.
+      Adjuntamos de nuevo el documento por si te resulta útil.
+    </p>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:18px;margin-bottom:20px;">
+      <span style="display:block;color:#9a3412;font-size:13px;">Importe pendiente</span>
+      <strong style="font-size:26px;color:#9a3412;">{$total}</strong>
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:13px;">
+      Si ya has realizado el pago, ignora este mensaje. Si necesitas más plazo o tienes alguna duda, responde a este correo.
+    </p>
+  </div>
+</body>
+</html>
+HTML;
+}
+
 function facturaDocumentoFecha(?string $fecha): string
 {
     if (!$fecha) {
@@ -190,42 +224,56 @@ class FacturaPdfSimple
             $this->current = [];
         }
 
+        $n = count($this->pages);
+        if ($n === 0) {
+            $this->pages[] = []; // evita un PDF sin ninguna pagina
+            $n = 1;
+        }
+
+        // Plan de numeracion de objetos (claro y sin colisiones):
+        //   1              -> Catalog
+        //   2              -> Pages
+        //   3 .. 2+n        -> Page (una por pagina)
+        //   3+n .. 2+2n     -> Content stream (una por pagina)
+        //   3+2n            -> Font
+        $fontObjNum = 3 + 2 * $n;
+
         $objects = [];
-        $objects[] = "<< /Type /Catalog /Pages 2 0 R >>";
+        $objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+
         $kids = [];
-        $contentObjectNumber = 3 + count($this->pages);
-
         foreach ($this->pages as $idx => $page) {
-            $pageObj = 3 + $idx;
-            $contentObj = $contentObjectNumber + $idx;
-            $kids[] = $pageObj . " 0 R";
-            $objects[] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 " . (3 + count($this->pages) * 2) . " 0 R >> >> /Contents {$contentObj} 0 R >>";
-        }
+            $pageObjNum = 3 + $idx;
+            $contentObjNum = 3 + $n + $idx;
+            $kids[] = "{$pageObjNum} 0 R";
 
-        $objects[1] = "<< /Type /Pages /Kids [" . implode(' ', $kids) . "] /Count " . count($this->pages) . " >>";
+            $objects[$pageObjNum] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
+                . "/Resources << /Font << /F1 {$fontObjNum} 0 R >> >> /Contents {$contentObjNum} 0 R >>";
 
-        foreach ($this->pages as $page) {
             $stream = implode("\n", $page);
-            $objects[] = "<< /Length " . strlen($stream) . " >>\nstream\n{$stream}\nendstream";
+            $objects[$contentObjNum] = "<< /Length " . strlen($stream) . " >>\nstream\n{$stream}\nendstream";
         }
 
-        $objects[] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+        $objects[2] = "<< /Type /Pages /Kids [" . implode(' ', $kids) . "] /Count {$n} >>";
+        $objects[$fontObjNum] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+
+        ksort($objects);
 
         $pdf = "%PDF-1.4\n";
-        $offsets = [0];
-        foreach ($objects as $i => $object) {
-            $offsets[] = strlen($pdf);
-            $num = $i + 1;
-            $pdf .= "{$num} 0 obj\n{$object}\nendobj\n";
+        $offsets = [];
+        foreach ($objects as $num => $body) {
+            $offsets[$num] = strlen($pdf);
+            $pdf .= "{$num} 0 obj\n{$body}\nendobj\n";
         }
 
+        $maxNum = max(array_keys($objects));
         $xref = strlen($pdf);
-        $pdf .= "xref\n0 " . (count($objects) + 1) . "\n";
+        $pdf .= "xref\n0 " . ($maxNum + 1) . "\n";
         $pdf .= "0000000000 65535 f \n";
-        for ($i = 1; $i <= count($objects); $i++) {
-            $pdf .= sprintf("%010d 00000 n \n", $offsets[$i]);
+        for ($i = 1; $i <= $maxNum; $i++) {
+            $pdf .= sprintf("%010d 00000 n \n", $offsets[$i] ?? 0);
         }
-        $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
+        $pdf .= "trailer\n<< /Size " . ($maxNum + 1) . " /Root 1 0 R >>\n";
         $pdf .= "startxref\n{$xref}\n%%EOF";
 
         return $pdf;

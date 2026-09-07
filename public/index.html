@@ -1,366 +1,426 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="L&J CRM - Plataforma de gestión empresarial todo-en-uno. CRM, facturación, backups, correo y seguridad en un solo panel.">
     <link rel="stylesheet" href="/assets/css/site/index-style.css">
     <link rel="icon" type="image/png" href="/assets/img/icono web.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <title>L&J - Panel de Control Web Personalizado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>L&J CRM - Gestión Empresarial Todo-en-Uno</title>
 </head>
 <body>
     <!-- Header -->
-    <header class="header">
+    <header class="header" id="header">
         <nav class="navbar">
             <div class="nav-container">
                 <div class="nav-brand">
-                    <h1 class="logo">L&J</h1>
-                    <span class="brand-subtitle">Panel de Control Web Personalizado</span>
+                    <div class="nav-logo">
+                        <span class="logo-text">L&J</span>
+                        <span class="logo-badge">CRM</span>
+                    </div>
                 </div>
-                <ul class="nav-menu">
-                    <li><a href="#introduccion" class="nav-link">Introducción</a></li>
-                    <li><a href="#enfoque" class="nav-link">Enfoque</a></li>
-                    <li><a href="#fases" class="nav-link">Fases</a></li>
-                    <li><a href="#autores" class="nav-link">Autores</a></li>
-                    <li><a href="/modules/site/login.html" class="nav-login-btn">Iniciar Sesión</a></li>
+                <ul class="nav-menu" id="nav-menu">
+                    <li><a href="#funcionalidades" class="nav-link">Funcionalidades</a></li>
+                    <li><a href="#modulos" class="nav-link">Módulos</a></li>
+                    <li><a href="#tecnologia" class="nav-link">Tecnología</a></li>
+                    <li><a href="#contacto" class="nav-link">Contacto</a></li>
+                    <li><a href="/modules/site/login.html" class="nav-login-btn"><i class="fas fa-sign-in-alt"></i> Acceder al Panel</a></li>
                 </ul>
+                <button class="nav-hamburger" id="nav-hamburger" aria-label="Menú">
+                    <span></span><span></span><span></span>
+                </button>
             </div>
         </nav>
     </header>
 
     <!-- Hero Section -->
     <section class="hero">
+        <div class="hero-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
         <div class="hero-container">
             <div class="hero-content">
-                <h1 class="hero-title">Panel de Control Web Personalizado</h1>
-                <p class="hero-subtitle">Una solución ligera y accesible para la administración de servidores web</p>
-                <div class="hero-badges">
-                    <span class="badge">Seguro</span>
-                    <span class="badge">Escalable</span>
-                    <span class="badge">Fácil de usar</span>
+                <div class="hero-tag"><i class="fas fa-rocket"></i> Plataforma CRM Profesional</div>
+                <h1 class="hero-title">Gestiona tu empresa <span class="hero-highlight">todo en un solo lugar</span></h1>
+                <p class="hero-subtitle">L&J CRM es una solución completa para la gestión de contactos, ventas, facturación y administración de servidores. Seguro, escalable y fácil de usar.</p>
+                <div class="hero-actions">
+                    <a href="/modules/site/login.html" class="btn-hero-primary">
+                        <i class="fas fa-arrow-right"></i> Comenzar ahora
+                    </a>
+                    <a href="#funcionalidades" class="btn-hero-secondary">
+                        <i class="fas fa-play-circle"></i> Ver funcionalidades
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">8+</span>
+                        <span class="stat-label">Módulos integrados</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Open Source</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-number">2FA</span>
+                        <span class="stat-label">Seguridad avanzada</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="dashboard-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-yellow"></span>
+                            <span class="dot dot-green"></span>
+                        </div>
+                        <div class="mockup-title">L&J CRM — Dashboard</div>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mockup-sidebar">
+                            <div class="ms-item ms-active"><i class="fas fa-tachometer-alt"></i></div>
+                            <div class="ms-item"><i class="fas fa-users"></i></div>
+                            <div class="ms-item"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <div class="ms-item"><i class="fas fa-shield-alt"></i></div>
+                            <div class="ms-item"><i class="fas fa-cog"></i></div>
+                        </div>
+                        <div class="mockup-content">
+                            <div class="mc-cards">
+                                <div class="mc-card mc-blue"><span>Contactos</span><strong>248</strong></div>
+                                <div class="mc-card mc-purple"><span>Facturas</span><strong>€12.4k</strong></div>
+                                <div class="mc-card mc-green"><span>Leads</span><strong>63</strong></div>
+                            </div>
+                            <div class="mc-chart">
+                                <div class="mc-bar" style="height:60%"></div>
+                                <div class="mc-bar" style="height:80%"></div>
+                                <div class="mc-bar" style="height:45%"></div>
+                                <div class="mc-bar mc-bar-active" style="height:90%"></div>
+                                <div class="mc-bar" style="height:70%"></div>
+                                <div class="mc-bar" style="height:55%"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Introducción -->
-        <section id="introduccion" class="content-section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Introducción</h2>
-                    <div class="section-divider"></div>
-                </div>
-                <div class="content-grid">
-                    <div class="content-text">
-                        <p class="text-large">
-                            En el mundo actual, donde las páginas web y las aplicaciones en línea son parte esencial de los negocios y la comunicación diaria, es fundamental contar con herramientas que faciliten la gestión de servidores de alojamiento web.
-                        </p>
-                        <p>
-                            Un panel de control, como el conocido cPanel, es una interfaz gráfica que permite a personas sin grandes conocimientos técnicos realizar tareas importantes, como crear cuentas de correo o supervisar el uso del servidor. Sin embargo, estas soluciones comerciales suelen ser costosas y no siempre se adaptan a necesidades locales o de pequeños proyectos, lo que genera la necesidad de alternativas más accesibles y personalizadas.
-                        </p>
-                        <p>
-                            Este proyecto final, realizado por <strong>Álvaro Gutiérrez Elena</strong> y <strong>Jaime Muñoz Marcelo</strong>, presenta el desarrollo de una versión ligera de un Panel de Control Web Personalizado (PCWP). Esta herramienta busca ofrecer una interfaz sencilla y segura para administrar un servidor web, incorporando funcionalidades clave como:
-                        </p>
+    <!-- Features Section -->
+    <section id="funcionalidades" class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">Funcionalidades</div>
+                <h2 class="section-title">Todo lo que necesita tu empresa</h2>
+                <p class="section-subtitle">Un panel centralizado con todas las herramientas para gestionar tu negocio eficientemente</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-blue">
+                        <i class="fas fa-address-book"></i>
                     </div>
-                    <div class="features-grid">
-                        <div class="feature-card">
-                            <div class="feature-icon">👥</div>
-                            <h3>Gestión de usuarios</h3>
-                            <p>Administración completa de cuentas de usuario</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">💾</div>
-                            <h3>Copias de seguridad</h3>
-                            <p>Creación y gestión de backups automáticos</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">📊</div>
-                            <h3>Monitoreo de recursos</h3>
-                            <p>Supervisión de memoria y espacio en disco</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🗄️</div>
-                            <h3>Administración de bases de datos</h3>
-                            <p>Gestión completa de bases de datos MySQL</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">📁</div>
-                            <h3>Configuración FTP</h3>
-                            <p>Cuentas FTP para transferencia de archivos</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">📧</div>
-                            <h3>Gestión de correos</h3>
-                            <p>Administración de cuentas de correo electrónico</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🔒</div>
-                            <h3>Certificados SSL/TLS</h3>
-                            <p>Instalación de certificados para conexiones seguras</p>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-icon">🛡️</div>
-                            <h3>Protección contra ataques</h3>
-                            <p>Medidas básicas contra intrusiones y spam</p>
-                        </div>
-                    </div>
+                    <h3>CRM Completo</h3>
+                    <p>Gestiona contactos, leads y oportunidades de venta con un pipeline visual e intuitivo.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Contactos y empresas</li>
+                        <li><i class="fas fa-check"></i> Pipeline de ventas</li>
+                        <li><i class="fas fa-check"></i> Seguimiento de actividades</li>
+                    </ul>
                 </div>
-                <div class="content-text">
-                    <p>
-                        El PCWP se diseña como una solución ligera, pensada para entornos educativos, pequeñas empresas o desarrolladores independientes, priorizando la facilidad de uso (usabilidad), la capacidad de crecer con el tiempo (escalabilidad) y la protección de la información (seguridad). A través de este proyecto, se aplican conocimientos adquiridos en el ciclo, para resolver un problema práctico en la administración de sitios web.
-                    </p>
-                    <p>
-                        En este documento, se detalla el contexto del proyecto, los objetivos principales y el enfoque seguido para su realización, con el fin de demostrar cómo una herramienta bien diseñada puede simplificar la vida digital cotidiana.
-                    </p>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-purple">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h3>Facturación</h3>
+                    <p>Crea presupuestos y facturas profesionales en PDF, con envío automático por email.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Facturas en PDF</li>
+                        <li><i class="fas fa-check"></i> Facturas recurrentes</li>
+                        <li><i class="fas fa-check"></i> Envío por email</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-green">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Seguridad</h3>
+                    <p>Protección avanzada con autenticación en dos pasos, CSRF, CSP y auditoría completa.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> 2FA por email</li>
+                        <li><i class="fas fa-check"></i> Log de auditoría</li>
+                        <li><i class="fas fa-check"></i> Protección CSRF/XSS</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-orange">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3>Administración de Servidor</h3>
+                    <p>Gestiona backups, bases de datos MySQL, cuentas FTP y certificados SSL desde el panel.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Backups automáticos</li>
+                        <li><i class="fas fa-check"></i> Gestión MySQL</li>
+                        <li><i class="fas fa-check"></i> SSL/TLS</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-cyan">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Correo &amp; Dominios</h3>
+                    <p>Administra cuentas de correo electrónico y dominios directamente desde el panel de control.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Cuentas de correo</li>
+                        <li><i class="fas fa-check"></i> Gestión de dominios</li>
+                        <li><i class="fas fa-check"></i> SMTP configurable</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon-wrap feature-pink">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Estadísticas &amp; Reportes</h3>
+                    <p>Panel de control con métricas en tiempo real, gráficas de ventas y actividad reciente.</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Dashboard visual</li>
+                        <li><i class="fas fa-check"></i> KPIs de ventas</li>
+                        <li><i class="fas fa-check"></i> Actividad reciente</li>
+                    </ul>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Enfoque -->
-        <section id="enfoque" class="content-section alt-bg">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Enfoque</h2>
-                    <div class="section-divider"></div>
+    <!-- Modules Section -->
+    <section id="modulos" class="modules-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag">Módulos</div>
+                <h2 class="section-title">Arquitectura modular</h2>
+                <p class="section-subtitle">Cada módulo es independiente y puede activarse o desactivarse según las necesidades de tu organización</p>
+            </div>
+            <div class="modules-grid">
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <span>Dashboard</span>
                 </div>
-                <div class="content-text">
-                    <p class="text-large">
-                        Para llevar a cabo este proyecto, se ha elegido un enfoque práctico y flexible, basado en una metodología ágil de desarrollo de software.
-                    </p>
-                    <p>
-                        Esta forma de trabajar permite dividir el proyecto en etapas pequeñas y repetibles, donde se puede probar y mejorar el sistema paso a paso, en lugar de hacerlo todo de una vez al final. Específicamente, se utiliza una variante llamada <strong>Scrum</strong>, que implica reuniones cortas semanales entre los dos miembros del equipo para revisar avances y ajustar planes.
-                    </p>
-                    <p>
-                        Esta elección es ideal para un proyecto colaborativo como este, ya que fomenta la comunicación y la adaptación a cambios, así como nuevas ideas surgidas durante el desarrollo. El enfoque se divide en cuatro fases principales, distribuidas a lo largo del tiempo disponible para el proyecto final de grado.
-                    </p>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-address-book"></i></div>
+                    <span>Contactos</span>
                 </div>
-                
-                <div class="methodology-card">
-                    <div class="methodology-header">
-                        <h3>Metodología Scrum</h3>
-                        <span class="methodology-badge">Ágil</span>
-                    </div>
-                    <div class="methodology-content">
-                        <div class="methodology-item">
-                            <strong>Reuniones semanales</strong> - Revisión de avances y ajuste de planes
-                        </div>
-                        <div class="methodology-item">
-                            <strong>Desarrollo iterativo</strong> - Etapas pequeñas y repetibles
-                        </div>
-                        <div class="methodology-item">
-                            <strong>Comunicación constante</strong> - Entre los dos miembros del equipo
-                        </div>
-                        <div class="methodology-item">
-                            <strong>Adaptación a cambios</strong> - Flexibilidad ante nuevas ideas
-                        </div>
-                    </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-funnel-dollar"></i></div>
+                    <span>Leads</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-handshake"></i></div>
+                    <span>Oportunidades</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-file-signature"></i></div>
+                    <span>Presupuestos</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-boxes"></i></div>
+                    <span>Productos</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-truck"></i></div>
+                    <span>Proveedores</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <span>Facturas</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-sync"></i></div>
+                    <span>Recurrentes</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-folder"></i></div>
+                    <span>Archivos</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-database"></i></div>
+                    <span>MySQL</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-shield-alt"></i></div>
+                    <span>Backups</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-lock"></i></div>
+                    <span>SSL/TLS</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-fire"></i></div>
+                    <span>Firewall</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-envelope"></i></div>
+                    <span>Correo</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-globe"></i></div>
+                    <span>Dominios</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-users"></i></div>
+                    <span>Usuarios</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"><i class="fas fa-chart-bar"></i></div>
+                    <span>Estadísticas</span>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Fases del Proyecto -->
-        <section id="fases" class="content-section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Fases del Proyecto</h2>
-                    <div class="section-divider"></div>
-                    <p class="section-description">
-                        Cada fase incluye explicaciones claras de las actividades y las razones por las que se realizan, asegurando que el PCWP sea funcional, seguro y fácil de usar.
-                    </p>
+    <!-- Tech Stack Section -->
+    <section id="tecnologia" class="tech-section">
+        <div class="container">
+            <div class="tech-inner">
+                <div class="tech-text">
+                    <div class="section-tag">Tecnología</div>
+                    <h2 class="section-title">Construido con tecnologías probadas</h2>
+                    <p>L&amp;J CRM utiliza un stack moderno, seguro y ligero. Sin dependencias pesadas, sin licencias costosas. Todo el código es tuyo.</p>
+                    <div class="tech-stack">
+                        <div class="tech-group">
+                            <h4>Frontend</h4>
+                            <div class="tech-tags">
+                                <span class="tech-tag">HTML5</span>
+                                <span class="tech-tag">CSS3</span>
+                                <span class="tech-tag">JavaScript ES6+</span>
+                            </div>
+                        </div>
+                        <div class="tech-group">
+                            <h4>Backend</h4>
+                            <div class="tech-tags">
+                                <span class="tech-tag">PHP 8.2+</span>
+                                <span class="tech-tag">MySQL</span>
+                                <span class="tech-tag">PDO</span>
+                            </div>
+                        </div>
+                        <div class="tech-group">
+                            <h4>Infraestructura</h4>
+                            <div class="tech-tags">
+                                <span class="tech-tag">Docker</span>
+                                <span class="tech-tag">PHPMailer</span>
+                                <span class="tech-tag">Argon2id</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="/modules/site/login.html" class="btn-cta">
+                        <i class="fas fa-arrow-right"></i> Acceder al panel
+                    </a>
                 </div>
-
-                <!-- Fase 1 -->
-                <div class="phase-card">
-                    <div class="phase-header">
-                        <div class="phase-number">01</div>
-                        <div class="phase-info">
-                            <h3 class="phase-title">Análisis y Planificación</h3>
-                            <div class="phase-meta">
-                                <span class="phase-duration">20% del tiempo total</span>
-                                <span class="phase-type">Fase Inicial</span>
-                            </div>
+                <div class="tech-features">
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-lock"></i></div>
+                        <div class="tf-text">
+                            <strong>Passwords Argon2id</strong>
+                            <span>El algoritmo de hashing más seguro disponible</span>
                         </div>
                     </div>
-                    <div class="phase-content">
-                        <p>
-                            En esta etapa, se estudian las necesidades del proyecto. Se habla con posibles usuarios, como administradores de sitios web o compañeros de clase, para entender qué funciones son más importantes, como crear usuarios o proteger contra ataques.
-                        </p>
-                        <p>
-                            También se revisan herramientas similares a CPanel para aprender de sus fortalezas y debilidades. Se crean diagramas que muestran cómo funcionará el sistema, por ejemplo, qué pasa cuando un usuario inicia sesión. Esto ayuda a planificar bien y evitar errores posteriores.
-                        </p>
-                        <div class="tools-used">
-                            <strong>Herramientas usadas:</strong> Software gratuito como Draw.io para los diagramas.
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="tf-text">
+                            <strong>Autenticación 2FA</strong>
+                            <span>Verificación en dos pasos vía email</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Fase 2 -->
-                <div class="phase-card">
-                    <div class="phase-header">
-                        <div class="phase-number">02</div>
-                        <div class="phase-info">
-                            <h3 class="phase-title">Diseño y Arquitectura</h3>
-                            <div class="phase-meta">
-                                <span class="phase-duration">25% del tiempo total</span>
-                                <span class="phase-type">Fase de Diseño</span>
-                            </div>
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-shield-virus"></i></div>
+                        <div class="tf-text">
+                            <strong>Protección CSRF &amp; XSS</strong>
+                            <span>Tokens CSRF y Content Security Policy</span>
                         </div>
                     </div>
-                    <div class="phase-content">
-                        <p>
-                            Aquí se define cómo se construirá el PCWP. Se opta por una estructura básica de tres partes: la parte visible para el usuario (frontend), hecha con lenguajes web estándar como HTML para la estructura, CSS para el aspecto visual y JavaScript para las interacciones dinámicas, junto con Bootstrap para que se vea bien en móviles y ordenadores.
-                        </p>
-                        <p>
-                            La parte lógica (backend) se programa en PHP, un lenguaje común para servidores web, que maneja tareas como guardar datos o enviar correos. Para almacenar información, como listas de usuarios o bases de datos, se usa MySQL, un sistema de bases de datos gratuito y confiable.
-                        </p>
-                        <div class="tech-stack">
-                            <div class="tech-category">
-                                <h4>Frontend</h4>
-                                <div class="tech-items">
-                                    <span class="tech-item">HTML</span>
-                                    <span class="tech-item">CSS</span>
-                                    <span class="tech-item">JavaScript</span>
-                                    <span class="tech-item">Bootstrap</span>
-                                </div>
-                            </div>
-                            <div class="tech-category">
-                                <h4>Backend</h4>
-                                <div class="tech-items">
-                                    <span class="tech-item">PHP</span>
-                                    <span class="tech-item">MySQL</span>
-                                </div>
-                            </div>
-                        </div>
-                        <p>
-                            Se pone énfasis en la usabilidad, la escalabilidad y la seguridad (por ejemplo, verificando contraseñas con métodos seguros y protegiendo contra ataques como inyecciones de código malicioso). Se siguen reglas básicas de diseño, como separar las funciones para que sea fácil de mantener.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Fase 3 -->
-                <div class="phase-card">
-                    <div class="phase-header">
-                        <div class="phase-number">03</div>
-                        <div class="phase-info">
-                            <h3 class="phase-title">Implementación y Desarrollo</h3>
-                            <div class="phase-meta">
-                                <span class="phase-duration">40% del tiempo total</span>
-                                <span class="phase-type">Fase de Codificación</span>
-                            </div>
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="tf-text">
+                            <strong>Auditoría completa</strong>
+                            <span>Registro de todas las acciones del sistema</span>
                         </div>
                     </div>
-                    <div class="phase-content">
-                        <p>
-                            Esta es la parte principal, donde se escribe el código real. Se divide en periodos cortos de dos semanas, enfocándose en una función por vez: por ejemplo, primero la gestión de usuarios y el monitoreo de recursos; luego, los backups y las cuentas FTP; y después, el correo electrónico, certificados SSL/TLS y protecciones contra ataques.
-                        </p>
-                        <p>
-                            Los dos integrantes trabajan juntos usando Git, una herramienta para compartir y versionar el código en un repositorio en línea como GitHub. Para probar localmente, se usa un entorno como XAMPP, que simula un servidor en el ordenador. Esto permite ver resultados rápidos y corregir problemas en el momento.
-                        </p>
-                        <div class="development-timeline">
-                            <div class="timeline-item">
-                                <div class="timeline-marker"></div>
-                                <div class="timeline-content">
-                                    <h4>Sprint 1</h4>
-                                    <p>Gestión de usuarios y monitoreo de recursos</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-marker"></div>
-                                <div class="timeline-content">
-                                    <h4>Sprint 2</h4>
-                                    <p>Backups y cuentas FTP</p>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-marker"></div>
-                                <div class="timeline-content">
-                                    <h4>Sprint 3</h4>
-                                    <p>Correo electrónico, SSL/TLS y protecciones</p>
-                                </div>
-                            </div>
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-docker"></i></div>
+                        <div class="tf-text">
+                            <strong>Docker Ready</strong>
+                            <span>Despliegue sencillo con docker-compose</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Fase 4 -->
-                <div class="phase-card">
-                    <div class="phase-header">
-                        <div class="phase-number">04</div>
-                        <div class="phase-info">
-                            <h3 class="phase-title">Pruebas y Validación</h3>
-                            <div class="phase-meta">
-                                <span class="phase-duration">15% del tiempo total</span>
-                                <span class="phase-type">Fase Final</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="phase-content">
-                        <p>
-                            Finalmente, se verifica que todo funcione correctamente. Se hacen pruebas simples: por ejemplo, comprobar si un backup se crea bien o si el sistema detecta un intento de ataque. Incluye pruebas con usuarios reales para asegurar usabilidad y rendimiento.
-                        </p>
-                        <p>
-                            Para la seguridad, se usan herramientas básicas gratuitas para simular ataques y confirmar protecciones. Si algo falla, se ajusta antes de finalizar. Esto garantiza que el PCWP sea confiable y cumpla con estándares básicos de accesibilidad, como que funcione en diferentes navegadores.
-                        </p>
-                        <div class="testing-areas">
-                            <div class="testing-item">
-                                <span class="testing-icon">✓</span>
-                                <span>Pruebas funcionales</span>
-                            </div>
-                            <div class="testing-item">
-                                <span class="testing-icon">✓</span>
-                                <span>Pruebas de usabilidad</span>
-                            </div>
-                            <div class="testing-item">
-                                <span class="testing-icon">✓</span>
-                                <span>Pruebas de seguridad</span>
-                            </div>
-                            <div class="testing-item">
-                                <span class="testing-icon">✓</span>
-                                <span>Pruebas de rendimiento</span>
-                            </div>
+                    <div class="tech-feature-card">
+                        <div class="tf-icon"><i class="fas fa-moon"></i></div>
+                        <div class="tf-text">
+                            <strong>Modo Oscuro</strong>
+                            <span>Interfaz adaptable al gusto del usuario</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- Autores -->
-        <section id="autores" class="content-section alt-bg">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Autores del Proyecto</h2>
-                    <div class="section-divider"></div>
+    <!-- CTA Section -->
+    <section id="contacto" class="cta-section">
+        <div class="container">
+            <div class="cta-card">
+                <div class="cta-content">
+                    <h2>¿Listo para tomar el control?</h2>
+                    <p>Accede a tu panel de control ahora mismo. Si no tienes cuenta, contacta con el administrador del sistema.</p>
+                    <div class="cta-actions">
+                        <a href="/modules/site/login.html" class="btn-cta-white">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </a>
+                    </div>
                 </div>
-                <div class="authors-grid">
-                    <div class="author-card">
-                        <div class="author-avatar">AG</div>
-                        <h3 class="author-name">Álvaro Gutiérrez Elena</h3>
-                        <p class="author-role">Desarrollador Frontend & Backend</p>
-                    </div>
-                    <div class="author-card">
-                        <div class="author-avatar">JM</div>
-                        <h3 class="author-name">Jaime Muñoz Marcelo</h3>
-                        <p class="author-role">Desarrollador Backend & Seguridad</p>
-                    </div>
+                <div class="cta-decorations">
+                    <div class="cta-dec cta-dec-1"><i class="fas fa-users"></i></div>
+                    <div class="cta-dec cta-dec-2"><i class="fas fa-chart-line"></i></div>
+                    <div class="cta-dec cta-dec-3"><i class="fas fa-shield-alt"></i></div>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <div class="footer-content">
+            <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3 class="footer-logo">L&J</h3>
-                    <p class="footer-description">Panel de Control Web Personalizado - Proyecto Final de Grado</p>
+                    <div class="footer-logo">
+                        <span class="logo-text">L&amp;J</span>
+                        <span class="logo-badge">CRM</span>
+                    </div>
+                    <p class="footer-desc">Plataforma de gestión empresarial diseñada para pequeñas y medianas empresas.</p>
                 </div>
-                <div class="footer-info">
-                    <p>&copy; 2026 Álvaro Gutiérrez Elena & Jaime Muñoz Marcelo</p>
-                    <p>Desarrollado como proyecto educativo</p>
+                <div class="footer-links">
+                    <h4>Plataforma</h4>
+                    <ul>
+                        <li><a href="#funcionalidades">Funcionalidades</a></li>
+                        <li><a href="#modulos">Módulos</a></li>
+                        <li><a href="#tecnologia">Tecnología</a></li>
+                        <li><a href="/modules/site/login.html">Acceder</a></li>
+                    </ul>
                 </div>
+                <div class="footer-links">
+                    <h4>Seguridad</h4>
+                    <ul>
+                        <li><a href="#">Política de seguridad</a></li>
+                        <li><a href="#">Privacidad</a></li>
+                        <li><a href="#">Términos de uso</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 L&amp;J CRM — Álvaro Gutiérrez Elena &amp; Jaime Muñoz Marcelo</p>
+                <p class="footer-tech">PHP · MySQL · Docker</p>
             </div>
         </div>
     </footer>
@@ -368,4 +428,3 @@
     <script src="/assets/js/site/index-script.js"></script>
 </body>
 </html>
-

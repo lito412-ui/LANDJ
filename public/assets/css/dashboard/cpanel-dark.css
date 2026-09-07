@@ -294,6 +294,8 @@ html[data-theme="dark"] .pipeline-empty       { color: #475569; }
 /* Estadísticas — charts */
 html[data-theme="dark"] .chart-card   { background: #1e293b; border-color: #334155; }
 html[data-theme="dark"] .chart-title  { color: #f1f5f9; }
+html[data-theme="dark"] .ranking-tabla th { border-bottom-color: #334155; }
+html[data-theme="dark"] .ranking-tabla td { border-bottom-color: #334155; color: #e2e8f0; }
 html[data-theme="dark"] .chart-label  { color: #b0bec8; } /* era #64748b → 2.2:1 sobre #1e293b ❌; #b0bec8 = 5.8:1 ✓ */
 html[data-theme="dark"] .chart-count  { color: #94a3b8; }
 html[data-theme="dark"] .chart-empty  { color: #94a3b8; }
@@ -404,6 +406,16 @@ html[data-theme="dark"] .config-notif-actions       { border-top-color: #263347;
 
 html[data-theme="dark"] .toggle-slider              { background: #475569; }
 html[data-theme="dark"] .toggle-switch input:checked + .toggle-slider { background: #2563eb; }
+html[data-theme="dark"] .modulos-aviso     { background: #1e293b; color: #93c5fd; }
+html[data-theme="dark"] .modulos-fila      { border-bottom-color: #334155; }
+html[data-theme="dark"] .modulos-icono     { background: #334155; color: #cbd5e1; }
+html[data-theme="dark"] .modulos-etiqueta  { color: #f1f5f9; }
+html[data-theme="dark"] .aviso-item         { border-bottom-color: #334155; }
+html[data-theme="dark"] .aviso-item.aviso-no-leido { background: #1e293b; }
+html[data-theme="dark"] .aviso-cuerpo p     { color: #cbd5e1; }
+html[data-theme="dark"] .aviso-meta         { color: #64748b; }
+html[data-theme="dark"] .avisos-usuarios-lista { border-color: #334155; }
+html[data-theme="dark"] .avisos-usuario-check  { color: #e2e8f0; }
 
 /* ─── Chip de recordatorio + item completado — dark ──────────────────── */
 html[data-theme="dark"] .det-act-recordatorio       { color: #fbbf24; }

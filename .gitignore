@@ -1,0 +1,21 @@
+# Variables de entorno y secretos
+.env
+.env.local
+.env.*.local
+
+# Dependencias Composer
+/vendor/
+
+# Backups y volcados SQL
+/backups/
+
+# IDE y editores
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log

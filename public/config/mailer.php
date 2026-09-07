@@ -7,90 +7,225 @@ use PHPMailer\PHPMailer\Exception;
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 /**
- * EnvÃ­a un email HTML vÃ­a SMTP (PHPMailer).
- * Credenciales leÃ­das de variables de entorno definidas en .env / docker-compose.
+ * Obtiene un valor de la tabla `system_config` (configuración del panel admin).
  */
-function enviarEmail(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+function getDbConfig(string $clave): string
 {
+    static $cache = [];
+    if (isset($cache[$clave])) return $cache[$clave];
+
+    global $pdo;
+    if (!isset($pdo)) {
+        try {
+            require_once __DIR__ . '/conexion.php';
+        } catch (Throwable $e) {}
+    }
+
+    if (isset($pdo)) {
+        try {
+            $s = $pdo->prepare('SELECT valor FROM system_config WHERE clave = ? AND valor IS NOT NULL AND valor != ""');
+            $s->execute([$clave]);
+            $row = $s->fetch(PDO::FETCH_ASSOC);
+            if ($row && $row['valor'] !== null && $row['valor'] !== '') {
+                $cache[$clave] = (string) $row['valor'];
+                return $cache[$clave];
+            }
+        } catch (Throwable $e) {}
+    }
+
+    $cache[$clave] = '';
+    return '';
+}
+
+/**
+ * Comprueba si el SMTP del SISTEMA (.env) está configurado.
+ * Se usa para 2FA y seguridad.
+ */
+function esSmtpSistemaConfigurado(): bool
+{
+    $host = trim(getenv('SMTP_HOST') ?: '');
+    $user = trim(getenv('SMTP_USER') ?: '');
+    $pass = trim(getenv('SMTP_PASS') ?: '');
+    return ($host !== '' && $user !== '' && $pass !== '');
+}
+
+/**
+ * Comprueba si el SMTP de NEGOCIO (Base de Datos - panel admin) está configurado.
+ * Se usa para Facturas y Presupuestos a clientes.
+ */
+function esSmtpNegocioConfigurado(): bool
+{
+    $host = getDbConfig('smtp_host');
+    $user = getDbConfig('smtp_user');
+    $pass = getDbConfig('smtp_pass');
+    return ($host !== '' && $user !== '' && $pass !== '');
+}
+
+/**
+ * Envía un email utilizando una instancia configurada de PHPMailer.
+ */
+function ejecutarEnvio(
+    string $host,
+    int $port,
+    string $user,
+    string $pass,
+    string $fromEmail,
+    string $fromName,
+    string $encryption,
+    string $to,
+    string $subject,
+    string $htmlBody,
+    array $attachments = []
+): bool {
     $mail = new PHPMailer(true);
 
     try {
-        $mail->isSMTP();
-        $mail->SMTPDebug  = SMTP::DEBUG_SERVER;
-        $mail->Debugoutput = 'error_log';
-        $mail->Host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = getenv('SMTP_USER') ?: '';
-        $pass = getenv('SMTP_PASS') ?: '';
-        $mail->Password   = str_replace(' ', '', $pass);
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = (int) (getenv('SMTP_PORT') ?: 587);
-        $mail->CharSet    = 'UTF-8';
+        $toClean = strtolower(trim($to));
+        if (!filter_var($toClean, FILTER_VALIDATE_EMAIL)) {
+            error_log("[mailer] Destinatario no válido: '{$to}'");
+            return false;
+        }
 
-        $from     = getenv('MAIL_FROM') ?: $mail->Username;
-        $mail->setFrom($from, 'L&J CRM');
-        $mail->addAddress($to);
+        $mail->isSMTP();
+        $mail->SMTPDebug   = SMTP::DEBUG_OFF;
+        $mail->Debugoutput = 'error_log';
+        $mail->Host        = $host;
+        $mail->SMTPAuth    = true;
+        $mail->Username    = $user;
+        $mail->Password    = str_replace(' ', '', $pass);
+
+        $encLower = strtolower(trim($encryption));
+        if ($encLower === 'ssl') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } elseif ($encLower === 'tls') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $mail->SMTPAutoTLS = false;
+        }
+
+        $mail->Port    = $port > 0 ? $port : 587;
+        $mail->CharSet = 'UTF-8';
+
+        $remitente = trim($fromEmail) ?: $user;
+        $mail->setFrom($remitente, $fromName);
+        $mail->addAddress($toClean);
 
         $mail->isHTML(true);
         $mail->Subject = $subject;
         $mail->Body    = $htmlBody;
 
-        foreach ($attachments as $attachment) {
-            if (!empty($attachment['path'])) {
+        foreach ($attachments as $att) {
+            if (!empty($att['path'])) {
                 $mail->addAttachment(
-                    $attachment['path'],
-                    $attachment['name'] ?? '',
-                    $attachment['encoding'] ?? PHPMailer::ENCODING_BASE64,
-                    $attachment['type'] ?? ''
+                    $att['path'],
+                    $att['name'] ?? '',
+                    $att['encoding'] ?? PHPMailer::ENCODING_BASE64,
+                    $att['type'] ?? ''
                 );
-                continue;
-            }
-
-            if (isset($attachment['data'])) {
+            } elseif (isset($att['data'])) {
                 $mail->addStringAttachment(
-                    $attachment['data'],
-                    $attachment['name'] ?? 'adjunto',
-                    $attachment['encoding'] ?? PHPMailer::ENCODING_BASE64,
-                    $attachment['type'] ?? 'application/octet-stream'
+                    $att['data'],
+                    $att['name'] ?? 'adjunto',
+                    $att['encoding'] ?? PHPMailer::ENCODING_BASE64,
+                    $att['type'] ?? 'application/octet-stream'
                 );
             }
         }
 
         $mail->send();
-        error_log("[mailer] Email enviado a {$to}");
+        error_log("[mailer] Email enviado a {$toClean} vía {$host}");
         return true;
 
-    } catch (Exception) {
-        error_log("[mailer] Error al enviar a {$to}: " . $mail->ErrorInfo);
+    } catch (Exception $e) {
+        error_log("[mailer] Error enviando a {$to} vía {$host}: " . $mail->ErrorInfo);
         return false;
     }
 }
 
 /**
- * Genera el HTML del email de cÃ³digo 2FA.
+ * CANAL SISTEMA (2FA, avisos de seguridad, verificación).
+ * Lee EXCLUSIVAMENTE las variables de entorno del servidor (.env).
+ */
+function enviarEmailSistema(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+{
+    if (!esSmtpSistemaConfigurado()) {
+        error_log('[mailer] No se puede enviar correo del sistema: SMTP del sistema (.env) no configurado');
+        return false;
+    }
+
+    $host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+    $port       = (int) (getenv('SMTP_PORT') ?: 587);
+    $user       = getenv('SMTP_USER') ?: '';
+    $pass       = getenv('SMTP_PASS') ?: '';
+    $from       = getenv('MAIL_FROM') ?: $user;
+    $encryption = getenv('SMTP_ENCRYPTION') ?: 'tls';
+
+    return ejecutarEnvio($host, $port, $user, $pass, $from, 'L&J CRM - Seguridad', $encryption, $to, $subject, $htmlBody, $attachments);
+}
+
+/**
+ * CANAL NEGOCIO (Presupuestos, Facturas, correos a contactos/clientes).
+ * Lee de la configuración guardada por el administrador en la Base de Datos (system_config).
+ * Si no está configurado en la BD, intenta usar el del .env si existe, o devuelve false.
+ */
+function enviarEmailNegocio(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+{
+    if (esSmtpNegocioConfigurado()) {
+        $host       = getDbConfig('smtp_host');
+        $port       = (int) (getDbConfig('smtp_port') ?: 587);
+        $user       = getDbConfig('smtp_user');
+        $pass       = getDbConfig('smtp_pass');
+        $from       = getDbConfig('smtp_from') ?: $user;
+        $encryption = getDbConfig('smtp_encryption') ?: 'tls';
+
+        return ejecutarEnvio($host, $port, $user, $pass, $from, 'L&J CRM', $encryption, $to, $subject, $htmlBody, $attachments);
+    }
+
+    // Fallback: Si el admin no configuró el de negocio pero el sistema tiene .env
+    if (esSmtpSistemaConfigurado()) {
+        return enviarEmailSistema($to, $subject, $htmlBody, $attachments);
+    }
+
+    error_log('[mailer] No se puede enviar correo de negocio: ningún SMTP configurado (ni en BD ni en .env)');
+    return false;
+}
+
+/**
+ * Alias general para correos salientes del CRM (presupuestos, facturas, etc.).
+ */
+function enviarEmail(string $to, string $subject, string $htmlBody, array $attachments = []): bool
+{
+    return enviarEmailNegocio($to, $subject, $htmlBody, $attachments);
+}
+
+/**
+ * Plantilla HTML para códigos de verificación 2FA.
  */
 function plantilla2FA(string $nombre, string $codigo): string
 {
+    $nombreSeguro = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
+    $codigoSeguro = htmlspecialchars($codigo, ENT_QUOTES, 'UTF-8');
+
     return <<<HTML
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Inter,-apple-system,BlinkMacSystemFont,Arial,sans-serif;">
   <div style="max-width:480px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
     <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:28px 32px;">
       <h1 style="margin:0;color:#fff;font-size:1.6rem;font-weight:700;letter-spacing:-0.01em;">L&amp;J CRM</h1>
-      <p style="margin:4px 0 0;color:rgba(255,255,255,.8);font-size:.9rem;">Verificación en dos pasos</p>
+      <p style="margin:4px 0 0;color:rgba(255,255,255,.85);font-size:.9rem;">Verificación de Seguridad</p>
     </div>
     <div style="padding:32px;">
-      <p style="margin:0 0 8px;color:#1e293b;font-size:1rem;">Hola, <strong>{$nombre}</strong></p>
+      <p style="margin:0 0 8px;color:#1e293b;font-size:1rem;">Hola, <strong>{$nombreSeguro}</strong></p>
       <p style="margin:0 0 24px;color:#64748b;font-size:.9rem;line-height:1.5;">
-        Introduce este código en la pantalla de verificación. Caduca en <strong>10 minutos</strong>.
+        Introduce el siguiente código en la pantalla de verificación para acceder a tu cuenta. Caduca en <strong>10 minutos</strong>.
       </p>
-      <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
-        <span style="font-size:2.2rem;font-weight:800;letter-spacing:.3em;color:#667eea;">{$codigo}</span>
+      <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+        <span style="font-size:2.4rem;font-weight:800;letter-spacing:.3em;color:#667eea;font-family:monospace;">{$codigoSeguro}</span>
       </div>
       <p style="margin:0;color:#94a3b8;font-size:.78rem;line-height:1.5;">
-        Si no has intentado iniciar sesiónn, ignora este correo.<br>
+        Si no has intentado iniciar sesión en L&amp;J CRM, ignora este correo.<br>
         Nunca compartas este código con nadie.
       </p>
     </div>

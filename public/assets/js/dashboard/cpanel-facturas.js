@@ -3,6 +3,7 @@ const Facturas = (() => {
     let detalleActual = null;
     let buscarTimer = null;
     let contactosCache = [];
+    let productosCache = [];
     let initDone = false;
     let estado = { buscar: '', estado: '', desde: '', hasta: '', orden: 'fecha_emision', dir: 'desc', pagina: 1, limite: 20 };
 
@@ -67,7 +68,27 @@ const Facturas = (() => {
 
         document.getElementById('fac-filtros-clear')?.addEventListener('click', limpiarFiltros);
 
+        document.getElementById('facturas-exportar-btn')?.addEventListener('click', () => {
+            window.open('/api/facturas.php?action=exportar', '_blank');
+        });
+        document.getElementById('facturas-importar-btn')?.addEventListener('click', () => {
+            document.getElementById('facturas-importar-input')?.click();
+        });
+        document.getElementById('facturas-importar-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const d = await importarCsvArchivo('/api/facturas.php?action=importar', file);
+                mostrarResultadoImportacion(d);
+                cargar();
+            } catch (err) {
+                manejarApiError(err, 'Error al importar facturas');
+            }
+        });
+
         cargarContactos();
+        cargarProductos();
         cargar();
     }
 
@@ -117,6 +138,16 @@ const Facturas = (() => {
             const extra = c.empresa ? ` - ${c.empresa}` : '';
             return `<option value="${c.id_contacto}" ${String(selected) === String(c.id_contacto) ? 'selected' : ''}>${esc(nombre + extra)}</option>`;
         }).join('');
+    }
+
+    async function cargarProductos() {
+        try {
+            const r = await fetchSeguro('/api/productos.php?activo=1&limite=100&orden=nombre&dir=asc');
+            const d = await r.json();
+            productosCache = d.ok ? d.data : [];
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar productos');
+        }
     }
 
     async function cargar() {
@@ -237,6 +268,13 @@ const Facturas = (() => {
         const row = document.createElement('div');
         row.className = 'factura-linea';
         row.innerHTML = `
+            <div class="factura-linea-producto">
+                <label>Producto / Servicio</label>
+                <select class="form-input fac-l-producto">
+                    <option value="">Personalizado...</option>
+                    ${productosCache.map(p => `<option value="${p.id_producto}">${esc(p.nombre)} (${money(p.precio)})</option>`).join('')}
+                </select>
+            </div>
             <div class="factura-linea-concepto">
                 <label>Concepto</label>
                 <input type="text" class="form-input fac-l-concepto" maxlength="255" placeholder="Servicio, producto o concepto" value="${escAttr(linea.concepto ?? '')}">
@@ -260,6 +298,17 @@ const Facturas = (() => {
             <button type="button" class="btn-icon danger fac-l-del" title="Eliminar linea"><i class="fas fa-trash"></i></button>`;
         cont.appendChild(row);
         row.querySelectorAll('input').forEach(i => i.addEventListener('input', calcularTotales));
+        row.querySelector('.fac-l-producto')?.addEventListener('change', (e) => {
+            const producto = productosCache.find(p => String(p.id_producto) === e.target.value);
+            if (!producto) return;
+            const concepto = row.querySelector('.fac-l-concepto');
+            const precio = row.querySelector('.fac-l-precio');
+            const iva = row.querySelector('.fac-l-iva');
+            if (concepto) concepto.value = producto.nombre;
+            if (precio) precio.value = num(producto.precio);
+            if (iva) iva.value = num(producto.iva_porcentaje);
+            calcularTotales();
+        });
         row.querySelector('.fac-l-del')?.addEventListener('click', () => {
             row.remove();
             calcularTotales();

@@ -16,6 +16,13 @@
                         <span>Estadísticas</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="#avisos" class="nav-link" data-section="avisos">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Avisos</span>
+                        <span class="nav-badge" id="avisos-badge" style="display:none">0</span>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -41,15 +48,33 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#presupuestos" class="nav-link" data-section="presupuestos">
+                        <i class="fas fa-file-signature"></i>
+                        <span>Presupuestos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#productos" class="nav-link" data-section="productos">
                         <i class="fas fa-boxes"></i>
                         <span>Productos</span>
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="#proveedores" class="nav-link" data-section="proveedores">
+                        <i class="fas fa-truck"></i>
+                        <span>Proveedores</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="#facturas" class="nav-link" data-section="facturas">
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span>Facturas</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#recurrentes" class="nav-link" data-section="recurrentes">
+                        <i class="fas fa-rotate"></i>
+                        <span>Recurrentes</span>
                     </a>
                 </li>
             </ul>
@@ -140,6 +165,12 @@
                     <a href="#logs" class="nav-link" data-section="logs">
                         <i class="fas fa-file-alt"></i>
                         <span>Auditoría</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-admin-only>
+                    <a href="#modulos" class="nav-link" data-section="modulos">
+                        <i class="fas fa-eye"></i>
+                        <span>Módulos Visibles</span>
                     </a>
                 </li>
             </ul>

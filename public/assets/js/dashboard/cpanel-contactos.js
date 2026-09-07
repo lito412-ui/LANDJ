@@ -200,7 +200,28 @@ const Contactos = (() => {
         });
 
         ContactosValidacion.initCampos();
+        document.getElementById('contactos-exportar-btn')?.addEventListener('click', exportar);
+        document.getElementById('contactos-importar-btn')?.addEventListener('click', () => {
+            document.getElementById('contactos-importar-input')?.click();
+        });
+        document.getElementById('contactos-importar-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const d = await importarCsvArchivo('/api/contactos.php?action=importar', file);
+                mostrarResultadoImportacion(d);
+                cargar();
+            } catch (err) {
+                manejarApiError(err, 'Error al importar contactos');
+            }
+        });
+
         cargar();
+    }
+
+    function exportar() {
+        window.open('/api/contactos.php?action=exportar', '_blank');
     }
 
     async function cargar() {
@@ -327,8 +348,13 @@ const Contactos = (() => {
         };
         const url    = editId ? `/api/contactos.php?id=${editId}` : '/api/contactos.php';
         const method = editId ? 'PUT' : 'POST';
+        await guardarContacto(url, method, payload, btn);
+    }
+
+    async function guardarContacto(url, method, payload, btn, forzar = false) {
+        const urlFinal = forzar ? url + (url.includes('?') ? '&' : '?') + 'forzar=1' : url;
         try {
-            const r = await fetchSeguro(url, {
+            const r = await fetchSeguro(urlFinal, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -337,14 +363,28 @@ const Contactos = (() => {
             if (d.ok) {
                 cerrarForm();
                 cargar();
-                mostrarToast(editId ? 'Contacto actualizado' : 'Contacto creado', 'success');
-            } else {
-                mostrarToast(d.error || 'Error al guardar', 'error');
+                mostrarToast(method === 'PUT' ? 'Contacto actualizado' : 'Contacto creado', 'success');
+                return;
             }
+            if (r.status === 409 && d.duplicados?.length) {
+                if (btn) btn.disabled = false;
+                const nombres = d.duplicados.map(c => `${c.nombre} ${c.apellidos || ''}`.trim()).join(', ');
+                if (!d.forzable) {
+                    mostrarToast(`${d.error}: ${nombres}`, 'error');
+                    return;
+                }
+                mostrarConfirm(
+                    'Posible contacto duplicado',
+                    `Ya existe un contacto con el mismo teléfono: ${nombres}. ¿Crear de todas formas?`,
+                    () => guardarContacto(url, method, payload, btn, true)
+                );
+                return;
+            }
+            mostrarToast(d.error || 'Error al guardar', 'error');
         } catch (e) {
             manejarApiError(e, 'Error de conexión');
         } finally {
-            btn.disabled = false;
+            if (btn) btn.disabled = false;
         }
     }
 

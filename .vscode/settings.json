@@ -1,4 +1,0 @@
-{
-    "githubIssues.issueBranchTitle": "${lito412}/issue${issueNumber}",
-    "git.requireGitUserConfig": false
-}

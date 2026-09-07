@@ -106,6 +106,25 @@ const Oportunidades = (() => {
         });
 
         _initDragDrop();
+        document.getElementById('opor-exportar-btn')?.addEventListener('click', () => {
+            window.open('/api/oportunidades.php?action=exportar', '_blank');
+        });
+        document.getElementById('opor-importar-btn')?.addEventListener('click', () => {
+            document.getElementById('opor-importar-input')?.click();
+        });
+        document.getElementById('opor-importar-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const d = await importarCsvArchivo('/api/oportunidades.php?action=importar', file);
+                mostrarResultadoImportacion(d);
+                cargar();
+            } catch (err) {
+                manejarApiError(err, 'Error al importar oportunidades');
+            }
+        });
+
         cargar();
     }
 

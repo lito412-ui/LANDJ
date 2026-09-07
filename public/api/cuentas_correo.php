@@ -13,6 +13,8 @@ csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'email');
 
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];

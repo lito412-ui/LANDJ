@@ -16,6 +16,20 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-    die("Error de conexión: " . $e->getMessage());
+    error_log('[conexion] Error de conexión a la base de datos: ' . $e->getMessage());
+    http_response_code(500);
+
+    $isApi = (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) ||
+             (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
+    if ($isApi) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'error' => 'Error de conexión con la base de datos']);
+    } else {
+        echo 'Error interno del servidor. Por favor, inténtelo más tarde.';
+    }
+    exit;
 }
-?>
+
+require_once __DIR__ . '/multitenant.php';
+asegurarEsquemaMultitenant($pdo);

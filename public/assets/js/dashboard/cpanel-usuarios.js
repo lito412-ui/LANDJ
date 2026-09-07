@@ -158,8 +158,8 @@ const Usuarios = (() => {
         if (!validarTodo()) return;
 
         const body = {
-            nombre:   getValue('uf-nombre'),
-            email:    getValue('uf-email')    || null,
+            nombre:   getValue('uf-nombre').trim(),
+            email:    getValue('uf-email').trim().toLowerCase() || null,
             rol:      getValue('uf-rol'),
             password: getValue('uf-password') || '',
         };

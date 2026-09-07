@@ -44,7 +44,7 @@ function validarUsuario(array $b, bool $esNuevo): array {
         $errors[] = 'El nombre contiene caracteres no permitidos';
     }
 
-    $email = clean($b['email'] ?? '');
+    $email = strtolower(clean($b['email'] ?? ''));
     if ($email !== '') {
         if (strlen($email) > 255) $errors[] = 'El email no puede superar 255 caracteres';
         elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'El email no es válido';

@@ -517,3 +517,244 @@
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
+/* Módulo: Visibilidad de módulos (admin) */
+.modulos-aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.modulos-aviso i {
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+.modulos-aviso p {
+    margin: 0;
+}
+
+.modulos-categoria-card {
+    margin-top: 16px;
+}
+
+.modulos-categoria-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modulos-toggle-categoria {
+    flex-shrink: 0;
+}
+
+.modulos-lista {
+    display: flex;
+    flex-direction: column;
+}
+
+.modulos-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 4px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modulos-fila:last-child {
+    border-bottom: none;
+}
+
+.modulos-fila-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modulos-icono {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modulos-etiqueta {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* Módulo: Avisos */
+.nav-badge {
+    margin-left: auto;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.avisos-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.avisos-usuarios-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.avisos-usuario-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #334155;
+    cursor: pointer;
+}
+
+.avisos-usuario-check small {
+    color: #94a3b8;
+}
+
+.aviso-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    border-left: 4px solid transparent;
+}
+
+.aviso-item:last-child {
+    border-bottom: none;
+}
+
+.aviso-item.aviso-no-leido {
+    background: #f8fafc;
+}
+
+.aviso-icono {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+}
+
+.aviso-cuerpo {
+    flex: 1;
+    min-width: 0;
+}
+
+.aviso-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.aviso-cuerpo p {
+    margin: 0 0 8px;
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.aviso-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.aviso-punto-nuevo {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+}
+
+.aviso-info    { border-left-color: #3b82f6; }
+.aviso-info    .aviso-icono { background: #dbeafe; color: #1d4ed8; }
+.aviso-exito   { border-left-color: #22c55e; }
+.aviso-exito   .aviso-icono { background: #dcfce7; color: #15803d; }
+.aviso-aviso   { border-left-color: #f59e0b; }
+.aviso-aviso   .aviso-icono { background: #fef3c7; color: #92400e; }
+.aviso-urgente { border-left-color: #ef4444; }
+.aviso-urgente .aviso-icono { background: #fee2e2; color: #b91c1c; }
+
+/* ── Configuración SMTP del Sistema ────────────────────────── */
+.form-hint {
+    display: block;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+}
+
+.cfg-smtp-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.form-alert {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+.form-alert-ok {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #16a34a;
+}
+
+.form-alert-err {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
+
+

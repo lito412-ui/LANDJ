@@ -2,11 +2,14 @@ const Productos = (() => {
     let editId = null;
     let buscarTimer = null;
     let initDone = false;
+    let proveedoresCache = [];
     let estado = { buscar: '', activo: '', orden: 'created_at', dir: 'desc', pagina: 1, limite: 20 };
 
     function init() {
         if (initDone) { cargar(); return; }
         initDone = true;
+
+        cargarProveedores();
 
         document.getElementById('productos-nuevo-btn')?.addEventListener('click', () => abrirForm());
         document.getElementById('productos-cancelar-btn')?.addEventListener('click', cerrarForm);
@@ -48,7 +51,42 @@ const Productos = (() => {
         });
 
         document.getElementById('prod-filtros-clear')?.addEventListener('click', limpiarFiltros);
+
+        document.getElementById('productos-exportar-btn')?.addEventListener('click', () => {
+            window.open('/api/productos.php?action=exportar', '_blank');
+        });
+        document.getElementById('productos-importar-btn')?.addEventListener('click', () => {
+            document.getElementById('productos-importar-input')?.click();
+        });
+        document.getElementById('productos-importar-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const d = await importarCsvArchivo('/api/productos.php?action=importar', file);
+                mostrarResultadoImportacion(d);
+                cargar();
+            } catch (err) {
+                manejarApiError(err, 'Error al importar productos');
+            }
+        });
+
         cargar();
+    }
+
+    async function cargarProveedores() {
+        try {
+            const r = await fetchSeguro('/api/proveedores.php?activo=1&limite=100&orden=nombre&dir=asc');
+            const d = await r.json();
+            proveedoresCache = d.ok ? d.data : [];
+            const select = document.getElementById('prod-proveedor');
+            if (select) {
+                select.innerHTML = '<option value="">Sin proveedor asignado</option>'
+                    + proveedoresCache.map(pv => `<option value="${pv.id_proveedor}">${esc(pv.nombre)}</option>`).join('');
+            }
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar proveedores');
+        }
     }
 
     function actualizarBadge() {
@@ -94,7 +132,7 @@ const Productos = (() => {
         if (!tbody) return;
         if (!lista.length) {
             tbody.innerHTML = `
-                <tr><td colspan="7" class="crm-empty">
+                <tr><td colspan="8" class="crm-empty">
                     <i class="fas fa-box-open"></i>
                     <p>No hay productos.
                         <button class="btn-link" id="prod-crear-primero">Crear el primero</button>
@@ -119,6 +157,7 @@ const Productos = (() => {
                 <td><strong>${money(p.precio)}</strong></td>
                 <td>${num(p.iva_porcentaje)}%</td>
                 <td>${num(p.stock)}</td>
+                <td>${esc(p.proveedor_nombre || '—')}</td>
                 <td>${badgeEstado(p.activo)}</td>
                 <td>
                     <div class="action-buttons">
@@ -144,6 +183,7 @@ const Productos = (() => {
         setVal('prod-iva', num(data?.iva_porcentaje ?? 21));
         setVal('prod-stock', num(data?.stock ?? 0));
         setVal('prod-descripcion', data?.descripcion ?? '');
+        setVal('prod-proveedor', data?.proveedor_id ?? '');
         const activo = document.getElementById('prod-activo');
         if (activo) activo.checked = data ? String(data.activo) === '1' : true;
         actualizarContador();
@@ -179,6 +219,7 @@ const Productos = (() => {
             stock: val('prod-stock'),
             activo: document.getElementById('prod-activo')?.checked ? 1 : 0,
             descripcion: val('prod-descripcion'),
+            proveedor_id: val('prod-proveedor'),
         };
         if (!validar(payload)) return;
 

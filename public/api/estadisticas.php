@@ -16,6 +16,8 @@ function err(string $msg, int $code = 400): void {
 }
 
 require __DIR__ . '/../config/conexion.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'statistics');
 
 try {
     // Totales
@@ -55,6 +57,33 @@ try {
         "SELECT tipo, COUNT(*) as total FROM actividades GROUP BY tipo ORDER BY total DESC"
     )->fetchAll(PDO::FETCH_ASSOC);
 
+    // Ranking de comerciales: oportunidades ganadas (por asignado_a, o creado_por si no hay asignado)
+    // y facturación emitida (por creado_por). Solo se listan usuarios con al menos una de las dos metricas.
+    $rankingComerciales = $pdo->query("
+        SELECT u.id_usuario, u.nombre,
+               COALESCE(op.ganadas, 0)        AS oportunidades_ganadas,
+               COALESCE(op.valor_ganado, 0)   AS valor_ganado,
+               COALESCE(fa.num_facturas, 0)   AS facturas_emitidas,
+               COALESCE(fa.total_facturado,0) AS facturado_total
+        FROM usuarios u
+        LEFT JOIN (
+            SELECT COALESCE(asignado_a, creado_por) AS usuario_id,
+                   COUNT(*) AS ganadas, SUM(valor) AS valor_ganado
+            FROM oportunidades
+            WHERE etapa = 'cerrada_ganada'
+            GROUP BY usuario_id
+        ) op ON op.usuario_id = u.id_usuario
+        LEFT JOIN (
+            SELECT creado_por AS usuario_id,
+                   COUNT(*) AS num_facturas, SUM(total) AS total_facturado
+            FROM facturas
+            WHERE estado != 'cancelada'
+            GROUP BY creado_por
+        ) fa ON fa.usuario_id = u.id_usuario
+        HAVING oportunidades_ganadas > 0 OR facturas_emitidas > 0
+        ORDER BY facturado_total DESC, valor_ganado DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
     ok([
         'totales'               => $totales,
         'valor_pipeline'        => $valorPipeline,
@@ -62,6 +91,7 @@ try {
         'leads_por_estado'      => $leadsPorEstado,
         'oportunidades_por_etapa' => $oportunidadesPorEtapa,
         'actividades_por_tipo'  => $actividadesPorTipo,
+        'ranking_comerciales'   => $rankingComerciales,
     ]);
 
 } catch (PDOException $e) {

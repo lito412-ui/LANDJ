@@ -1,9 +1,9 @@
 <?php
-// SOLO PARA DESARROLLO — eliminar en producción
+// Solo accesible para administradores del sistema
 session_start();
-if (empty($_SESSION['user_id'])) {
+if (empty($_SESSION['user_id']) || ($_SESSION['rol'] ?? '') !== 'administrador') {
     http_response_code(403);
-    die('Acceso denegado');
+    die('Acceso denegado. Solo administradores pueden acceder a esta herramienta.');
 }
 
 require_once __DIR__ . '/config/mailer.php';
@@ -32,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             };
             $mail->Host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = getenv('SMTP_USER') ?: 'jaimemuozmarcelo@gmail.com';
-            $pass = getenv('SMTP_PASS') ?: 'ijmehzmkpgwttbjr';
+            $mail->Username   = getenv('SMTP_USER') ?: '';
+            $pass = getenv('SMTP_PASS') ?: '';
             $mail->Password   = str_replace(' ', '', $pass);
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
@@ -55,11 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$smtpUser = getenv('SMTP_USER') ?: 'jaimemuozmarcelo@gmail.com';
+$smtpUser = getenv('SMTP_USER') ?: '';
 $smtpHost = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
 $smtpPort = getenv('SMTP_PORT') ?: '587';
-$smtpPass = getenv('SMTP_PASS') ?: 'ijmehzmkpgwttbjr';
-$passOk   = strlen(str_replace(' ', '', $smtpPass)) === 16 ? '✓ 16 caracteres' : '✗ ' . strlen(str_replace(' ', '', $smtpPass)) . ' caracteres (debería ser 16)';
+$smtpPass = getenv('SMTP_PASS') ?: '';
+$passLen  = strlen(str_replace(' ', '', $smtpPass));
+$passOk   = $passLen > 0 ? ($passLen === 16 ? '✓ 16 caracteres' : "✗ $passLen caracteres (debería ser 16)") : '✗ No configurada';
 ?>
 <!DOCTYPE html>
 <html lang="es">

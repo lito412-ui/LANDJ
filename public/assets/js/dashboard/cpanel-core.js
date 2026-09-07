@@ -42,6 +42,8 @@ async function checkAuth() {
 
         _poblarDropdownHeader(data);
         aplicarPermisosUI(data.rol);
+        aplicarVisibilidadModulos();
+        cargarBadgeAvisosInicial();
         cargarActividadReciente();
 
         if (typeof Configuracion !== 'undefined') Configuracion.cargar(data);
@@ -126,6 +128,7 @@ function initSidebarNavigation() {
             if (!sectionId) return;
             e.preventDefault();
             if (ADMIN_SECTIONS.includes(sectionId) && perfilData?.rol !== 'administrador') return;
+            if (esModuloOculto(sectionId)) return;
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             link.parentElement.classList.add('active');
@@ -135,17 +138,22 @@ function initSidebarNavigation() {
             if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
             if (sectionId === 'configuracion') Configuracion.init();
             if (sectionId === 'statistics')    Estadisticas.init();
+            if (sectionId === 'avisos')        Avisos.init();
             if (sectionId === 'contactos')     Contactos.init();
             if (sectionId === 'leads')         Leads.init();
             if (sectionId === 'productos')     Productos.init();
+            if (sectionId === 'proveedores')   Proveedores.init();
             if (sectionId === 'facturas')      Facturas.init();
+            if (sectionId === 'recurrentes')   Recurrentes.init();
             if (sectionId === 'users'        && typeof Usuarios   !== 'undefined') Usuarios.init();
             if (sectionId === 'oportunidades') Oportunidades.init();
+            if (sectionId === 'presupuestos')  Presupuestos.init();
             if (sectionId === 'email')        Email.init();
             if (sectionId === 'domains')      Dominios.init();
             if (sectionId === 'logs'         && typeof Auditoria  !== 'undefined') Auditoria.init();
             if (sectionId === 'databases'    && typeof Databases  !== 'undefined') Databases.init();
             if (sectionId === 'backups'      && typeof Backups    !== 'undefined') Backups.init();
+            if (sectionId === 'modulos'      && typeof Modulos    !== 'undefined') Modulos.init();
         });
     });
 }
@@ -226,9 +234,75 @@ function mostrarConfirm(titulo, texto, onConfirm, btnLabel = 'Eliminar', variant
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 }
 
-// ─── Permisos UI ─────────────────────────────────────────────────────────────
+// ─── Badge de avisos no leídos ────────────────────────────────────────────────
 
-const ADMIN_SECTIONS = ['users', 'logs', 'databases', 'backups'];
+function actualizarBadgeAvisos(noLeidos) {
+    const badge = document.getElementById('avisos-badge');
+    if (!badge) return;
+    if (noLeidos > 0) {
+        badge.textContent = noLeidos > 99 ? '99+' : noLeidos;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+async function cargarBadgeAvisosInicial() {
+    try {
+        const r = await fetchSeguro('/api/avisos.php?solo_conteo=1');
+        const d = await r.json();
+        if (d.ok) actualizarBadgeAvisos(d.data.no_leidos);
+    } catch (e) {
+        console.error('[avisos-badge]', e);
+    }
+}
+
+// ─── Visibilidad de módulos (configurable por el administrador) ──────────────
+
+let _modulosOcultos = new Set();
+
+function esModuloOculto(sectionId) {
+    return perfilData?.rol !== 'administrador' && _modulosOcultos.has(sectionId);
+}
+
+async function aplicarVisibilidadModulos() {
+    // Los administradores siempre ven todo; no hace falta ni consultar la API.
+    if (perfilData?.rol === 'administrador') return;
+
+    try {
+        const r = await fetchSeguro('/api/modulos_visibilidad.php');
+        const d = await r.json();
+        if (!d.ok) return;
+
+        _modulosOcultos = new Set(d.data.filter(m => !m.visible).map(m => m.modulo));
+
+        _modulosOcultos.forEach(sectionId => {
+            const link = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
+            if (link) link.parentElement.style.display = 'none';
+        });
+
+        // Si una categoria (nav-section) se queda sin ningun nav-item visible,
+        // ocultamos tambien su cabecera para no dejar un titulo "flotando" sin nada debajo.
+        document.querySelectorAll('.nav-section:not([data-admin-only])').forEach(seccion => {
+            const items = seccion.querySelectorAll('.nav-item');
+            const algunoVisible = [...items].some(li => li.style.display !== 'none');
+            seccion.style.display = (items.length && !algunoVisible) ? 'none' : '';
+        });
+
+        // Si el usuario estaba (o entra por URL) en una sección recien ocultada, volver al dashboard
+        const activo = document.querySelector('.content-section.active');
+        if (activo && _modulosOcultos.has(activo.id)) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('dashboard')?.classList.add('active');
+            document.querySelector('[data-section="dashboard"]')?.parentElement.classList.add('active');
+        }
+    } catch (e) {
+        console.error('[modulos-visibilidad]', e);
+    }
+}
+
+const ADMIN_SECTIONS = ['users', 'logs', 'databases', 'backups', 'modulos'];
 
 function aplicarPermisosUI(rol) {
     const esAdmin = rol === 'administrador';
@@ -263,6 +337,28 @@ function aplicarPermisosUI(rol) {
 function manejarApiError(e, msg) {
     console.error('[API]', msg, e);
     mostrarToast(msg, 'error');
+}
+
+// ─── Importación CSV compartida ───────────────────────────────────────────────
+
+/** Muestra un toast resumen tras importar un CSV y deja el detalle de errores en consola. */
+function mostrarResultadoImportacion(d) {
+    if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+    const r = d.data;
+    const partes = [`${r.creados} creado(s)`];
+    if (r.actualizados) partes.push(`${r.actualizados} actualizado(s)`);
+    if (r.errores?.length) partes.push(`${r.errores.length} fila(s) con error`);
+    const tipo = !r.errores?.length ? 'success' : (r.creados + (r.actualizados || 0)) > 0 ? 'info' : 'error';
+    mostrarToast('Importación: ' + partes.join(', '), tipo);
+    if (r.errores?.length) console.warn('Errores de importación:', r.errores);
+}
+
+/** Sube un archivo CSV al endpoint indicado (?action=importar) y devuelve la respuesta JSON. */
+async function importarCsvArchivo(url, file) {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    const r = await fetchSeguro(url, { method: 'POST', body: formData });
+    return r.json();
 }
 
 // ─── Paginación ───────────────────────────────────────────────────────────────
@@ -351,6 +447,7 @@ async function cargarActividadReciente() {
 
 function navegarA(sectionId) {
     if (ADMIN_SECTIONS.includes(sectionId) && perfilData?.rol !== 'administrador') return;
+    if (esModuloOculto(sectionId)) return;
 
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -361,17 +458,22 @@ function navegarA(sectionId) {
 
     if (sectionId === 'configuracion') Configuracion.init();
     if (sectionId === 'statistics')  Estadisticas.init();
+    if (sectionId === 'avisos')      Avisos.init();
     if (sectionId === 'contactos')   Contactos.init();
     if (sectionId === 'leads')       Leads.init();
     if (sectionId === 'oportunidades') Oportunidades.init();
+    if (sectionId === 'presupuestos') Presupuestos.init();
     if (sectionId === 'productos')   Productos.init();
+    if (sectionId === 'proveedores') Proveedores.init();
     if (sectionId === 'facturas')    Facturas.init();
+    if (sectionId === 'recurrentes') Recurrentes.init();
     if (sectionId === 'email')       Email.init();
     if (sectionId === 'domains')     Dominios.init();
     if (sectionId === 'users'      && typeof Usuarios  !== 'undefined') Usuarios.init();
     if (sectionId === 'logs'       && typeof Auditoria !== 'undefined') Auditoria.init();
     if (sectionId === 'databases'  && typeof Databases !== 'undefined') Databases.init();
     if (sectionId === 'backups'    && typeof Backups   !== 'undefined') Backups.init();
+    if (sectionId === 'modulos'    && typeof Modulos   !== 'undefined') Modulos.init();
 }
 
 // ─── Acciones rápidas del dashboard ──────────────────────────────────────────

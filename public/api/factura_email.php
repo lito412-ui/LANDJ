@@ -12,6 +12,8 @@ if (!isset($_SESSION['user_id'])) {
 csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'facturas');
 require __DIR__ . '/../config/mailer.php';
 require __DIR__ . '/../config/facturas_documentos.php';
 
@@ -44,8 +46,13 @@ try {
         exit;
     }
 
+    if (!esSmtpNegocioConfigurado() && !esSmtpSistemaConfigurado()) {
+        facturaEmailErr('El servidor de correo (SMTP) no está configurado. Ve a Configuración > Servidor de Correo (SMTP) para activarlo.', 400);
+        exit;
+    }
+
     $pdf = facturaDocumentoPdf($factura);
-    $ok = enviarEmail(
+    $ok = enviarEmailNegocio(
         $factura['contacto_email'],
         'Factura ' . $factura['numero'],
         facturaDocumentoHtmlEmail($factura),
@@ -58,7 +65,7 @@ try {
     );
 
     if (!$ok) {
-        facturaEmailErr('No se pudo enviar el email', 500);
+        facturaEmailErr('No se pudo enviar el email. Revisa los datos de conexión SMTP en Configuración > Servidor de Correo.', 500);
         exit;
     }
 

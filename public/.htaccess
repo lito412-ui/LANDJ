@@ -1,0 +1,61 @@
+# L&J CRM — Apache Security Configuration
+
+# Ocultar firma del servidor
+ServerSignature Off
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# ── Proteger archivos sensibles ──────────────────────────────
+<FilesMatch "\.(env|sql|log|bak|backup|sh|yml|yaml|json|lock|xml|md|gitignore|dockerignore)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Proteger carpeta config explícitamente
+<DirectoryMatch "^.*/config/">
+    Order Allow,Deny
+    Deny from all
+</DirectoryMatch>
+
+# ── Headers de seguridad ─────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# ── Rewrite rules para PHP limpio ───────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Redirigir index.html a sí mismo (no tocar)
+    # Redirigir login.html a sí mismo (no tocar)
+
+    # Bloquear acceso directo a carpeta config
+    RewriteRule ^config/ - [F,L]
+    
+    # Bloquear acceso a archivos ocultos
+    RewriteRule (^|/)\. - [F,L]
+</IfModule>
+
+# ── Cache de assets estáticos ────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 6 months"
+    ExpiresByType image/jpg "access plus 6 months"
+    ExpiresByType image/jpeg "access plus 6 months"
+    ExpiresByType image/svg+xml "access plus 6 months"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# ── Comprimir assets ─────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/plain
+</IfModule>

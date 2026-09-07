@@ -137,6 +137,13 @@
                    placeholder="Buscar por numero, contacto, empresa o email...">
         </div>
         <div class="crm-filtros">
+            <button class="btn-secondary btn-sm" id="facturas-exportar-btn" title="Exportar a CSV">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+            <button class="btn-secondary btn-sm" id="facturas-importar-btn" title="Importar desde CSV">
+                <i class="fas fa-file-import"></i> Importar
+            </button>
+            <input type="file" id="facturas-importar-input" accept=".csv" hidden>
             <button class="btn-filtros-toggle" id="fac-filtros-toggle" title="Filtros avanzados">
                 <i class="fas fa-sliders-h"></i> Filtros
                 <span class="filtros-badge" id="fac-filtros-badge" style="display:none">0</span>

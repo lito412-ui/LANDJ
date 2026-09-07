@@ -13,6 +13,9 @@ csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'facturas');
+require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
@@ -155,9 +158,120 @@ function guardarLineas(PDO $pdo, int $facturaId, array $lineas): void {
     }
 }
 
+// ─── Exportar / importar CSV ────────────────────────────────────────────────
+// Formato: una fila por cada línea de factura. Varias filas con el mismo
+// "numero" forman una única factura al importar.
+function exportarFacturas(PDO $pdo): void {
+    $s = $pdo->query("
+        SELECT f.numero, c.email AS contacto_email, f.estado, f.fecha_emision, f.fecha_vencimiento, f.notas,
+               fl.concepto, fl.cantidad, fl.precio_unitario, fl.iva_porcentaje
+        FROM facturas f
+        INNER JOIN contactos c ON c.id_contacto = f.contacto_id
+        INNER JOIN factura_lineas fl ON fl.factura_id = f.id_factura
+        ORDER BY f.numero, fl.orden, fl.id_linea
+    ");
+    $filas = [];
+    foreach ($s->fetchAll() as $l) {
+        $filas[] = [$l['numero'], $l['contacto_email'], $l['estado'], $l['fecha_emision'], $l['fecha_vencimiento'],
+            $l['notas'], $l['concepto'], $l['cantidad'], $l['precio_unitario'], $l['iva_porcentaje']];
+    }
+    csvDescargar('facturas_' . date('Y-m-d') . '.csv', [
+        'numero', 'contacto_email', 'estado', 'fecha_emision', 'fecha_vencimiento',
+        'notas', 'concepto', 'cantidad', 'precio_unitario', 'iva_porcentaje',
+    ], $filas);
+}
+
+function importarFacturas(PDO $pdo, int $userId): void {
+    try {
+        $filas = csvLeerSubida('archivo');
+    } catch (RuntimeException $e) {
+        err($e->getMessage());
+        return;
+    }
+    if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
+
+    // Agrupar filas por número de factura; sin número, cada fila es su propia factura
+    $grupos = [];
+    foreach ($filas as $idx => $fila) {
+        $numero = trim($fila['numero'] ?? '');
+        $clave  = $numero !== '' ? $numero : '__sin_numero_' . $idx;
+        $grupos[$clave]['filas'][] = ['idx' => $idx, 'datos' => $fila];
+        $grupos[$clave]['cabecera'] ??= $fila;
+    }
+
+    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
+    $sExiste   = $pdo->prepare("SELECT id_factura FROM facturas WHERE numero = ? LIMIT 1");
+
+    $creados = 0; $errores = [];
+
+    foreach ($grupos as $grupo) {
+        $cabecera    = $grupo['cabecera'];
+        $primeraFila = $grupo['filas'][0]['idx'] + 2;
+
+        $numeroReal = trim($cabecera['numero'] ?? '');
+        if ($numeroReal !== '') {
+            $sExiste->execute([$numeroReal]);
+            if ($sExiste->fetchColumn()) {
+                $errores[] = "Fila $primeraFila: ya existe una factura con el número $numeroReal (se omite)";
+                continue;
+            }
+        }
+
+        $email = trim($cabecera['contacto_email'] ?? '');
+        if ($email === '') { $errores[] = "Fila $primeraFila: falta contacto_email"; continue; }
+        $sContacto->execute([$email]);
+        $contactoId = $sContacto->fetchColumn() ?: null;
+        if (!$contactoId) { $errores[] = "Fila $primeraFila: no existe ningún contacto con email $email"; continue; }
+
+        $lineasInput = array_map(fn($f) => [
+            'concepto'        => $f['datos']['concepto'] ?? '',
+            'cantidad'        => $f['datos']['cantidad'] ?? '',
+            'precio_unitario' => $f['datos']['precio_unitario'] ?? '',
+            'iva_porcentaje'  => $f['datos']['iva_porcentaje'] ?? '',
+        ], $grupo['filas']);
+
+        $b = [
+            'contacto_id'       => $contactoId,
+            'estado'            => $cabecera['estado'] ?? 'borrador',
+            'fecha_emision'     => $cabecera['fecha_emision'] ?? '',
+            'fecha_vencimiento' => $cabecera['fecha_vencimiento'] ?? '',
+            'notas'             => $cabecera['notas'] ?? '',
+            'lineas'            => $lineasInput,
+        ];
+        $v = validarFactura($b);
+        if ($v['errors']) { $errores[] = "Fila $primeraFila: " . implode('; ', $v['errors']); continue; }
+
+        try {
+            $pdo->beginTransaction();
+            $num = $numeroReal !== '' ? $numeroReal : generarNumeroFactura($pdo);
+            $s = $pdo->prepare("
+                INSERT INTO facturas
+                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId]);
+            $nuevoId = (int) $pdo->lastInsertId();
+            guardarLineas($pdo, $nuevoId, $v['lineas']);
+            registrarAuditoria($pdo, 'facturas', $nuevoId, 'crear', null, $v);
+            $pdo->commit();
+            $creados++;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $duplicado = $e instanceof PDOException && $e->getCode() === '23000';
+            $errores[] = "Fila $primeraFila: error al guardar la factura (" . ($duplicado ? 'número duplicado' : 'error de base de datos') . ")";
+        }
+    }
+
+    ok(['creados' => $creados, 'actualizados' => 0, 'errores' => $errores, 'total' => count($grupos)]);
+}
+
 try {
     switch ($method) {
         case 'GET':
+            if (($_GET['action'] ?? '') === 'exportar') {
+                exportarFacturas($pdo);
+                break;
+            }
             if ($id) {
                 $factura = cargarFactura($pdo, $id);
                 $factura ? ok($factura) : err('Factura no encontrada', 404);
@@ -214,6 +328,10 @@ try {
             break;
 
         case 'POST':
+            if (($_GET['action'] ?? '') === 'importar') {
+                importarFacturas($pdo, $userId);
+                break;
+            }
             $v = validarFactura(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 

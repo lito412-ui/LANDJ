@@ -13,6 +13,9 @@ csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'oportunidades');
+require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
@@ -72,11 +75,98 @@ function validarOportunidad(array $b): array {
     ];
 }
 
+// ─── Exportar / importar CSV ────────────────────────────────────────────────
+function exportarOportunidades(PDO $pdo): void {
+    $s = $pdo->query("
+        SELECT o.titulo, o.descripcion, o.valor, o.etapa, o.fecha_cierre_esperada,
+               c.email AS contacto_email, l.email AS lead_email, o.created_at
+        FROM oportunidades o
+        LEFT JOIN contactos c ON c.id_contacto = o.contacto_id
+        LEFT JOIN leads     l ON l.id_lead     = o.lead_id
+        ORDER BY o.created_at DESC
+    ");
+    $filas = [];
+    foreach ($s->fetchAll() as $o) {
+        $filas[] = [$o['titulo'], $o['descripcion'], $o['valor'], $o['etapa'],
+            $o['fecha_cierre_esperada'], $o['contacto_email'], $o['lead_email'], $o['created_at']];
+    }
+    csvDescargar('oportunidades_' . date('Y-m-d') . '.csv',
+        ['titulo', 'descripcion', 'valor', 'etapa', 'fecha_cierre_esperada', 'contacto_email', 'lead_email', 'created_at'], $filas);
+}
+
+function importarOportunidades(PDO $pdo, int $userId): void {
+    try {
+        $filas = csvLeerSubida('archivo');
+    } catch (RuntimeException $e) {
+        err($e->getMessage());
+        return;
+    }
+    if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
+
+    $sContacto = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
+    $sLead     = $pdo->prepare("SELECT id_lead FROM leads WHERE email = ? LIMIT 1");
+    $sIns = $pdo->prepare("
+        INSERT INTO oportunidades (titulo, descripcion, valor, etapa, contacto_id, lead_id, fecha_cierre_esperada, creado_por)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+
+    $creados = 0; $errores = [];
+    foreach ($filas as $idx => $fila) {
+        $numFila = $idx + 2;
+
+        $contactoId = null;
+        $email = trim($fila['contacto_email'] ?? '');
+        if ($email !== '') {
+            $sContacto->execute([$email]);
+            $contactoId = $sContacto->fetchColumn() ?: null;
+            if (!$contactoId) { $errores[] = "Fila $numFila: no existe ningún contacto con email $email"; continue; }
+        }
+
+        $leadId = null;
+        $leadEmail = trim($fila['lead_email'] ?? '');
+        if ($leadEmail !== '') {
+            $sLead->execute([$leadEmail]);
+            $leadId = $sLead->fetchColumn() ?: null;
+            if (!$leadId) { $errores[] = "Fila $numFila: no existe ningún lead con email $leadEmail"; continue; }
+        }
+
+        $b = [
+            'titulo'                => $fila['titulo'] ?? '',
+            'descripcion'           => $fila['descripcion'] ?? '',
+            'valor'                 => $fila['valor'] ?? '',
+            'etapa'                 => $fila['etapa'] ?? 'prospecto',
+            'fecha_cierre_esperada' => $fila['fecha_cierre_esperada'] ?? '',
+            'contacto_id'           => $contactoId ?? '',
+            'lead_id'               => $leadId ?? '',
+        ];
+        $v = validarOportunidad($b);
+        if ($v['errors']) { $errores[] = "Fila $numFila: " . implode('; ', $v['errors']); continue; }
+
+        try {
+            $sIns->execute([
+                $v['titulo'], $v['descripcion'], $v['valor'], $v['etapa'],
+                $v['contacto_id'], $v['lead_id'], $v['fecha_cierre_esperada'], $userId,
+            ]);
+            $nuevoId = (int) $pdo->lastInsertId();
+            registrarAuditoria($pdo, 'oportunidades', $nuevoId, 'crear', null, $v);
+            $creados++;
+        } catch (PDOException $e) {
+            $errores[] = "Fila $numFila: error de base de datos";
+        }
+    }
+
+    ok(['creados' => $creados, 'actualizados' => 0, 'errores' => $errores, 'total' => count($filas)]);
+}
+
 try {
     switch ($method) {
 
         // ─── Listar / detalle ─────────────────────────────────────────────────
         case 'GET':
+            if (($_GET['action'] ?? '') === 'exportar') {
+                exportarOportunidades($pdo);
+                break;
+            }
             if ($id) {
                 $s = $pdo->prepare("
                     SELECT o.*,
@@ -154,6 +244,10 @@ try {
 
         // ─── Crear ───────────────────────────────────────────────────────────
         case 'POST':
+            if (($_GET['action'] ?? '') === 'importar') {
+                importarOportunidades($pdo, $userId);
+                break;
+            }
             $v = validarOportunidad(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 

@@ -76,6 +76,13 @@
                 <option value="cerrada_ganada">Ganada</option>
                 <option value="cerrada_perdida">Perdida</option>
             </select>
+            <button class="btn-secondary btn-sm" id="opor-exportar-btn" title="Exportar a CSV">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+            <button class="btn-secondary btn-sm" id="opor-importar-btn" title="Importar desde CSV">
+                <i class="fas fa-file-import"></i> Importar
+            </button>
+            <input type="file" id="opor-importar-input" accept=".csv" hidden>
             <button class="btn-filtros-toggle" id="op-filtros-toggle" title="Filtros avanzados">
                 <i class="fas fa-sliders-h"></i> Filtros
                 <span class="filtros-badge" id="op-filtros-badge" style="display:none">0</span>

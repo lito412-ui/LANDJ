@@ -13,6 +13,9 @@ csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'contactos');
+require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
@@ -95,11 +98,113 @@ function validarYSanitizar(array $b): array {
     ];
 }
 
+// ─── Exportar / importar CSV ────────────────────────────────────────────────
+// ─── Detección de duplicados ────────────────────────────────────────────────
+// El email tiene UNIQUE en BD: un duplicado por email exacto nunca se puede
+// forzar (violaria la restriccion), asi que se separa de los duplicados por
+// telefono (señal mas debil, esos si se pueden forzar).
+function buscarPosiblesDuplicados(PDO $pdo, ?string $email, ?string $telefono): array {
+    $porEmail = [];
+    if ($email !== null) {
+        $s = $pdo->prepare("SELECT id_contacto, nombre, apellidos, email, telefono, empresa FROM contactos WHERE email = ? LIMIT 1");
+        $s->execute([$email]);
+        $porEmail = $s->fetchAll();
+    }
+
+    $porTelefono = [];
+    if ($telefono !== null && $telefono !== '') {
+        $telefonoNormalizado = preg_replace('/[\s\-]/', '', $telefono);
+        if ($telefonoNormalizado !== '') {
+            $s = $pdo->prepare(
+                "SELECT id_contacto, nombre, apellidos, email, telefono, empresa
+                 FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? LIMIT 5"
+            );
+            $s->execute([$telefonoNormalizado]);
+            $porTelefono = $s->fetchAll();
+        }
+    }
+
+    return ['email' => $porEmail, 'telefono' => $porTelefono];
+}
+
+function exportarContactos(PDO $pdo): void {
+    $s = $pdo->query("SELECT nombre, apellidos, email, telefono, empresa, notas, created_at FROM contactos ORDER BY nombre, apellidos");
+    $filas = [];
+    foreach ($s->fetchAll() as $c) {
+        $filas[] = [$c['nombre'], $c['apellidos'], $c['email'], $c['telefono'], $c['empresa'], $c['notas'], $c['created_at']];
+    }
+    csvDescargar('contactos_' . date('Y-m-d') . '.csv',
+        ['nombre', 'apellidos', 'email', 'telefono', 'empresa', 'notas', 'created_at'], $filas);
+}
+
+function importarContactos(PDO $pdo, int $userId): void {
+    try {
+        $filas = csvLeerSubida('archivo');
+    } catch (RuntimeException $e) {
+        err($e->getMessage());
+        return;
+    }
+    if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
+
+    $creados = 0; $actualizados = 0; $errores = [];
+    $sBuscarEmail = $pdo->prepare("SELECT id_contacto FROM contactos WHERE email = ? LIMIT 1");
+    $sBuscarTelefono = $pdo->prepare(
+        "SELECT id_contacto FROM contactos WHERE REPLACE(REPLACE(telefono, ' ', ''), '-', '') = ? LIMIT 1"
+    );
+    $sIns = $pdo->prepare(
+        "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por)
+         VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    $sUpd = $pdo->prepare(
+        "UPDATE contactos SET nombre=?, apellidos=?, telefono=?, empresa=?, notas=? WHERE id_contacto=?"
+    );
+
+    foreach ($filas as $idx => $fila) {
+        $numFila = $idx + 2; // +1 cabecera, +1 base 1
+        $v = validarYSanitizar($fila);
+        if ($v['errors']) { $errores[] = "Fila $numFila: " . implode('; ', $v['errors']); continue; }
+
+        try {
+            $existenteId = null;
+            if ($v['email'] !== null) {
+                $sBuscarEmail->execute([$v['email']]);
+                $existenteId = $sBuscarEmail->fetchColumn() ?: null;
+            }
+            // Sin coincidencia por email: probar por teléfono (mismo criterio que la deteccion manual)
+            if (!$existenteId && $v['telefono'] !== null) {
+                $telefonoNormalizado = preg_replace('/[\s\-]/', '', $v['telefono']);
+                if ($telefonoNormalizado !== '') {
+                    $sBuscarTelefono->execute([$telefonoNormalizado]);
+                    $existenteId = $sBuscarTelefono->fetchColumn() ?: null;
+                }
+            }
+            if ($existenteId) {
+                $sUpd->execute([$v['nombre'], $v['apellidos'], $v['telefono'], $v['empresa'], $v['notas'], $existenteId]);
+                registrarAuditoria($pdo, 'contactos', (int) $existenteId, 'editar', null, $v);
+                $actualizados++;
+            } else {
+                $sIns->execute([$v['nombre'], $v['apellidos'], $v['email'], $v['telefono'], $v['empresa'], $v['notas'], $userId]);
+                $nuevoId = (int) $pdo->lastInsertId();
+                registrarAuditoria($pdo, 'contactos', $nuevoId, 'crear', null, $v);
+                $creados++;
+            }
+        } catch (PDOException $e) {
+            $errores[] = "Fila $numFila: " . ($e->getCode() === '23000' ? 'email duplicado' : 'error de base de datos');
+        }
+    }
+
+    ok(['creados' => $creados, 'actualizados' => $actualizados, 'errores' => $errores, 'total' => count($filas)]);
+}
+
 try {
     switch ($method) {
 
         // ─── Listar / buscar / detalle ────────────────────────────────────
         case 'GET':
+            if (($_GET['action'] ?? '') === 'exportar') {
+                exportarContactos($pdo);
+                break;
+            }
             if ($id) {
                 $s = $pdo->prepare("SELECT * FROM contactos WHERE id_contacto = ? LIMIT 1");
                 $s->execute([$id]);
@@ -158,8 +263,35 @@ try {
 
         // ─── Crear ───────────────────────────────────────────────────────
         case 'POST':
+            if (($_GET['action'] ?? '') === 'importar') {
+                importarContactos($pdo, $userId);
+                break;
+            }
             $v = validarYSanitizar(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
+
+            $duplicados = buscarPosiblesDuplicados($pdo, $v['email'], $v['telefono']);
+            if ($duplicados['email']) {
+                http_response_code(409);
+                echo json_encode([
+                    'ok' => false,
+                    'error' => 'Ya existe un contacto con ese email',
+                    'duplicados' => $duplicados['email'],
+                    'forzable' => false,
+                ]);
+                break;
+            }
+            if ($duplicados['telefono'] && ($_GET['forzar'] ?? '') !== '1') {
+                http_response_code(409);
+                echo json_encode([
+                    'ok' => false,
+                    'error' => 'Posible contacto duplicado (mismo teléfono)',
+                    'duplicados' => $duplicados['telefono'],
+                    'forzable' => true,
+                ]);
+                break;
+            }
+
             $s = $pdo->prepare(
                 "INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, notas, creado_por)
                  VALUES (?, ?, ?, ?, ?, ?, ?)"

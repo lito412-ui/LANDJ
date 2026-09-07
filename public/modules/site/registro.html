@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/assets/css/site/style.css">
+    <link rel="icon" type="image/png" href="/assets/img/icono web.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>L&J CRM — Crear Cuenta</title>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1 class="logo">L&J</h1>
+                <p class="subtitle" id="stepSubtitle">Crea tu cuenta de empresa</p>
+            </div>
+
+            <div id="alertBox" class="auth-alert" role="alert">
+                <i class="fas fa-info-circle" id="alertIcon"></i>
+                <span id="alertText"></span>
+            </div>
+
+            <!-- ── PASO 1: FORMULARIO DE REGISTRO ────────────────────────── -->
+            <form id="formRegistro" class="login-form">
+                <div class="input-group">
+                    <label for="regNombre" class="input-label">Nombre de Usuario <span style="color:#ef4444;">*</span></label>
+                    <input 
+                        type="text" 
+                        id="regNombre" 
+                        class="input-field" 
+                        placeholder="Ej: alvaro" 
+                        required 
+                        autocomplete="username"
+                        minlength="3"
+                        maxlength="100"
+                    >
+                    <span class="auth-hint">Solo letras, números, puntos o guiones</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="regEmail" class="input-label">Correo Electrónico <span style="color:#ef4444;">*</span></label>
+                    <input 
+                        type="email" 
+                        id="regEmail" 
+                        class="input-field" 
+                        placeholder="tu@empresa.com" 
+                        required 
+                        autocomplete="email"
+                    >
+                    <span class="auth-hint">Te enviaremos un código de activación</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="regEmpresa" class="input-label">Nombre de tu Empresa / Grupo <span style="color:#6b7280;font-size:0.75rem;">(Opcional)</span></label>
+                    <input 
+                        type="text" 
+                        id="regEmpresa" 
+                        class="input-field" 
+                        placeholder="Ej: Mi Empresa S.L." 
+                        autocomplete="organization"
+                        maxlength="150"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="regPassword" class="input-label">Contraseña <span style="color:#ef4444;">*</span></label>
+                    <input 
+                        type="password" 
+                        id="regPassword" 
+                        class="input-field" 
+                        placeholder="Mínimo 8 caracteres (letras y números)" 
+                        required 
+                        autocomplete="new-password"
+                        minlength="8"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="regPassword2" class="input-label">Confirmar Contraseña <span style="color:#ef4444;">*</span></label>
+                    <input 
+                        type="password" 
+                        id="regPassword2" 
+                        class="input-field" 
+                        placeholder="Repite la contraseña" 
+                        required 
+                        autocomplete="new-password"
+                        minlength="8"
+                    >
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="btnCrear">
+                        <i class="fas fa-user-plus"></i> Crear Cuenta
+                    </button>
+                </div>
+
+                <div class="auth-links">
+                    <p class="auth-link-subtle">
+                        ¿Ya tienes una cuenta? <a href="/modules/site/login.html" class="auth-link" style="font-weight: 700;">Inicia Sesión</a>
+                    </p>
+                    <p style="margin-top: 6px;">
+                        <a href="/" class="auth-link auth-link-subtle" style="font-size: 0.82rem;"><i class="fas fa-arrow-left"></i> Volver a la página principal</a>
+                    </p>
+                </div>
+            </form>
+
+            <!-- ── PASO 2: VERIFICACIÓN DEL CORREO ───────────────────────── -->
+            <form id="formVerificar" class="login-form" style="display: none;">
+                <p style="color: #4b5563; font-size: 0.9rem; text-align: center; margin-bottom: 10px;">
+                    Introduce el código de <strong>6 dígitos</strong> enviado a:<br>
+                    <span id="txtEmailDestino" style="color:#667eea; font-weight:700;"></span>
+                </p>
+
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="verifCodigo" 
+                        class="input-field auth-code-input" 
+                        placeholder="000000" 
+                        required 
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        inputmode="numeric"
+                        autocomplete="one-time-code"
+                        autofocus
+                    >
+                    <span class="auth-hint" style="text-align: center;">El código caduca en 15 minutos</span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="btnVerificar">
+                        <i class="fas fa-check-circle"></i> Activar y Acceder
+                    </button>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" id="btnReenviar" class="btn-secondary-link">
+                        ¿No recibiste el código? Reenviar
+                    </button>
+                    <div id="txtCuentaAtras" style="font-size: 0.8rem; color: #9ca3af; margin-top: 4px;"></div>
+                </div>
+
+                <div class="auth-links" style="margin-top: 20px;">
+                    <p>
+                        <a href="/modules/site/login.html" class="auth-link"><i class="fas fa-arrow-left"></i> Ir a inicio de sesión</a>
+                    </p>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const formRegistro  = document.getElementById('formRegistro');
+            const formVerificar = document.getElementById('formVerificar');
+            const stepSubtitle  = document.getElementById('stepSubtitle');
+            const alertBox      = document.getElementById('alertBox');
+            const alertText     = document.getElementById('alertText');
+            const alertIcon     = document.getElementById('alertIcon');
+            const txtEmailDestino = document.getElementById('txtEmailDestino');
+            const btnCrear      = document.getElementById('btnCrear');
+            const btnVerificar  = document.getElementById('btnVerificar');
+            const btnReenviar   = document.getElementById('btnReenviar');
+            const txtCuentaAtras = document.getElementById('txtCuentaAtras');
+
+            let currentUserId = null;
+            let timerReenvio  = null;
+
+            function showAlert(msg, isOk = false) {
+                alertText.textContent = msg;
+                alertBox.className = 'auth-alert ' + (isOk ? 'auth-alert--ok' : 'auth-alert--err') + ' show';
+                alertIcon.className = isOk ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            }
+
+            function hideAlert() {
+                alertBox.className = 'auth-alert';
+            }
+
+            function pasarAPaso2(userId, email) {
+                currentUserId = userId;
+                txtEmailDestino.textContent = email;
+                formRegistro.style.display = 'none';
+                formVerificar.style.display = 'flex';
+                stepSubtitle.textContent = 'Verificación de Correo';
+                document.getElementById('verifCodigo').focus();
+                iniciarCuentaAtras(60);
+            }
+
+            function iniciarCuentaAtras(segundos) {
+                btnReenviar.disabled = true;
+                clearInterval(timerReenvio);
+                let s = segundos;
+                txtCuentaAtras.textContent = `Podrás reenviar en ${s}s`;
+
+                timerReenvio = setInterval(() => {
+                    s--;
+                    if (s <= 0) {
+                        clearInterval(timerReenvio);
+                        btnReenviar.disabled = false;
+                        txtCuentaAtras.textContent = '';
+                    } else {
+                        txtCuentaAtras.textContent = `Podrás reenviar en ${s}s`;
+                    }
+                }, 1000);
+            }
+
+            // Comprobar si viene redirigido con paso=verificar desde login
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('paso') === 'verificar' && urlParams.get('user_id')) {
+                const uId = parseInt(urlParams.get('user_id'));
+                const uEmail = decodeURIComponent(urlParams.get('email') || '');
+                showAlert('Tu cuenta requiere verificación antes de acceder. Introduce el código que enviamos a tu email.', false);
+                pasarAPaso2(uId, uEmail);
+            }
+
+            // Enviar formulario de registro (Paso 1)
+            formRegistro.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideAlert();
+
+                const nombre   = document.getElementById('regNombre').value.trim();
+                const email    = document.getElementById('regEmail').value.trim();
+                const empresa  = document.getElementById('regEmpresa').value.trim();
+                const pass1    = document.getElementById('regPassword').value;
+                const pass2    = document.getElementById('regPassword2').value;
+
+                if (pass1 !== pass2) {
+                    showAlert('Las contraseñas no coinciden', false);
+                    return;
+                }
+
+                btnCrear.disabled = true;
+                btnCrear.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando cuenta...';
+
+                try {
+                    const res = await fetch('/api/auth.php?accion=registro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nombre: nombre,
+                            email: email,
+                            nombre_empresa: empresa,
+                            password: pass1
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.ok) {
+                        showAlert('¡Cuenta creada! Revisa tu correo e introduce el código de 6 dígitos.', true);
+                        pasarAPaso2(data.data.user_id, data.data.email);
+                    } else {
+                        showAlert(data.error || 'Error al crear la cuenta', false);
+                    }
+                } catch (err) {
+                    showAlert('Error de red: ' + err.message, false);
+                } finally {
+                    btnCrear.disabled = false;
+                    btnCrear.innerHTML = '<i class="fas fa-user-plus"></i> Crear Cuenta';
+                }
+            });
+
+            // Enviar verificación de código (Paso 2)
+            formVerificar.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideAlert();
+
+                const codigo = document.getElementById('verifCodigo').value.trim();
+                if (codigo.length < 6) {
+                    showAlert('Introduce los 6 dígitos del código', false);
+                    return;
+                }
+
+                btnVerificar.disabled = true;
+                btnVerificar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+
+                try {
+                    const res = await fetch('/api/auth.php?accion=verificar-registro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            codigo: codigo
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.ok) {
+                        showAlert('✓ ' + data.data.message, true);
+                        setTimeout(() => {
+                            window.location.href = data.data.redirect || '/admin/cpanel.php';
+                        }, 1000);
+                    } else {
+                        showAlert(data.error || 'Código incorrecto o caducado', false);
+                    }
+                } catch (err) {
+                    showAlert('Error de red: ' + err.message, false);
+                } finally {
+                    btnVerificar.disabled = false;
+                    btnVerificar.innerHTML = '<i class="fas fa-check-circle"></i> Activar y Acceder';
+                }
+            });
+
+            // Reenviar código
+            btnReenviar.addEventListener('click', async () => {
+                hideAlert();
+                btnReenviar.disabled = true;
+                btnReenviar.textContent = 'Enviando...';
+
+                try {
+                    const res = await fetch('/api/auth.php?accion=reenviar-registro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: currentUserId })
+                    });
+
+                    const data = await res.json();
+                    if (data.ok) {
+                        showAlert('✓ Nuevo código enviado a tu correo electrónico', true);
+                        iniciarCuentaAtras(60);
+                    } else {
+                        showAlert(data.error || 'Error al reenviar código', false);
+                        btnReenviar.disabled = false;
+                    }
+                } catch (err) {
+                    showAlert('Error de red: ' + err.message, false);
+                    btnReenviar.disabled = false;
+                } finally {
+                    btnReenviar.textContent = '¿No recibiste el código? Reenviar';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

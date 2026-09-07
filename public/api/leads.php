@@ -13,6 +13,9 @@ csrfValidar();
 
 require __DIR__ . '/../config/conexion.php';
 require __DIR__ . '/../config/auditoria.php';
+require __DIR__ . '/../config/modulos_visibilidad.php';
+verificarModuloVisible($pdo, 'leads');
+require __DIR__ . '/../config/csv_util.php';
 
 $userId = (int) $_SESSION['user_id'];
 $method = $_SERVER['REQUEST_METHOD'];
@@ -86,11 +89,74 @@ function validarLead(array $b): array {
     ];
 }
 
+// ─── Exportar / importar CSV ────────────────────────────────────────────────
+function exportarLeads(PDO $pdo): void {
+    $s = $pdo->query("SELECT nombre, email, telefono, empresa, origen, estado, notas, created_at FROM leads ORDER BY nombre");
+    $filas = [];
+    foreach ($s->fetchAll() as $l) {
+        $filas[] = [$l['nombre'], $l['email'], $l['telefono'], $l['empresa'], $l['origen'], $l['estado'], $l['notas'], $l['created_at']];
+    }
+    csvDescargar('leads_' . date('Y-m-d') . '.csv',
+        ['nombre', 'email', 'telefono', 'empresa', 'origen', 'estado', 'notas', 'created_at'], $filas);
+}
+
+function importarLeads(PDO $pdo, int $userId): void {
+    try {
+        $filas = csvLeerSubida('archivo');
+    } catch (RuntimeException $e) {
+        err($e->getMessage());
+        return;
+    }
+    if (!$filas) { err('El archivo CSV está vacío o no tiene un formato válido'); return; }
+
+    $creados = 0; $actualizados = 0; $errores = [];
+    $sBuscarEmail = $pdo->prepare("SELECT id_lead FROM leads WHERE email = ? LIMIT 1");
+    $sIns = $pdo->prepare(
+        "INSERT INTO leads (nombre, email, telefono, empresa, origen, estado, notas, creado_por)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    $sUpd = $pdo->prepare(
+        "UPDATE leads SET nombre=?, telefono=?, empresa=?, origen=?, estado=?, notas=? WHERE id_lead=?"
+    );
+
+    foreach ($filas as $idx => $fila) {
+        $numFila = $idx + 2;
+        $v = validarLead($fila);
+        if ($v['errors']) { $errores[] = "Fila $numFila: " . implode('; ', $v['errors']); continue; }
+
+        try {
+            $existenteId = null;
+            if ($v['email'] !== null) {
+                $sBuscarEmail->execute([$v['email']]);
+                $existenteId = $sBuscarEmail->fetchColumn() ?: null;
+            }
+            if ($existenteId) {
+                $sUpd->execute([$v['nombre'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $existenteId]);
+                registrarAuditoria($pdo, 'leads', (int) $existenteId, 'editar', null, $v);
+                $actualizados++;
+            } else {
+                $sIns->execute([$v['nombre'], $v['email'], $v['telefono'], $v['empresa'], $v['origen'], $v['estado'], $v['notas'], $userId]);
+                $nuevoId = (int) $pdo->lastInsertId();
+                registrarAuditoria($pdo, 'leads', $nuevoId, 'crear', null, $v);
+                $creados++;
+            }
+        } catch (PDOException $e) {
+            $errores[] = "Fila $numFila: error de base de datos";
+        }
+    }
+
+    ok(['creados' => $creados, 'actualizados' => $actualizados, 'errores' => $errores, 'total' => count($filas)]);
+}
+
 try {
     switch ($method) {
 
         // ─── Listar / buscar / detalle ────────────────────────────────────
         case 'GET':
+            if (($_GET['action'] ?? '') === 'exportar') {
+                exportarLeads($pdo);
+                break;
+            }
             if ($id) {
                 $s = $pdo->prepare("SELECT * FROM leads WHERE id_lead = ? LIMIT 1");
                 $s->execute([$id]);
@@ -156,6 +222,10 @@ try {
 
         // ─── Crear ───────────────────────────────────────────────────────
         case 'POST':
+            if (($_GET['action'] ?? '') === 'importar') {
+                importarLeads($pdo, $userId);
+                break;
+            }
             $v = validarLead(body());
             if ($v['errors']) { err(implode('; ', $v['errors'])); break; }
 

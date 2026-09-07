@@ -104,6 +104,25 @@ const Leads = (() => {
         });
 
         initCampos();
+        document.getElementById('leads-exportar-btn')?.addEventListener('click', () => {
+            window.open('/api/leads.php?action=exportar', '_blank');
+        });
+        document.getElementById('leads-importar-btn')?.addEventListener('click', () => {
+            document.getElementById('leads-importar-input')?.click();
+        });
+        document.getElementById('leads-importar-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const d = await importarCsvArchivo('/api/leads.php?action=importar', file);
+                mostrarResultadoImportacion(d);
+                cargar();
+            } catch (err) {
+                manejarApiError(err, 'Error al importar leads');
+            }
+        });
+
         cargar();
     }
 

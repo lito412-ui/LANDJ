@@ -46,6 +46,13 @@
                         <span class="dom-ssl-label">Producto activo</span>
                     </label>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Proveedor</label>
+                    <select id="prod-proveedor" class="form-input">
+                        <option value="">Sin proveedor asignado</option>
+                    </select>
+                    <span class="form-error" id="err-prod-proveedor"></span>
+                </div>
                 <div class="form-group full-width">
                     <label class="form-label">Descripcion</label>
                     <textarea id="prod-descripcion" class="form-textarea" rows="3" maxlength="1000" placeholder="Detalles visibles para uso interno..."></textarea>
@@ -76,6 +83,13 @@
                 <option value="1">Activos</option>
                 <option value="0">Inactivos</option>
             </select>
+            <button class="btn-secondary btn-sm" id="productos-exportar-btn" title="Exportar a CSV">
+                <i class="fas fa-file-export"></i> Exportar
+            </button>
+            <button class="btn-secondary btn-sm" id="productos-importar-btn" title="Importar desde CSV">
+                <i class="fas fa-file-import"></i> Importar
+            </button>
+            <input type="file" id="productos-importar-input" accept=".csv" hidden>
             <button class="btn-filtros-toggle" id="prod-filtros-toggle" title="Filtros avanzados">
                 <i class="fas fa-sliders-h"></i> Filtros
                 <span class="filtros-badge" id="prod-filtros-badge" style="display:none">0</span>
@@ -113,13 +127,14 @@
                         <th>Precio</th>
                         <th>IVA</th>
                         <th>Stock</th>
+                        <th>Proveedor</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="productos-tbody">
                     <tr>
-                        <td colspan="7" class="crm-loading">
+                        <td colspan="8" class="crm-loading">
                             <i class="fas fa-spinner fa-spin"></i> Cargando...
                         </td>
                     </tr>
