@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizarMetricas();
     setInterval(actualizarMetricas, 3000);
     initSidebarNavigation();
+    initMobileSidebar();
     initUserMenu();
     initThemeToggle();
     initQuickActions();
@@ -134,6 +135,7 @@ function initSidebarNavigation() {
             link.parentElement.classList.add('active');
             document.getElementById(sectionId)?.classList.add('active');
             document.getElementById('user-dropdown')?.classList.remove('show');
+            cerrarMenuMovil();
 
             if (sectionId === 'perfil'         && perfilData) mostrarPerfil(perfilData);
             if (sectionId === 'configuracion') Configuracion.init();
@@ -156,6 +158,41 @@ function initSidebarNavigation() {
             if (sectionId === 'modulos'      && typeof Modulos    !== 'undefined') Modulos.init();
         });
     });
+}
+
+function initMobileSidebar() {
+    const boton = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const fondo = document.getElementById('sidebar-backdrop');
+    if (!boton || !sidebar || !fondo) return;
+
+    const alternar = () => {
+        const abierto = !sidebar.classList.contains('is-open');
+        sidebar.classList.toggle('is-open', abierto);
+        fondo.classList.toggle('is-visible', abierto);
+        document.body.classList.toggle('mobile-menu-open', abierto);
+        boton.setAttribute('aria-expanded', String(abierto));
+        boton.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+        boton.querySelector('i').className = abierto ? 'fas fa-times' : 'fas fa-bars';
+    };
+
+    boton.addEventListener('click', alternar);
+    fondo.addEventListener('click', cerrarMenuMovil);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenuMovil(); });
+    window.addEventListener('resize', () => { if (window.innerWidth > 768) cerrarMenuMovil(); });
+}
+
+function cerrarMenuMovil() {
+    const sidebar = document.getElementById('sidebar');
+    const fondo = document.getElementById('sidebar-backdrop');
+    const boton = document.getElementById('mobile-menu-btn');
+    sidebar?.classList.remove('is-open');
+    fondo?.classList.remove('is-visible');
+    document.body.classList.remove('mobile-menu-open');
+    boton?.setAttribute('aria-expanded', 'false');
+    boton?.setAttribute('aria-label', 'Abrir menú');
+    const icono = boton?.querySelector('i');
+    if (icono) icono.className = 'fas fa-bars';
 }
 
 function initUserMenu() {

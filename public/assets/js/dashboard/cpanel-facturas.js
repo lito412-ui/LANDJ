@@ -4,6 +4,7 @@ const Facturas = (() => {
     let buscarTimer = null;
     let contactosCache = [];
     let productosCache = [];
+    let plantillasCache = [];
     let initDone = false;
     let estado = { buscar: '', estado: '', desde: '', hasta: '', orden: 'fecha_emision', dir: 'desc', pagina: 1, limite: 20 };
 
@@ -23,7 +24,11 @@ const Facturas = (() => {
         if (overlay) document.body.appendChild(overlay);
 
         document.getElementById('facturas-nueva-btn')?.addEventListener('click', () => abrirForm());
+        document.getElementById('facturas-plantillas-btn')?.addEventListener('click', abrirPlantillas);
         document.getElementById('facturas-cancelar-btn')?.addEventListener('click', cerrarForm);
+        document.getElementById('plantillas-cerrar-btn')?.addEventListener('click', cerrarPlantillas);
+        document.getElementById('plantillas-limpiar-btn')?.addEventListener('click', limpiarPlantillaForm);
+        document.getElementById('plantillas-form')?.addEventListener('submit', guardarPlantilla);
         document.getElementById('facturas-form')?.addEventListener('submit', guardar);
         document.getElementById('fac-linea-add')?.addEventListener('click', () => addLinea());
         document.getElementById('fac-det-cerrar')?.addEventListener('click', cerrarDetalle);
@@ -89,6 +94,7 @@ const Facturas = (() => {
 
         cargarContactos();
         cargarProductos();
+        cargarPlantillas();
         cargar();
     }
 
@@ -148,6 +154,46 @@ const Facturas = (() => {
         } catch (e) {
             manejarApiError(e, 'Error al cargar productos');
         }
+    }
+
+    async function cargarPlantillas() {
+        try {
+            const r = await fetchSeguro('/api/plantillas_factura.php');
+            const d = await r.json();
+            plantillasCache = d.ok ? d.data : [];
+            renderPlantillasSelect();
+            renderPlantillasTabla();
+        } catch (e) {
+            manejarApiError(e, 'Error al cargar los modelos de factura');
+        }
+    }
+
+    function renderPlantillasSelect(selected = '') {
+        const select = document.getElementById('fac-plantilla');
+        if (!select) return;
+        select.innerHTML = '<option value="">Diseño estándar</option>' + plantillasCache.map(p =>
+            `<option value="${p.id_plantilla}" ${String(selected) === String(p.id_plantilla) ? 'selected' : ''}>${esc(p.nombre)}</option>`
+        ).join('');
+    }
+
+    function renderPlantillasTabla() {
+        const tbody = document.getElementById('plantillas-tbody');
+        if (!tbody) return;
+        if (!plantillasCache.length) {
+            tbody.innerHTML = '<tr><td colspan="3" class="crm-empty">Todavía no has creado ningún modelo.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = plantillasCache.map(p => `
+            <tr>
+                <td><strong>${esc(p.nombre)}</strong>${p.logo_url ? '<br><small>Con logo</small>' : ''}</td>
+                <td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;background:${escAttr(p.color_primario)}"></span> ${esc(p.fuente)}</td>
+                <td><div class="action-buttons">
+                    <button class="btn-icon" data-plantilla-editar="${p.id_plantilla}" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon danger" data-plantilla-eliminar="${p.id_plantilla}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                </div></td>
+            </tr>`).join('');
+        tbody.querySelectorAll('[data-plantilla-editar]').forEach(b => b.addEventListener('click', () => editarPlantilla(b.dataset.plantillaEditar)));
+        tbody.querySelectorAll('[data-plantilla-eliminar]').forEach(b => b.addEventListener('click', () => eliminarPlantilla(b.dataset.plantillaEliminar)));
     }
 
     async function cargar() {
@@ -223,6 +269,7 @@ const Facturas = (() => {
         document.getElementById('facturas-form')?.reset();
         limpiarErrores();
         renderContactosSelect(data?.contacto_id ?? '');
+        renderPlantillasSelect(data?.plantilla_id ?? '');
 
         const hoy = new Date().toISOString().slice(0, 10);
         setVal('fac-estado', data?.estado ?? 'borrador');
@@ -353,6 +400,7 @@ const Facturas = (() => {
             fecha_emision: document.getElementById('fac-fecha-emision')?.value,
             fecha_vencimiento: document.getElementById('fac-fecha-vencimiento')?.value,
             notas: document.getElementById('fac-notas')?.value.trim(),
+            plantilla_id: document.getElementById('fac-plantilla')?.value || null,
             lineas: leerLineas(),
         };
         if (!validar(payload)) return;
@@ -372,6 +420,79 @@ const Facturas = (() => {
         } catch (err) {
             manejarApiError(err, 'Error al guardar factura');
         }
+    }
+
+    function abrirPlantillas() {
+        cerrarForm();
+        document.getElementById('plantillas-form-panel')?.classList.add('active');
+        document.getElementById('plantillas-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cerrarPlantillas() {
+        document.getElementById('plantillas-form-panel')?.classList.remove('active');
+        limpiarPlantillaForm();
+    }
+
+    function limpiarPlantillaForm() {
+        setVal('plantilla-id', '');
+        setVal('plantilla-nombre', '');
+        setVal('plantilla-logo', '');
+        setVal('plantilla-primario', '#1d4ed8');
+        setVal('plantilla-secundario', '#eff6ff');
+        setVal('plantilla-fuente', 'Helvetica');
+        setVal('plantilla-pie', '');
+        setText('plantillas-form-titulo', 'Nuevo modelo de factura');
+    }
+
+    function editarPlantilla(id) {
+        const p = plantillasCache.find(x => String(x.id_plantilla) === String(id));
+        if (!p) return;
+        setVal('plantilla-id', p.id_plantilla);
+        setVal('plantilla-nombre', p.nombre);
+        setVal('plantilla-logo', p.logo_url || '');
+        setVal('plantilla-primario', p.color_primario);
+        setVal('plantilla-secundario', p.color_secundario);
+        setVal('plantilla-fuente', p.fuente);
+        setVal('plantilla-pie', p.texto_pie || '');
+        setText('plantillas-form-titulo', `Editar modelo: ${p.nombre}`);
+        document.getElementById('plantilla-nombre')?.focus();
+    }
+
+    async function guardarPlantilla(e) {
+        e.preventDefault();
+        const id = document.getElementById('plantilla-id')?.value;
+        const payload = {
+            nombre: document.getElementById('plantilla-nombre')?.value.trim(),
+            logo_url: document.getElementById('plantilla-logo')?.value.trim(),
+            color_primario: document.getElementById('plantilla-primario')?.value,
+            color_secundario: document.getElementById('plantilla-secundario')?.value,
+            fuente: document.getElementById('plantilla-fuente')?.value,
+            texto_pie: document.getElementById('plantilla-pie')?.value.trim(),
+        };
+        try {
+            const r = await fetchSeguro('/api/plantillas_factura.php' + (id ? '?id=' + encodeURIComponent(id) : ''), {
+                method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+            });
+            const d = await r.json();
+            if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+            mostrarToast(id ? 'Modelo actualizado' : 'Modelo creado', 'success');
+            limpiarPlantillaForm();
+            cargarPlantillas();
+        } catch (err) { manejarApiError(err, 'Error al guardar el modelo'); }
+    }
+
+    function eliminarPlantilla(id) {
+        const p = plantillasCache.find(x => String(x.id_plantilla) === String(id));
+        if (!p) return;
+        mostrarConfirm('Eliminar modelo', `Se eliminará el modelo ${p.nombre}. Las facturas ya creadas conservarán su diseño.`, async () => {
+            try {
+                const r = await fetchSeguro('/api/plantillas_factura.php?id=' + encodeURIComponent(id), { method: 'DELETE' });
+                const d = await r.json();
+                if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+                mostrarToast('Modelo eliminado', 'success');
+                cargarPlantillas();
+            } catch (err) { manejarApiError(err, 'Error al eliminar el modelo'); }
+        });
     }
 
     function validar(payload) {

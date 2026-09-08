@@ -34,15 +34,19 @@ function facturaDocumentoPdf(array $factura): string
 {
     $pdf = new FacturaPdfSimple();
     $pdf->addPage();
+    $plantilla = facturaDocumentoPlantilla($factura);
+    $pdf->setFont($plantilla['fuente']);
+    $pdf->setTextColor($plantilla['color_primario']);
 
     $contacto = trim(($factura['contacto_nombre'] ?? '') . ' ' . ($factura['contacto_apellidos'] ?? ''));
     $empresa = trim((string) ($factura['contacto_empresa'] ?? ''));
 
-    $pdf->text(50, 790, 'L&J CRM', 20);
+    $pdf->text(50, 790, $plantilla['nombre_empresa'], 20);
     $pdf->text(50, 765, 'Factura ' . $factura['numero'], 15);
     $pdf->text(50, 742, 'Fecha emision: ' . facturaDocumentoFecha($factura['fecha_emision']), 10);
     $pdf->text(50, 726, 'Fecha vencimiento: ' . facturaDocumentoFecha($factura['fecha_vencimiento'] ?? null), 10);
     $pdf->text(405, 790, 'Cliente', 12);
+    $pdf->setTextColor('#111827');
     $pdf->text(405, 770, $empresa !== '' ? $empresa : $contacto, 10);
     if ($empresa !== '' && $contacto !== '') {
         $pdf->text(405, 754, $contacto, 10);
@@ -51,6 +55,7 @@ function facturaDocumentoPdf(array $factura): string
     $pdf->text(405, 722, (string) ($factura['contacto_telefono'] ?? ''), 10);
 
     $y = 675;
+    $pdf->setLineColor($plantilla['color_primario']);
     $pdf->line(50, $y + 14, 545, $y + 14);
     $pdf->text(50, $y, 'Concepto', 10);
     $pdf->text(300, $y, 'Cant.', 10);
@@ -58,6 +63,7 @@ function facturaDocumentoPdf(array $factura): string
     $pdf->text(430, $y, 'IVA', 10);
     $pdf->text(490, $y, 'Total', 10);
     $pdf->line(50, $y - 8, 545, $y - 8);
+    $pdf->setLineColor('#111827');
     $y -= 28;
 
     foreach ($factura['lineas'] as $linea) {
@@ -98,6 +104,11 @@ function facturaDocumentoPdf(array $factura): string
         }
     }
 
+    if ($plantilla['texto_pie'] !== '') {
+        $pdf->setTextColor($plantilla['color_primario']);
+        $pdf->text(50, 28, $plantilla['texto_pie'], 8);
+    }
+
     return $pdf->output();
 }
 
@@ -106,6 +117,11 @@ function facturaDocumentoHtmlEmail(array $factura): string
     $numero = htmlspecialchars((string) $factura['numero'], ENT_QUOTES, 'UTF-8');
     $total = htmlspecialchars(facturaDocumentoMoneda($factura['total']), ENT_QUOTES, 'UTF-8');
     $fecha = htmlspecialchars(facturaDocumentoFecha($factura['fecha_emision']), ENT_QUOTES, 'UTF-8');
+    $plantilla = facturaDocumentoPlantilla($factura);
+    $color = htmlspecialchars($plantilla['color_primario'], ENT_QUOTES, 'UTF-8');
+    $fondo = htmlspecialchars($plantilla['color_secundario'], ENT_QUOTES, 'UTF-8');
+    $pie = htmlspecialchars($plantilla['texto_pie'], ENT_QUOTES, 'UTF-8');
+    $logo = $plantilla['logo_url'] !== '' ? '<img src="' . htmlspecialchars($plantilla['logo_url'], ENT_QUOTES, 'UTF-8') . '" alt="Logo" style="max-height:44px;max-width:180px;margin-bottom:14px;">' : '';
 
     return <<<HTML
 <!DOCTYPE html>
@@ -113,17 +129,29 @@ function facturaDocumentoHtmlEmail(array $factura): string
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,sans-serif;color:#1f2937;">
   <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e5e7eb;">
-    <h1 style="margin:0 0 8px;font-size:22px;color:#111827;">Factura {$numero}</h1>
+    {$logo}<h1 style="margin:0 0 8px;font-size:22px;color:{$color};">Factura {$numero}</h1>
     <p style="margin:0 0 20px;color:#6b7280;">Adjuntamos tu factura emitida el {$fecha}.</p>
-    <div style="background:#f9fafb;border-radius:10px;padding:18px;margin-bottom:20px;">
+    <div style="background:{$fondo};border-radius:10px;padding:18px;margin-bottom:20px;">
       <span style="display:block;color:#6b7280;font-size:13px;">Total</span>
       <strong style="font-size:26px;color:#111827;">{$total}</strong>
     </div>
-    <p style="margin:0;color:#6b7280;font-size:13px;">Gracias por confiar en L&amp;J CRM.</p>
+    <p style="margin:0;color:#6b7280;font-size:13px;">{$pie}</p>
   </div>
 </body>
 </html>
 HTML;
+}
+
+function facturaDocumentoPlantilla(array $factura): array
+{
+    $base = ['nombre_empresa' => 'L&J CRM', 'logo_url' => '', 'color_primario' => '#1D4ED8', 'color_secundario' => '#EFF6FF', 'fuente' => 'Helvetica', 'texto_pie' => 'Gracias por confiar en L&J CRM.'];
+    if (empty($factura['plantilla_snapshot'])) return $base;
+    $datos = json_decode((string) $factura['plantilla_snapshot'], true);
+    if (!is_array($datos)) return $base;
+    foreach (['logo_url', 'color_primario', 'color_secundario', 'fuente', 'texto_pie'] as $clave) {
+        if (isset($datos[$clave]) && is_string($datos[$clave])) $base[$clave] = $datos[$clave];
+    }
+    return $base;
 }
 
 /**
@@ -192,6 +220,7 @@ class FacturaPdfSimple
 {
     private array $pages = [];
     private array $current = [];
+    private string $font = 'Helvetica';
 
     public function addPage(): void
     {
@@ -203,8 +232,10 @@ class FacturaPdfSimple
 
     public function text(float $x, float $y, string $text, int $size = 10): void
     {
+        $font = ['Helvetica' => 'F1', 'Times-Roman' => 'F2', 'Courier' => 'F3'][$this->font] ?? 'F1';
         $this->current[] = sprintf(
-            "BT /F1 %d Tf %.2F %.2F Td (%s) Tj ET",
+            "BT /%s %d Tf %.2F %.2F Td (%s) Tj ET",
+            $font,
             $size,
             $x,
             $y,
@@ -216,6 +247,10 @@ class FacturaPdfSimple
     {
         $this->current[] = sprintf("%.2F %.2F m %.2F %.2F l S", $x1, $y1, $x2, $y2);
     }
+
+    public function setFont(string $font): void { $this->font = in_array($font, ['Helvetica', 'Times-Roman', 'Courier'], true) ? $font : 'Helvetica'; }
+    public function setTextColor(string $hex): void { $this->current[] = $this->colorCommand($hex, 'rg'); }
+    public function setLineColor(string $hex): void { $this->current[] = $this->colorCommand($hex, 'RG'); }
 
     public function output(): string
     {
@@ -248,7 +283,7 @@ class FacturaPdfSimple
             $kids[] = "{$pageObjNum} 0 R";
 
             $objects[$pageObjNum] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
-                . "/Resources << /Font << /F1 {$fontObjNum} 0 R >> >> /Contents {$contentObjNum} 0 R >>";
+                . "/Resources << /Font << /F1 {$fontObjNum} 0 R /F2 " . ($fontObjNum + 1) . " 0 R /F3 " . ($fontObjNum + 2) . " 0 R >> >> /Contents {$contentObjNum} 0 R >>";
 
             $stream = implode("\n", $page);
             $objects[$contentObjNum] = "<< /Length " . strlen($stream) . " >>\nstream\n{$stream}\nendstream";
@@ -256,6 +291,8 @@ class FacturaPdfSimple
 
         $objects[2] = "<< /Type /Pages /Kids [" . implode(' ', $kids) . "] /Count {$n} >>";
         $objects[$fontObjNum] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+        $objects[$fontObjNum + 1] = "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>";
+        $objects[$fontObjNum + 2] = "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>";
 
         ksort($objects);
 
@@ -288,5 +325,11 @@ class FacturaPdfSimple
     {
         $converted = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $text);
         return $converted !== false ? $converted : preg_replace('/[^\x20-\x7E]/', '', $text);
+    }
+
+    private function colorCommand(string $hex, string $operator): string
+    {
+        if (!preg_match('/^#([0-9a-f]{6})$/i', $hex, $m)) $m[1] = '000000';
+        return sprintf('%.3F %.3F %.3F %s', hexdec(substr($m[1], 0, 2)) / 255, hexdec(substr($m[1], 2, 2)) / 255, hexdec(substr($m[1], 4, 2)) / 255, $operator);
     }
 }

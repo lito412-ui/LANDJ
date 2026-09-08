@@ -50,7 +50,8 @@ try {
         exit;
     }
 
-    if (!esSmtpNegocioConfigurado() && !esSmtpSistemaConfigurado()) {
+    $grupoId = obtenerIdGrupoActual();
+    if (!esSmtpNegocioConfigurado($grupoId)) {
         facturaEmailErr('El servidor de correo (SMTP) no está configurado. Ve a Configuración > Servidor de Correo (SMTP) para activarlo.', 400);
         exit;
     }
@@ -65,7 +66,8 @@ try {
             'name' => facturaDocumentoNombre($factura),
             'encoding' => 'base64',
             'type' => 'application/pdf',
-        ]]
+        ]],
+        $grupoId
     );
 
     if (!$ok) {

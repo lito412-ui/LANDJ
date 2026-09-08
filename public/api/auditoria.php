@@ -17,17 +17,22 @@ if ($_SESSION['rol'] !== 'administrador') {
 
 require __DIR__ . '/../config/conexion.php';
 
+// La auditoría no tiene id_grupo propio. Su pertenencia se determina siempre
+// por el usuario que realizó la acción, evitando que un administrador pueda
+// consultar la actividad de otra empresa.
+$grupoId = obtenerIdGrupoActual();
+
 $tabla      = trim($_GET['tabla']      ?? '');
 $accion     = trim($_GET['accion']     ?? '');
 $registroId = isset($_GET['registro_id']) ? (int) $_GET['registro_id'] : null;
 $limite     = min((int) ($_GET['limite'] ?? 50), 200);
 $offset     = max((int) ($_GET['offset'] ?? 0), 0);
 
-$where  = [];
-$params = [];
+$where  = ['u.id_grupo = ?'];
+$params = [$grupoId];
 
 if ($tabla !== '') {
-    $tablasValidas = ['contactos', 'leads', 'oportunidades', 'actividades', 'usuarios', 'dominios', 'cuentas_correo'];
+    $tablasValidas = ['contactos', 'leads', 'oportunidades', 'actividades', 'usuarios', 'dominios', 'cuentas_correo', 'facturas', 'plantillas_factura'];
     if (in_array($tabla, $tablasValidas, true)) {
         $where[]  = 'a.tabla = ?';
         $params[] = $tabla;
@@ -47,10 +52,10 @@ if ($registroId !== null) {
 
 $clausulaWhere = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
-$sqlCount = "SELECT COUNT(*) FROM auditoria a$clausulaWhere";
+$sqlCount = "SELECT COUNT(*) FROM auditoria a INNER JOIN usuarios u ON u.id_usuario = a.usuario_id$clausulaWhere";
 $sqlData  = "SELECT a.*, u.nombre AS usuario_nombre
              FROM auditoria a
-             LEFT JOIN usuarios u ON u.id_usuario = a.usuario_id
+             INNER JOIN usuarios u ON u.id_usuario = a.usuario_id
              $clausulaWhere
              ORDER BY a.created_at DESC
              LIMIT ? OFFSET ?";

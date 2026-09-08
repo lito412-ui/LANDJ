@@ -14,14 +14,16 @@ require __DIR__ . '/../config/conexion.php';
 $userId  = (int) $_SESSION['user_id'];
 $esAdmin = ($_SESSION['rol'] ?? '') === 'administrador';
 $limite  = min((int) ($_GET['limite'] ?? 10), 25);
+$grupoId = obtenerIdGrupoActual();
 
 $sql    = "SELECT a.accion, a.tabla, a.created_at, u.nombre AS usuario
            FROM auditoria a
-           LEFT JOIN usuarios u ON u.id_usuario = a.usuario_id";
-$params = [];
+           INNER JOIN usuarios u ON u.id_usuario = a.usuario_id
+           WHERE u.id_grupo = ?";
+$params = [$grupoId];
 
 if (!$esAdmin) {
-    $sql   .= " WHERE a.usuario_id = ?";
+    $sql   .= " AND a.usuario_id = ?";
     $params[] = $userId;
 }
 
@@ -41,6 +43,8 @@ try {
         'usuarios'       => 'Usuario',
         'dominios'       => 'Dominio',
         'cuentas_correo' => 'Cuenta de correo',
+        'facturas'       => 'Factura',
+        'plantillas_factura' => 'Modelo de factura',
     ];
 
     $ACCION_LABEL = ['crear' => 'creado', 'editar' => 'actualizado', 'eliminar' => 'eliminado'];

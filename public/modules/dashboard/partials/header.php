@@ -1,6 +1,9 @@
 <header class="header">
     <div class="header-container">
         <div class="header-left">
+            <button class="mobile-menu-btn" id="mobile-menu-btn" type="button" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
+                <i class="fas fa-bars"></i>
+            </button>
             <h1 class="logo">L&J</h1>
             <span class="welcome-text">Bienvenido, <span id="user-name">Usuario</span></span>
         </div>

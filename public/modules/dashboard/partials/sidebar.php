@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar" aria-label="Navegación principal">
     <nav class="sidebar-nav">
 
         <div class="nav-section">

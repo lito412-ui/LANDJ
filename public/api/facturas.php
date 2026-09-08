@@ -68,6 +68,9 @@ function validarFactura(array $b): array {
     $notas = nullOrStr($b['notas'] ?? '');
     if ($notas !== null && strlen($notas) > 1000) $errors[] = 'Las notas no pueden superar 1000 caracteres';
 
+    $plantillaId = isset($b['plantilla_id']) && $b['plantilla_id'] !== '' ? (int) $b['plantilla_id'] : null;
+    if ($plantillaId !== null && $plantillaId <= 0) $errors[] = 'Modelo de factura no válido';
+
     $lineasInput = is_array($b['lineas'] ?? null) ? $b['lineas'] : [];
     if (empty($lineasInput)) $errors[] = 'Anade al menos una linea de factura';
 
@@ -105,7 +108,16 @@ function validarFactura(array $b): array {
     $iva = round(array_sum(array_column($lineas, 'iva_importe')), 2);
     $total = round(array_sum(array_column($lineas, 'total_linea')), 2);
 
-    return compact('errors', 'contactoId', 'estado', 'fechaEmision', 'fechaVencimiento', 'notas', 'lineas', 'base', 'iva', 'total');
+    return compact('errors', 'contactoId', 'estado', 'fechaEmision', 'fechaVencimiento', 'notas', 'plantillaId', 'lineas', 'base', 'iva', 'total');
+}
+
+function plantillaFacturaSnapshot(PDO $pdo, ?int $plantillaId, int $grupoId): ?string {
+    if ($plantillaId === null) return null;
+    $s = $pdo->prepare('SELECT id_plantilla, nombre, logo_url, color_primario, color_secundario, fuente, texto_pie FROM plantillas_factura WHERE id_plantilla = ? AND id_grupo = ?');
+    $s->execute([$plantillaId, $grupoId]);
+    $plantilla = $s->fetch();
+    if (!$plantilla) throw new RuntimeException('Modelo de factura no encontrado');
+    return json_encode($plantilla, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 }
 
 function generarNumeroFactura(PDO $pdo): string {
@@ -248,8 +260,8 @@ function importarFacturas(PDO $pdo, int $userId, int $grupoId): void {
             $num = $numeroReal !== '' ? $numeroReal : generarNumeroFactura($pdo);
             $s = $pdo->prepare("
                 INSERT INTO facturas
-                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo, plantilla_id, plantilla_snapshot)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
             ");
             $s->execute([$num, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
             $nuevoId = (int) $pdo->lastInsertId();
@@ -344,12 +356,13 @@ try {
 
             $pdo->beginTransaction();
             $numero = generarNumeroFactura($pdo);
+            $plantillaSnapshot = plantillaFacturaSnapshot($pdo, $v['plantillaId'], $grupoId);
             $s = $pdo->prepare("
                 INSERT INTO facturas
-                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (numero, contacto_id, estado, fecha_emision, fecha_vencimiento, base_imponible, iva_total, total, notas, creado_por, id_grupo, plantilla_id, plantilla_snapshot)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId]);
+            $s->execute([$numero, $v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $userId, $grupoId, $v['plantillaId'], $plantillaSnapshot]);
             $newId = (int) $pdo->lastInsertId();
             guardarLineas($pdo, $newId, $v['lineas']);
             $nuevo = cargarFactura($pdo, $newId);
@@ -372,13 +385,14 @@ try {
             if (!$contacto->fetch()) { err('Contacto no encontrado', 404); break; }
 
             $pdo->beginTransaction();
+            $plantillaSnapshot = plantillaFacturaSnapshot($pdo, $v['plantillaId'], $grupoId);
             $s = $pdo->prepare("
                 UPDATE facturas
                    SET contacto_id=?, estado=?, fecha_emision=?, fecha_vencimiento=?,
-                       base_imponible=?, iva_total=?, total=?, notas=?
+                       base_imponible=?, iva_total=?, total=?, notas=?, plantilla_id=?, plantilla_snapshot=?
                  WHERE id_factura=? AND id_grupo=?
             ");
-            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $id, $grupoId]);
+            $s->execute([$v['contactoId'], $v['estado'], $v['fechaEmision'], $v['fechaVencimiento'], $v['base'], $v['iva'], $v['total'], $v['notas'], $v['plantillaId'], $plantillaSnapshot, $id, $grupoId]);
             guardarLineas($pdo, $id, $v['lineas']);
             $despues = cargarFactura($pdo, $id);
             registrarAuditoria($pdo, 'facturas', $id, 'editar', $antes, $despues);

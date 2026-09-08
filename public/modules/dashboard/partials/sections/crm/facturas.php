@@ -4,9 +4,14 @@
             <h2 class="section-title">Facturas</h2>
             <p class="section-subtitle">Gestiona facturas vinculadas a tus contactos</p>
         </div>
-        <button class="btn-primary" id="facturas-nueva-btn">
-            <i class="fas fa-plus"></i> Nueva Factura
-        </button>
+        <div class="header-actions">
+            <button class="btn-secondary" id="facturas-plantillas-btn">
+                <i class="fas fa-palette"></i> Modelos
+            </button>
+            <button class="btn-primary" id="facturas-nueva-btn">
+                <i class="fas fa-plus"></i> Nueva Factura
+            </button>
+        </div>
     </div>
 
     <div class="form-panel" id="facturas-form-panel">
@@ -28,6 +33,12 @@
                         <option value="pagada">Pagada</option>
                         <option value="vencida">Vencida</option>
                         <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Modelo visual</label>
+                    <select id="fac-plantilla" class="form-input">
+                        <option value="">Diseño estándar</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -72,6 +83,57 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="form-panel" id="plantillas-form-panel">
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title" id="plantillas-form-titulo">Modelos de factura</h3>
+                <button type="button" class="btn-secondary btn-sm" id="plantillas-cerrar-btn"><i class="fas fa-times"></i> Cerrar</button>
+            </div>
+            <p class="section-subtitle">Personaliza la imagen de tus facturas. Los modelos son privados para tu empresa.</p>
+            <form id="plantillas-form" class="form-grid" novalidate>
+                <input type="hidden" id="plantilla-id">
+                <div class="form-group">
+                    <label class="form-label">Nombre del modelo <span class="form-required">*</span></label>
+                    <input id="plantilla-nombre" class="form-input" maxlength="100" placeholder="Ej. Factura corporativa">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Logo (URL HTTPS)</label>
+                    <input id="plantilla-logo" type="url" class="form-input" maxlength="1000" placeholder="https://tuempresa.es/logo.png">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Color principal</label>
+                    <input id="plantilla-primario" type="color" class="form-input" value="#1d4ed8">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Color de fondo</label>
+                    <input id="plantilla-secundario" type="color" class="form-input" value="#eff6ff">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tipografía</label>
+                    <select id="plantilla-fuente" class="form-input">
+                        <option value="Helvetica">Helvetica — moderna</option>
+                        <option value="Times-Roman">Times — clásica</option>
+                        <option value="Courier">Courier — técnica</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label">Texto de pie</label>
+                    <textarea id="plantilla-pie" class="form-textarea" rows="2" maxlength="500" placeholder="Gracias por confiar en nosotros."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar modelo</button>
+                    <button type="button" class="btn-secondary" id="plantillas-limpiar-btn">Nuevo modelo</button>
+                </div>
+            </form>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead><tr><th>Modelo</th><th>Estilo</th><th>Acciones</th></tr></thead>
+                    <tbody id="plantillas-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 

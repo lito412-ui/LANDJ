@@ -14,6 +14,7 @@ csrfGenerar();
 <div class="main-container">
 
     <?php include __DIR__ . '/partials/sidebar.php'; ?>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
 
     <main class="main-content">
         <?php include __DIR__ . '/partials/sections/panel/dashboard.php'; ?>

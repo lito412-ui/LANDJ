@@ -51,6 +51,8 @@ html[data-theme="dark"] .rol-badge--usuario { background: #0c2140; color: #7dd3f
 
 /* Sidebar — #475569 sobre #1e293b era 1.6:1, corregido a #94a3b8 (5.1:1) */
 html[data-theme="dark"] .sidebar              { background: #1e293b; border-right-color: #334155; }
+html[data-theme="dark"] .mobile-menu-btn      { background: #334155; color: #f8fafc; }
+html[data-theme="dark"] .mobile-menu-btn:hover { background: #475569; }
 html[data-theme="dark"] .nav-section-title    { color: #94a3b8; }
 html[data-theme="dark"] .nav-link             { color: #94a3b8; }
 html[data-theme="dark"] .nav-link:hover       { background: #334155; color: #f1f5f9; }
