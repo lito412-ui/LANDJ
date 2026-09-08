@@ -113,7 +113,7 @@ function validarFactura(array $b): array {
 
 function plantillaFacturaSnapshot(PDO $pdo, ?int $plantillaId, int $grupoId): ?string {
     if ($plantillaId === null) return null;
-    $s = $pdo->prepare('SELECT id_plantilla, nombre, logo_url, color_primario, color_secundario, fuente, texto_pie FROM plantillas_factura WHERE id_plantilla = ? AND id_grupo = ?');
+    $s = $pdo->prepare('SELECT id_plantilla, nombre, logo_url, color_primario, color_secundario, fuente, texto_pie, marca_agua, marca_agua_opacidad, orden_bloques FROM plantillas_factura WHERE id_plantilla = ? AND id_grupo = ?');
     $s->execute([$plantillaId, $grupoId]);
     $plantilla = $s->fetch();
     if (!$plantilla) throw new RuntimeException('Modelo de factura no encontrado');

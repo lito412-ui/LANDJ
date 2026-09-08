@@ -4,7 +4,9 @@
             <button class="mobile-menu-btn" id="mobile-menu-btn" type="button" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
                 <i class="fas fa-bars"></i>
             </button>
-            <h1 class="logo">L&J</h1>
+            <a class="logo" href="#dashboard" aria-label="L&J cPanel, ir al panel principal">
+                <img src="/assets/img/logo_proyecto.png" alt="L&J cPanel">
+            </a>
             <span class="welcome-text">Bienvenido, <span id="user-name">Usuario</span></span>
         </div>
         <div class="header-right">

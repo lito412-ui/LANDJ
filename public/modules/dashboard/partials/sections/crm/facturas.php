@@ -93,15 +93,20 @@
                 <button type="button" class="btn-secondary btn-sm" id="plantillas-cerrar-btn"><i class="fas fa-times"></i> Cerrar</button>
             </div>
             <p class="section-subtitle">Personaliza la imagen de tus facturas. Los modelos son privados para tu empresa.</p>
-            <form id="plantillas-form" class="form-grid" novalidate>
+            <form id="plantillas-form" class="invoice-designer" novalidate>
                 <input type="hidden" id="plantilla-id">
+                <input type="hidden" id="plantilla-logo">
+                <div class="invoice-designer-controls">
                 <div class="form-group">
                     <label class="form-label">Nombre del modelo <span class="form-required">*</span></label>
                     <input id="plantilla-nombre" class="form-input" maxlength="100" placeholder="Ej. Factura corporativa">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Logo (URL HTTPS)</label>
-                    <input id="plantilla-logo" type="url" class="form-input" maxlength="1000" placeholder="https://tuempresa.es/logo.png">
+                    <label class="form-label">Logo</label>
+                    <label class="logo-dropzone" id="plantilla-logo-drop" for="plantilla-logo-file">
+                        <i class="fas fa-cloud-arrow-up"></i><span>Arrastra tu logo o pulsa para subirlo</span><small>PNG, JPG o WebP · máximo 2 MB</small>
+                    </label>
+                    <input id="plantilla-logo-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Color principal</label>
@@ -123,10 +128,37 @@
                     <label class="form-label">Texto de pie</label>
                     <textarea id="plantilla-pie" class="form-textarea" rows="2" maxlength="500" placeholder="Gracias por confiar en nosotros."></textarea>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Marca de agua</label>
+                    <input id="plantilla-marca-agua" class="form-input" maxlength="120" placeholder="EJEMPLO · CONFIDENCIAL">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Opacidad <span id="plantilla-opacidad-valor">10%</span></label>
+                    <input id="plantilla-opacidad" type="range" min="0" max="35" value="10" class="form-input">
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label">Estructura de la factura</label>
+                    <p class="designer-help">Arrastra los bloques para decidir el orden del documento.</p>
+                    <div class="designer-blocks" id="plantilla-bloques">
+                        <button type="button" class="designer-block" draggable="true" data-block="cabecera"><i class="fas fa-grip-vertical"></i> Cabecera</button>
+                        <button type="button" class="designer-block" draggable="true" data-block="cliente"><i class="fas fa-grip-vertical"></i> Cliente</button>
+                        <button type="button" class="designer-block" draggable="true" data-block="lineas"><i class="fas fa-grip-vertical"></i> Líneas</button>
+                        <button type="button" class="designer-block" draggable="true" data-block="totales"><i class="fas fa-grip-vertical"></i> Totales</button>
+                        <button type="button" class="designer-block" draggable="true" data-block="pie"><i class="fas fa-grip-vertical"></i> Pie</button>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar modelo</button>
                     <button type="button" class="btn-secondary" id="plantillas-limpiar-btn">Nuevo modelo</button>
                 </div>
+                </div>
+                <aside class="invoice-preview-wrap">
+                    <div class="invoice-preview-toolbar"><i class="fas fa-eye"></i> Vista previa en tiempo real</div>
+                    <article class="invoice-preview" id="plantilla-preview">
+                        <div class="preview-watermark" id="preview-watermark"></div>
+                        <div class="preview-content" id="preview-content"></div>
+                    </article>
+                </aside>
             </form>
             <div class="table-container">
                 <table class="data-table">

@@ -24,26 +24,32 @@ function respuestaPlantilla(bool $ok, $data = null, ?string $error = null, int $
     echo json_encode($ok ? ['ok' => true, 'data' => $data] : ['ok' => false, 'error' => $error]);
 }
 
-function datosPlantilla(array $input): array {
+function datosPlantilla(array $input, int $grupoId): array {
     $nombre = trim((string) ($input['nombre'] ?? ''));
     $logo = trim((string) ($input['logo_url'] ?? ''));
     $primario = strtoupper(trim((string) ($input['color_primario'] ?? '#1D4ED8')));
     $secundario = strtoupper(trim((string) ($input['color_secundario'] ?? '#EFF6FF')));
     $fuente = trim((string) ($input['fuente'] ?? 'Helvetica'));
     $pie = trim((string) ($input['texto_pie'] ?? ''));
+    $marcaAgua = trim((string) ($input['marca_agua'] ?? ''));
+    $opacidad = (int) ($input['marca_agua_opacidad'] ?? 10);
+    $orden = is_array($input['orden_bloques'] ?? null) ? array_values($input['orden_bloques']) : ['cabecera', 'cliente', 'lineas', 'totales', 'pie'];
+    $bloquesValidos = ['cabecera', 'cliente', 'lineas', 'totales', 'pie'];
 
     $errores = [];
     if ($nombre === '' || mb_strlen($nombre) > 100) $errores[] = 'Indica un nombre de hasta 100 caracteres';
-    if ($logo !== '' && (!filter_var($logo, FILTER_VALIDATE_URL) || !preg_match('#^https://#i', $logo))) {
-        $errores[] = 'El logo debe ser una URL HTTPS válida';
+    $logoPropio = preg_match('#^/uploads/facturas/' . preg_quote((string) $grupoId, '#') . '/[a-f0-9]{32}\.(png|jpg|webp)$#i', $logo);
+    if ($logo !== '' && !$logoPropio) {
+        $errores[] = 'El logo debe cargarse desde este editor';
     }
     if (!preg_match('/^#[0-9A-F]{6}$/', $primario) || !preg_match('/^#[0-9A-F]{6}$/', $secundario)) {
         $errores[] = 'Los colores deben tener formato hexadecimal';
     }
     if (!in_array($fuente, ['Helvetica', 'Times-Roman', 'Courier'], true)) $errores[] = 'Fuente no válida';
     if (mb_strlen($pie) > 500) $errores[] = 'El pie no puede superar 500 caracteres';
+    if (mb_strlen($marcaAgua) > 120 || $opacidad < 0 || $opacidad > 35 || count($orden) !== 5 || array_diff($orden, $bloquesValidos) || count(array_unique($orden)) !== 5) $errores[] = 'Configuración visual no válida';
 
-    return compact('nombre', 'logo', 'primario', 'secundario', 'fuente', 'pie', 'errores');
+    return compact('nombre', 'logo', 'primario', 'secundario', 'fuente', 'pie', 'marcaAgua', 'opacidad', 'orden', 'errores');
 }
 
 try {
@@ -56,12 +62,12 @@ try {
 
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     if ($method === 'POST' || $method === 'PUT') {
-        $d = datosPlantilla($input);
+        $d = datosPlantilla($input, $grupoId);
         if ($d['errores']) { respuestaPlantilla(false, null, implode('; ', $d['errores']), 422); exit; }
 
         if ($method === 'POST') {
-            $s = $pdo->prepare('INSERT INTO plantillas_factura (id_grupo, nombre, logo_url, color_primario, color_secundario, fuente, texto_pie, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-            $s->execute([$grupoId, $d['nombre'], $d['logo'] ?: null, $d['primario'], $d['secundario'], $d['fuente'], $d['pie'] ?: null, $userId]);
+            $s = $pdo->prepare('INSERT INTO plantillas_factura (id_grupo, nombre, logo_url, color_primario, color_secundario, fuente, texto_pie, marca_agua, marca_agua_opacidad, orden_bloques, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $s->execute([$grupoId, $d['nombre'], $d['logo'] ?: null, $d['primario'], $d['secundario'], $d['fuente'], $d['pie'] ?: null, $d['marcaAgua'] ?: null, $d['opacidad'], json_encode($d['orden']), $userId]);
             $nuevoId = (int) $pdo->lastInsertId();
             registrarAuditoria($pdo, 'plantillas_factura', $nuevoId, 'crear', null, $d);
             respuestaPlantilla(true, ['id_plantilla' => $nuevoId]);
@@ -73,8 +79,8 @@ try {
         $anterior->execute([$id, $grupoId]);
         $antes = $anterior->fetch();
         if (!$antes) { respuestaPlantilla(false, null, 'Modelo no encontrado', 404); exit; }
-        $s = $pdo->prepare('UPDATE plantillas_factura SET nombre=?, logo_url=?, color_primario=?, color_secundario=?, fuente=?, texto_pie=? WHERE id_plantilla=? AND id_grupo=?');
-        $s->execute([$d['nombre'], $d['logo'] ?: null, $d['primario'], $d['secundario'], $d['fuente'], $d['pie'] ?: null, $id, $grupoId]);
+        $s = $pdo->prepare('UPDATE plantillas_factura SET nombre=?, logo_url=?, color_primario=?, color_secundario=?, fuente=?, texto_pie=?, marca_agua=?, marca_agua_opacidad=?, orden_bloques=? WHERE id_plantilla=? AND id_grupo=?');
+        $s->execute([$d['nombre'], $d['logo'] ?: null, $d['primario'], $d['secundario'], $d['fuente'], $d['pie'] ?: null, $d['marcaAgua'] ?: null, $d['opacidad'], json_encode($d['orden']), $id, $grupoId]);
         registrarAuditoria($pdo, 'plantillas_factura', $id, 'editar', $antes, $d);
         respuestaPlantilla(true, ['id_plantilla' => $id]);
         exit;

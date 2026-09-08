@@ -29,6 +29,7 @@ const Facturas = (() => {
         document.getElementById('plantillas-cerrar-btn')?.addEventListener('click', cerrarPlantillas);
         document.getElementById('plantillas-limpiar-btn')?.addEventListener('click', limpiarPlantillaForm);
         document.getElementById('plantillas-form')?.addEventListener('submit', guardarPlantilla);
+        prepararEditorPlantillas();
         document.getElementById('facturas-form')?.addEventListener('submit', guardar);
         document.getElementById('fac-linea-add')?.addEventListener('click', () => addLinea());
         document.getElementById('fac-det-cerrar')?.addEventListener('click', cerrarDetalle);
@@ -441,7 +442,12 @@ const Facturas = (() => {
         setVal('plantilla-secundario', '#eff6ff');
         setVal('plantilla-fuente', 'Helvetica');
         setVal('plantilla-pie', '');
+        setVal('plantilla-marca-agua', '');
+        setVal('plantilla-opacidad', '10');
+        setText('plantilla-opacidad-valor', '10%');
+        ordenarBloques(['cabecera', 'cliente', 'lineas', 'totales', 'pie']);
         setText('plantillas-form-titulo', 'Nuevo modelo de factura');
+        actualizarVistaPrevia();
     }
 
     function editarPlantilla(id) {
@@ -454,7 +460,12 @@ const Facturas = (() => {
         setVal('plantilla-secundario', p.color_secundario);
         setVal('plantilla-fuente', p.fuente);
         setVal('plantilla-pie', p.texto_pie || '');
+        setVal('plantilla-marca-agua', p.marca_agua || '');
+        setVal('plantilla-opacidad', p.marca_agua_opacidad ?? 10);
+        setText('plantilla-opacidad-valor', `${p.marca_agua_opacidad ?? 10}%`);
+        ordenarBloques(parseOrden(p.orden_bloques));
         setText('plantillas-form-titulo', `Editar modelo: ${p.nombre}`);
+        actualizarVistaPrevia();
         document.getElementById('plantilla-nombre')?.focus();
     }
 
@@ -468,6 +479,9 @@ const Facturas = (() => {
             color_secundario: document.getElementById('plantilla-secundario')?.value,
             fuente: document.getElementById('plantilla-fuente')?.value,
             texto_pie: document.getElementById('plantilla-pie')?.value.trim(),
+            marca_agua: document.getElementById('plantilla-marca-agua')?.value.trim(),
+            marca_agua_opacidad: document.getElementById('plantilla-opacidad')?.value,
+            orden_bloques: ordenActualBloques(),
         };
         try {
             const r = await fetchSeguro('/api/plantillas_factura.php' + (id ? '?id=' + encodeURIComponent(id) : ''), {
@@ -493,6 +507,71 @@ const Facturas = (() => {
                 cargarPlantillas();
             } catch (err) { manejarApiError(err, 'Error al eliminar el modelo'); }
         });
+    }
+
+    function prepararEditorPlantillas() {
+        ['plantilla-nombre', 'plantilla-primario', 'plantilla-secundario', 'plantilla-fuente', 'plantilla-pie', 'plantilla-marca-agua'].forEach(id =>
+            document.getElementById(id)?.addEventListener('input', actualizarVistaPrevia));
+        const opacidad = document.getElementById('plantilla-opacidad');
+        opacidad?.addEventListener('input', () => { setText('plantilla-opacidad-valor', `${opacidad.value}%`); actualizarVistaPrevia(); });
+        const input = document.getElementById('plantilla-logo-file');
+        input?.addEventListener('change', () => subirLogo(input.files?.[0]));
+        const zona = document.getElementById('plantilla-logo-drop');
+        ['dragenter', 'dragover'].forEach(ev => zona?.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('is-dragging'); }));
+        ['dragleave', 'drop'].forEach(ev => zona?.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('is-dragging'); }));
+        zona?.addEventListener('drop', e => subirLogo(e.dataTransfer.files?.[0]));
+        const bloques = document.getElementById('plantilla-bloques');
+        let arrastrado = null;
+        bloques?.querySelectorAll('.designer-block').forEach(b => {
+            b.addEventListener('dragstart', () => { arrastrado = b; b.classList.add('is-dragging'); });
+            b.addEventListener('dragend', () => b.classList.remove('is-dragging'));
+            b.addEventListener('dragover', e => e.preventDefault());
+            b.addEventListener('drop', e => { e.preventDefault(); if (arrastrado && arrastrado !== b) { bloques.insertBefore(arrastrado, b); actualizarVistaPrevia(); } });
+        });
+        actualizarVistaPrevia();
+    }
+
+    async function subirLogo(file) {
+        if (!file) return;
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) { mostrarToast('Usa una imagen PNG, JPG o WebP de hasta 2 MB', 'error'); return; }
+        const zona = document.getElementById('plantilla-logo-drop');
+        zona?.classList.add('is-uploading');
+        try {
+            const form = new FormData(); form.append('logo', file);
+            const r = await fetchSeguro('/api/plantillas_factura_logo.php', { method: 'POST', body: form });
+            const d = await r.json();
+            if (!d.ok) { mostrarToast(d.error, 'error'); return; }
+            setVal('plantilla-logo', d.data.url);
+            zona?.classList.add('has-logo');
+            zona?.querySelector('span') && (zona.querySelector('span').textContent = 'Logo cargado. Pulsa o arrastra para reemplazarlo');
+            actualizarVistaPrevia();
+        } catch (e) { manejarApiError(e, 'No se pudo subir el logo'); } finally { zona?.classList.remove('is-uploading'); }
+    }
+
+    function parseOrden(valor) { try { const v = typeof valor === 'string' ? JSON.parse(valor) : valor; return Array.isArray(v) && v.length === 5 ? v : ['cabecera','cliente','lineas','totales','pie']; } catch (_) { return ['cabecera','cliente','lineas','totales','pie']; } }
+    function ordenActualBloques() { return [...document.querySelectorAll('#plantilla-bloques [data-block]')].map(b => b.dataset.block); }
+    function ordenarBloques(orden) { const c = document.getElementById('plantilla-bloques'); if (!c) return; orden.forEach(id => { const b = c.querySelector(`[data-block="${id}"]`); if (b) c.appendChild(b); }); }
+
+    function actualizarVistaPrevia() {
+        const preview = document.getElementById('plantilla-preview'); const content = document.getElementById('preview-content');
+        if (!preview || !content) return;
+        const primario = document.getElementById('plantilla-primario')?.value || '#1d4ed8';
+        const secundario = document.getElementById('plantilla-secundario')?.value || '#eff6ff';
+        const fuente = document.getElementById('plantilla-fuente')?.value || 'Helvetica';
+        const logo = document.getElementById('plantilla-logo')?.value || '';
+        const pie = document.getElementById('plantilla-pie')?.value.trim() || 'Gracias por confiar en nosotros.';
+        const agua = document.getElementById('plantilla-marca-agua')?.value.trim() || '';
+        const opacidad = Number(document.getElementById('plantilla-opacidad')?.value || 10) / 100;
+        preview.style.setProperty('--preview-primary', primario); preview.style.setProperty('--preview-secondary', secundario); preview.style.fontFamily = fuente;
+        const marca = document.getElementById('preview-watermark'); marca.textContent = agua; marca.style.opacity = opacidad;
+        const bloques = {
+            cabecera: `<header class="preview-header">${logo ? `<img src="${escAttr(logo)}" alt="Logo">` : '<strong>MI EMPRESA</strong>'}<span>FACTURA<br><b>FAC-2026-0001</b></span></header>`,
+            cliente: '<section class="preview-client"><small>FACTURAR A</small><strong>Cliente de ejemplo S.L.</strong><span>cliente@ejemplo.es</span></section>',
+            lineas: '<section class="preview-lines"><div><b>Concepto</b><b>Importe</b></div><div><span>Servicio profesional</span><span>1.000,00 €</span></div><div><span>Consultoría mensual</span><span>250,00 €</span></div></section>',
+            totales: '<section class="preview-totals"><span>Base imponible <b>1.250,00 €</b></span><span>IVA <b>262,50 €</b></span><strong>Total <b>1.512,50 €</b></strong></section>',
+            pie: `<footer class="preview-footer">${esc(pie)}</footer>`,
+        };
+        content.innerHTML = ordenActualBloques().map(b => bloques[b]).join('');
     }
 
     function validar(payload) {

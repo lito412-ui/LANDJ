@@ -45,13 +45,19 @@ html, body {
 }
 
 .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
+    display: block;
+    width: 128px;
+    height: 48px;
+    overflow: hidden;
+    flex: 0 0 auto;
+}
+
+.logo img {
+    display: block;
+    width: 128px;
+    height: 48px;
+    object-fit: cover;
+    object-position: center 46%;
 }
 
 .welcome-text {
@@ -1395,6 +1401,8 @@ html, body {
     .header-left {
         gap: 12px;
     }
+
+    .logo, .logo img { width: 104px; height: 42px; }
     
     .welcome-text {
         display: none;

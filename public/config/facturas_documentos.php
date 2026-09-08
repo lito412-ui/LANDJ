@@ -36,6 +36,10 @@ function facturaDocumentoPdf(array $factura): string
     $pdf->addPage();
     $plantilla = facturaDocumentoPlantilla($factura);
     $pdf->setFont($plantilla['fuente']);
+    if ($plantilla['marca_agua'] !== '') {
+        $pdf->setTextColor($plantilla['color_secundario']);
+        $pdf->watermark($plantilla['marca_agua']);
+    }
     $pdf->setTextColor($plantilla['color_primario']);
 
     $contacto = trim(($factura['contacto_nombre'] ?? '') . ' ' . ($factura['contacto_apellidos'] ?? ''));
@@ -144,11 +148,11 @@ HTML;
 
 function facturaDocumentoPlantilla(array $factura): array
 {
-    $base = ['nombre_empresa' => 'L&J CRM', 'logo_url' => '', 'color_primario' => '#1D4ED8', 'color_secundario' => '#EFF6FF', 'fuente' => 'Helvetica', 'texto_pie' => 'Gracias por confiar en L&J CRM.'];
+    $base = ['nombre_empresa' => 'L&J CRM', 'logo_url' => '', 'color_primario' => '#1D4ED8', 'color_secundario' => '#EFF6FF', 'fuente' => 'Helvetica', 'texto_pie' => 'Gracias por confiar en L&J CRM.', 'marca_agua' => ''];
     if (empty($factura['plantilla_snapshot'])) return $base;
     $datos = json_decode((string) $factura['plantilla_snapshot'], true);
     if (!is_array($datos)) return $base;
-    foreach (['logo_url', 'color_primario', 'color_secundario', 'fuente', 'texto_pie'] as $clave) {
+    foreach (['logo_url', 'color_primario', 'color_secundario', 'fuente', 'texto_pie', 'marca_agua'] as $clave) {
         if (isset($datos[$clave]) && is_string($datos[$clave])) $base[$clave] = $datos[$clave];
     }
     return $base;
@@ -251,6 +255,11 @@ class FacturaPdfSimple
     public function setFont(string $font): void { $this->font = in_array($font, ['Helvetica', 'Times-Roman', 'Courier'], true) ? $font : 'Helvetica'; }
     public function setTextColor(string $hex): void { $this->current[] = $this->colorCommand($hex, 'rg'); }
     public function setLineColor(string $hex): void { $this->current[] = $this->colorCommand($hex, 'RG'); }
+    public function watermark(string $text): void
+    {
+        $font = ['Helvetica' => 'F1', 'Times-Roman' => 'F2', 'Courier' => 'F3'][$this->font] ?? 'F1';
+        $this->current[] = sprintf('q 0.707 0.707 -0.707 0.707 210 330 cm BT /%s 34 Tf 0 0 Td (%s) Tj ET Q', $font, $this->escape($this->toWinAnsi($text)));
+    }
 
     public function output(): string
     {
